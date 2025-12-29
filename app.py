@@ -2,19 +2,16 @@ import streamlit as st
 from datetime import datetime, timedelta
 import hashlib
 
-# ────────────────────────────────────────────────
-#                  3개 언어 번역 데이터
-# ────────────────────────────────────────────────
-
+# 언어 번역 (한국어, 영어, 중국어 3개만)
 translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 운세 🌟",
         "caption": "완전 무료 😄",
-        "lang_select": "언어 선택",
         "birth": "### 생년월일 입력",
         "year": "년",
         "month": "월",
         "day": "일",
+        "next_btn": "✅ 생년월일 다 적었어! 다음으로 →",
         "mbti_mode": "MBTI 어떻게 할까?",
         "direct": "직접 입력",
         "test": "상세 테스트 (16문제)",
@@ -40,11 +37,11 @@ translations = {
     "en": {
         "title": "🌟 2026 Zodiac + MBTI + Saju Fortune 🌟",
         "caption": "Completely Free 😄",
-        "lang_select": "Select Language",
         "birth": "### Enter Birth Date",
         "year": "Year",
         "month": "Month",
         "day": "Day",
+        "next_btn": "✅ Done with birthday! Go next →",
         "mbti_mode": "How to get MBTI?",
         "direct": "Enter directly",
         "test": "Detailed Test (16 questions)",
@@ -70,11 +67,11 @@ translations = {
     "zh": {
         "title": "🌟 2026年 生肖 + MBTI + 四柱运势 🌟",
         "caption": "完全免费 😄",
-        "lang_select": "选择语言",
         "birth": "### 输入出生日期",
         "year": "年",
         "month": "月",
         "day": "日",
+        "next_btn": "✅ 生日日期填好了！下一步 →",
         "mbti_mode": "MBTI怎么选？",
         "direct": "直接输入",
         "test": "详细测试 (16题)",
@@ -99,295 +96,115 @@ translations = {
     }
 }
 
-# 12간지 설명 (3개 언어)
+# 간단한 12띠 (3개 언어)
 zodiacs = {
-    "ko": {
-        "Rat": "🐭 쥐띠 - 활발·성장, 돈↑",
-        "Ox": "🐮 소띠 - 노력 결실",
-        "Tiger": "🐯 호랑이띠 - 도전 성공, 돈 대박",
-        "Rabbit": "🐰 토끼띠 - 안정·사랑 운",
-        "Dragon": "🐲 용띠 - 운↑ 리더십",
-        "Snake": "🐍 뱀띠 - 실속·직감",
-        "Horse": "🐴 말띠 - 새 도전·돈 기회",
-        "Goat": "🐑 양띠 - 편안+결혼 운",
-        "Monkey": "🐵 원숭이띠 - 변화·재능",
-        "Rooster": "🐔 닭띠 - 노력 결과",
-        "Dog": "🐶 개띠 - 친구·돈↑",
-        "Pig": "🐷 돼지띠 - 여유·돈 최고"
-    },
-    "en": {
-        "Rat": "🐭 Rat - Active growth, money ↑",
-        "Ox": "🐮 Ox - Effort pays off",
-        "Tiger": "🐯 Tiger - Challenge success, big money",
-        "Rabbit": "🐰 Rabbit - Stability & love luck",
-        "Dragon": "🐲 Dragon - Luck ↑ leadership",
-        "Snake": "🐍 Snake - Practical & intuition",
-        "Horse": "🐴 Horse - New challenge & money chance",
-        "Goat": "🐑 Goat - Comfort + marriage luck",
-        "Monkey": "🐵 Monkey - Change & talent",
-        "Rooster": "🐔 Rooster - Effort brings results",
-        "Dog": "🐶 Dog - Friends & money ↑",
-        "Pig": "🐷 Pig - Relaxed & best money luck"
-    },
-    "zh": {
-        "Rat": "🐭 鼠 - 活跃成长，财运上升",
-        "Ox": "🐮 牛 - 努力有回报",
-        "Tiger": "🐯 虎 - 挑战成功，大财",
-        "Rabbit": "🐰 兔 - 稳定+爱情运",
-        "Dragon": "🐲 龙 - 运势大涨+领导力",
-        "Snake": "🐍 蛇 - 务实+直觉强",
-        "Horse": "🐴 马 - 新挑战+赚钱机会",
-        "Goat": "🐑 羊 - 舒适+婚姻运",
-        "Monkey": "🐵 猴 - 变化+才华",
-        "Rooster": "🐔 鸡 - 努力见成果",
-        "Dog": "🐶 狗 - 朋友运+财运",
-        "Pig": "🐷 猪 - 悠闲+财运最佳"
-    }
+    "ko": ["쥐띠", "소띠", "호랑이띠", "토끼띠", "용띠", "뱀띠", "말띠", "양띠", "원숭이띠", "닭띠", "개띠", "돼지띠"],
+    "en": ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"],
+    "zh": ["鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊", "猴", "鸡", "狗", "猪"]
 }
 
-# MBTI 특징 (3개 언어, 간략 버전)
+# 간단한 MBTI 특징 (3개 언어)
 mbtis = {
-    "ko": {
-        "INTJ": "🧠 냉철 전략가",
-        "INTP": "💡 아이디어 천재",
-        "ENTJ": "👑 보스",
-        "ENTP": "⚡ 토론왕",
-        "INFJ": "🔮 마음 마스터",
-        "INFP": "🎨 감성 예술가",
-        "ENFJ": "🤗 모두 선생님",
-        "ENFP": "🎉 인간 비타민",
-        "ISTJ": "📋 규칙 지킴이",
-        "ISFJ": "🛡️ 세상 따뜻함",
-        "ESTJ": "📢 리더",
-        "ESFJ": "💕 분위기 메이커",
-        "ISTP": "🔧 고치는 장인",
-        "ISFP": "🌸 감성 힐러",
-        "ESTP": "🏄 모험왕",
-        "ESFP": "🎭 파티 주인공"
-    },
-    "en": {
-        "INTJ": "🧠 Strategic Mastermind",
-        "INTP": "💡 Innovative Thinker",
-        "ENTJ": "👑 Commander",
-        "ENTP": "⚡ Debater",
-        "INFJ": "🔮 Insightful Counselor",
-        "INFP": "🎨 Idealistic Dreamer",
-        "ENFJ": "🤗 Charismatic Teacher",
-        "ENFP": "🎉 Enthusiastic Campaigner",
-        "ISTJ": "📋 Responsible Inspector",
-        "ISFJ": "🛡️ Caring Protector",
-        "ESTJ": "📢 Efficient Executive",
-        "ESFJ": "💕 Supportive Host",
-        "ISTP": "🔧 Practical Craftsman",
-        "ISFP": "🌸 Sensitive Artist",
-        "ESTP": "🏄 Bold Adventurer",
-        "ESFP": "🎭 Entertaining Performer"
-    },
-    "zh": {
-        "INTJ": "🧠 冷静战略家",
-        "INTP": "💡 创意天才",
-        "ENTJ": "👑 领袖",
-        "ENTP": "⚡ 辩论王",
-        "INFJ": "🔮 心灵大师",
-        "INFP": "🎨 感性艺术家",
-        "ENFJ": "🤗 万人导师",
-        "ENFP": "🎉 人类维生素",
-        "ISTJ": "📋 规则守护者",
-        "ISFJ": "🛡️ 温暖守护者",
-        "ESTJ": "📢 高效领导",
-        "ESFJ": "💕 气氛制造者",
-        "ISTP": "🔧 修理大师",
-        "ISFP": "🌸 感性治疗师",
-        "ESTP": "🏄 冒险王",
-        "ESFP": "🎭 派对主角"
-    }
+    "ko": ["INTJ: 🧠 냉철 전략가", "INTP: 💡 아이디어 천재", "ENTJ: 👑 보스", "ENTP: ⚡ 토론왕",
+           "INFJ: 🔮 마음 마스터", "INFP: 🎨 감성 예술가", "ENFJ: 🤗 모두 선생님", "ENFP: 🎉 인간 비타민",
+           "ISTJ: 📋 규칙 지킴이", "ISFJ: 🛡️ 세상 따뜻함", "ESTJ: 📢 리더", "ESFJ: 💕 분위기 메이커",
+           "ISTP: 🔧 고치는 장인", "ISFP: 🌸 감성 힐러", "ESTP: 🏄 모험왕", "ESFP: 🎭 파티 주인공"],
+    "en": ["INTJ: 🧠 Strategic Mastermind", "INTP: 💡 Innovative Thinker", "ENTJ: 👑 Commander", "ENTP: ⚡ Debater",
+           "INFJ: 🔮 Insightful Counselor", "INFP: 🎨 Idealistic Dreamer", "ENFJ: 🤗 Charismatic Teacher", "ENFP: 🎉 Enthusiastic Campaigner",
+           "ISTJ: 📋 Responsible Inspector", "ISFJ: 🛡️ Caring Protector", "ESTJ: 📢 Efficient Executive", "ESFJ: 💕 Supportive Host",
+           "ISTP: 🔧 Practical Craftsman", "ISFP: 🌸 Sensitive Artist", "ESTP: 🏄 Bold Adventurer", "ESFP: 🎭 Entertaining Performer"],
+    "zh": ["INTJ: 🧠 冷静战略家", "INTP: 💡 创意天才", "ENTJ: 👑 领袖", "ENTP: ⚡ 辩论王",
+           "INFJ: 🔮 心灵大师", "INFP: 🎨 感性艺术家", "ENFJ: 🤗 万人导师", "ENFP: 🎉 人类维生素",
+           "ISTJ: 📋 规则守护者", "ISFJ: 🛡️ 温暖守护者", "ESTJ: 📢 高效领导", "ESFJ: 💕 气氛制造者",
+           "ISTP: 🔧 修理大师", "ISFP: 🌸 感性治疗师", "ESTP: 🏄 冒险王", "ESFP: 🎭 派对主角"]
 }
 
-# 사주 한마디 (3개 언어)
-saju_msgs = {
-    "ko": [
-        "목(木) 기운 강함 → 성장과 발전의 해! 🌱",
-        "화(火) 기운 강함 → 열정 폭발! ❤️",
-        "토(土) 기운 강함 → 안정과 재물운 💰",
-        "금(金) 기운 강함 → 결단력 좋음! 👔",
-        "수(水) 기운 강함 → 지혜와 흐름 🌊",
-        "오행 균형 → 행복한 한 해 ✨",
-        "양기 강함 → 도전 성공 🚀",
-        "음기 강함 → 내면 성찰 😌"
-    ],
-    "en": [
-        "Strong Wood → Year of growth & development! 🌱",
-        "Strong Fire → Passion explosion! ❤️",
-        "Strong Earth → Stability & wealth 💰",
-        "Strong Metal → Sharp decisiveness! 👔",
-        "Strong Water → Wisdom & flow 🌊",
-        "Balanced elements → Happy year ✨",
-        "Strong Yang → Challenges to success 🚀",
-        "Strong Yin → Deep inner reflection 😌"
-    ],
-    "zh": [
-        "木气旺盛 → 成长与发展之年！🌱",
-        "火气旺盛 → 热情爆发！❤️",
-        "土气旺盛 → 稳定与财运 💰",
-        "金气旺盛 → 决断力优秀！👔",
-        "水气旺盛 → 智慧与流动 🌊",
-        "五行平衡 → 幸福的一年 ✨",
-        "阳气旺盛 → 挑战成功 🚀",
-        "阴气旺盛 → 内心反省 😌"
-    ]
-}
-
-# 오늘/내일 운세 메시지 (각 40개 예시, 실제로는 더 늘려도 좋음)
+# 간단한 오늘/내일 운세 메시지 (각 언어 10개씩 예시)
 daily_messages = {
-    "ko": [
-        "에너지 충만! 새로운 시작 딱 좋은 날 🔥",
-        "인내가 필요한 하루… 작은 성취가 쌓이는 날 🐢",
-        "뜻밖의 인연이 생길 수 있는 날 💞",
-        "재물운 상승! 지갑이 두둑해질 조짐 💰",
-        "집중력 최고봉! 중요한 일 마무리 GO 📊",
-        "조금 피곤할 수 있음… 휴식 필수 😴",
-        "변화의 바람이 부는 날! 새로운 시도 OK 🌬️",
-        "주변 사람들과의 소통이 중요해지는 날 🗣️",
-        "직감이 예리해지는 날! 믿고 따라가세요 🔮",
-        "경쟁에서 이길 운! 자신감 UP 💪",
-        "안정감이 주는 하루… 천천히 가도 좋아 🏡",
-        "창의력 폭발! 아이디어 쏟아지는 날 🎨",
-        "감정 기복 주의… 차분함 유지하기 🙏",
-        "도움이 필요한 순간에 손 내밀어줄 사람이 나타남 🤝",
-        "작은 행운이 연속으로! 미소 잊지 마세요 😊",
-        "결단력이 빛나는 날! 망설이지 말고 GO! ⚡",
-        "내면 성찰의 시간… 조용히 생각 정리하기 🧘",
-        "활동적인 하루! 몸을 움직이면 기분 UP 🏃",
-        "금전 흐름이 좋아지는 날! 투자 타이밍? 🤔",
-        "감사하는 마음이 더 큰 복을 부르는 날 🙌",
-        # 연애운
-        "오늘 눈 맞춘 사람이 운명일지도…? 설렘 주의 💘",
-        "고백 타이밍 최고! 용기 내 볼까? 😳",
-        "상대방이 먼저 연락 올 확률 업↑ 📱💕",
-        "작은 스킨십에도 심쿵! 오늘은 살짝 가까이 가봐 ❤️",
-        "오랜 짝사랑이 조금씩 움직이기 시작하는 날 🌸",
-        "연애 대화가 술술 풀리는 마법 같은 하루 💬",
-        "오늘은 '너무 좋아'라는 말이 저절로 나올 거야 😍",
-        "연애운이 반짝! 소개팅이나 만남 잡아보는 건 어때? ✨",
-        "서로의 마음이 가까워지는 순간이 올지도… 기대돼요 💞",
-        "애매했던 관계에 명확한 신호가 올 수 있는 날 🔍"
-        # ... 20개 더 추가 가능
-    ],
-    "en": [
-        "Energy full! Perfect day to start something new 🔥",
-        "Patience needed… Small achievements building up 🐢",
-        "Unexpected connections might happen 💞",
-        "Money luck rising! Unexpected cash coming? 💸",
-        "Super focused today! Finish important tasks 📊",
-        "A bit tired… Rest is essential 😴",
-        "Wind of change! Try something new 🌬️",
-        "Communication becomes key today 🗣️",
-        "Your intuition is spot on! Trust it 🔮",
-        "Shine in competition! Confidence max 💪",
-        # ... (영어 40개 버전으로 확장)
-        "Eye contact today might be fate… Heart-fluttering alert 💘",
-        "Perfect timing for confession! Go for it? 😳",
-        "High chance your crush messages you first 📱💕",
-        # ...
-    ],
-    "zh": [
-        "能量满满！非常适合新开始的一天 🔥",
-        "需要耐心…小成就正在积累 🐢",
-        "可能有意外缘分出现 💞",
-        "财运上升！钱包变厚 💰",
-        "专注力巅峰！今天完成大事 📊",
-        "有点累…休息是必须的 😴",
-        "变化之风吹来！尝试新事物 🌬️",
-        "沟通成为关键的一天 🗣️",
-        "直觉很准！相信你的直觉 🔮",
-        "在竞争中闪耀！自信爆棚 💪",
-        # 연애운
-        "今天眼神对上的人可能是缘分…心动警告 💘",
-        "表白最佳时机！要不要试试？😳",
-        "对方主动联系的概率很高 📱💕",
-        # ...
-    ]
+    "ko": ["에너지 충만! 새로운 시작 GO! 🔥", "인내가 필요한 날… 천천히 가자 🐢", "뜻밖의 인연이 생길지도 💞",
+           "돈 들어올 기미! 💰", "집중력 최고! 오늘 끝내버려 📊", "조금 피곤… 푹 쉬어 😴",
+           "변화의 날! 새 도전 OK 🌬️", "소통이 중요한 날 🗣️", "직감 예리! 믿고 가 🔮", "경쟁에서 이길 운! 💪"],
+    "en": ["Full energy! New start GO! 🔥", "Patience day… Take it slow 🐢", "Unexpected connection? 💞",
+           "Money coming! 💰", "Max focus! Finish today 📊", "A bit tired… Rest 😴",
+           "Change day! Try new things 🌬️", "Communication key 🗣️", "Intuition sharp 🔮", "Win the competition! 💪"],
+    "zh": ["能量满满！新开始GO！🔥", "需要耐心的日子…慢慢来 🐢", "可能有意外缘分 💞",
+           "财运来了！💰", "专注力巅峰！今天搞定 📊", "有点累…好好休息 😴",
+           "变化之日！尝试新事物 🌬️", "沟通重要的一天 🗣️", "直觉很准 🔮", "竞争中获胜！💪"]
 }
-
-# ────────────────────────────────────────────────
-#                   함수들
-# ────────────────────────────────────────────────
 
 def get_zodiac(y):
-    z_list = ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", 
-              "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"]
-    return z_list[(y - 4) % 12] if 1900 <= y <= 2030 else None
+    idx = (y - 4) % 12
+    return zodiacs[st.session_state.lang][idx]
 
-def get_saju(year, month, day, lang):
-    total = year + month + day
-    index = total % len(saju_msgs[lang])
-    return saju_msgs[lang][index]
-
-def get_daily_index(year, month, day, target_date):
-    combined = f"{year}{month:02d}{day:02d}{target_date.year}{target_date.month:02d}{target_date.day:02d}"
-    hash_object = hashlib.sha256(combined.encode())
-    return int(hash_object.hexdigest(), 16) % len(daily_messages[lang])
+def get_daily_message(year, month, day, offset=0):
+    target = datetime.now().date() + timedelta(days=offset)
+    combined = f"{year}{month:02d}{day:02d}{target.year}{target.month:02d}{target.day:02d}"
+    hash_val = int(hashlib.sha256(combined.encode()).hexdigest(), 16)
+    idx = hash_val % len(daily_messages[st.session_state.lang])
+    return daily_messages[st.session_state.lang][idx]
 
 # ────────────────────────────────────────────────
-#                   앱 시작
+#                    앱 시작
 # ────────────────────────────────────────────────
 
 if "lang" not in st.session_state:
     st.session_state.lang = "ko"
 
-lang_options = {"한국어": "ko", "English": "en", "中文": "zh"}
-selected_lang = st.selectbox("🌐 Language", list(lang_options.keys()))
-lang = lang_options[selected_lang]
+lang_map = {"한국어": "ko", "English": "en", "中文": "zh"}
+selected = st.selectbox("🌐 Language / 语言", list(lang_map.keys()))
+st.session_state.lang = lang_map[selected]
 
-t = translations[lang]
+t = translations[st.session_state.lang]
 
 st.title(t["title"])
 st.caption(t["caption"])
 
-# 생년월일 입력
 st.write(t["birth"])
 col1, col2, col3 = st.columns(3)
 year = col1.number_input(t["year"], 1900, 2030, 2005, step=1)
 month = col2.number_input(t["month"], 1, 12, 1, step=1)
 day = col3.number_input(t["day"], 1, 31, 1, step=1)
 
-# MBTI 부분 (기존 코드 유지, 생략)
+# ★★★ 여기!!! 생년월일 입력 후 다음으로 가는 버튼 ★★★
+if st.button(t["next_btn"], type="primary", use_container_width=True):
+    st.balloons()
+    st.success("좋아! 이제 MBTI 선택할 차례야~ ↓↓↓")
 
-if st.session_state.get("mbti"):
+# MBTI 선택 부분 (간단히 직접 입력만 넣음 - 테스트는 생략)
+if "mbti" not in st.session_state:
+    st.session_state.mbti = None
+
+if st.session_state.mbti is None:
+    st.write(t["mbti_mode"])
+    mbti_choice = st.selectbox("MBTI", mbtis[st.session_state.lang])
+    if st.button(t["fortune_btn"]):
+        st.session_state.mbti = mbti_choice.split(":")[0].strip()  # INTJ, INTP 등만 추출
+        st.rerun()
+
+# 결과 화면
+if st.session_state.mbti:
     mbti = st.session_state.mbti
-    zodiac_key = get_zodiac(year)
-    if zodiac_key:
-        if st.button(t["fortune_btn"], use_container_width=True):
-            zodiac_text = zodiacs[lang][zodiac_key]
-            mbti_text = mbtis[lang][mbti]
-            saju = get_saju(year, month, day, lang)
-
-            st.success(f"{zodiac_text} + {mbti_text} → {t['best_combo']}")
-            st.metric(t["fortune_score"], "92", delta=t["stable"])
-
-            st.info(f"{t['zodiac_title']}: {zodiac_text.split(' - ')[1]}")
-            st.info(f"{t['mbti_title']}: {mbti_text}")
-            st.warning(f"{t['saju_title']}: {saju}")
-
-            st.markdown("---")
-            st.subheader(t["daily_title"])
-
-            today = datetime.now().date()
-            tomorrow = today + timedelta(days=1)
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-                idx = get_daily_index(year, month, day, today)
-                st.info(f"**{t['today']} ({today.strftime('%m월 %d일')})**")
-                st.write(daily_messages[lang][idx])
-
-            with col2:
-                idx = get_daily_index(year, month, day, tomorrow)
-                st.info(f"**{t['tomorrow']} ({tomorrow.strftime('%m월 %d일')})**")
-                st.write(daily_messages[lang][idx])
-
-            st.balloons()
+    zodiac = get_zodiac(year)
+    
+    if st.button(t["fortune_btn"], use_container_width=True):
+        st.success(f"{zodiac} + {mbti} → {t['best_combo']}")
+        st.metric(t["fortune_score"], "92점", delta=t["stable"])
+        
+        st.markdown("---")
+        st.subheader(t["daily_title"])
+        
+        today = datetime.now().date()
+        tomorrow = today + timedelta(days=1)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.info(f"**{t['today']}** ({today.strftime('%m월 %d일')})")
+            st.write(get_daily_message(year, month, day, 0))
+        with col2:
+            st.info(f"**{t['tomorrow']}** ({tomorrow.strftime('%m월 %d일')})")
+            st.write(get_daily_message(year, month, day, 1))
+        
+        st.balloons()
 
     if st.button(t["reset"]):
         st.session_state.clear()
