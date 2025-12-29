@@ -19,8 +19,8 @@ st.markdown("### 📱 QR 코드 스캔!")
 st.image("frame.png", caption="폰으로 찍어보세요")
 
 st.markdown("### 🔗 친구들한테 공유할 링크")
-st.code(app_url, language=None)  # 복사하기 쉬운 URL 표시
-st.write("위 링크 복사해서 카톡·인스타·틱톡에 붙여넣기 하면 돼요!")
+st.code(app_url, language=None)
+st.write("위 링크 복사해서 카톡·인스타·틱톡에 붙여넣기!")
 
 st.markdown("""
 <div style="background:#ffeb3b;padding:15px;border-radius:15px;text-align:center;margin:20px 0;">
@@ -40,29 +40,32 @@ if "mbti" not in st.session_state:
 if st.session_state.mbti is None:
     c = st.radio("MBTI 어떻게 할까?", ["직접 입력","간단 테스트 (4문제)"], key="mode")
     if c == "직접 입력":
-        m = st.selectbox("너의 MBTI", sorted(M.keys()), key="direct")
-        if st.button("운세 보기", key="direct_go"):
+        m = st.selectbox("너의 MBTI", sorted(M.keys()), key="direct_mbti")
+        if st.button("운세 보기", key="direct_button"):
             st.session_state.mbti = m
             st.rerun()
     else:
-        st.write("4문제만 답해줘!")
-        q1 = st.radio("주말에 뭐 하고 싶어?", ["친구들이랑 놀기", "혼자 쉬기"], key="q1")
-        q2 = st.radio("새로운 물건 보면?", ["실제로 만져보고 싶음", "상상만 해도 재밌음"], key="q2")
-        q3 = st.radio("친구가 울 때?", ["어떻게 도와줄지 생각", "먼저 위로하고 공감"], key="q3")
-        q4 = st.radio("방 정리?", ["미리미리 깔끔하게", "필요할 때 대충"], key="q4")
-        if st.button("테스트 결과 보기!", key="test_go"):
+        st.write("4문제만 답해줘! 😊")
+        q1 = st.radio("1. 주말에 뭐 하고 싶어?", ["친구들이랑 놀기", "혼자 쉬기"], key="q1")
+        q2 = st.radio("2. 새로운 물건 보면?", ["실제로 만져보고 싶음", "상상만 해도 재밌음"], key="q2")
+        q3 = st.radio("3. 친구가 울 때?", ["어떻게 도와줄지 생각", "먼저 위로하고 공감"], key="q3")
+        q4 = st.radio("4. 방 정리?", ["미리미리 깔끔하게", "필요할 때 대충"], key="q4")
+        if st.button("테스트 결과 보기!", key="test_button"):
             ei = "E" if q1 == "친구들이랑 놀기" else "I"
             sn = "S" if q2 == "실제로 만져보고 싶음" else "N"
             tf = "T" if q3 == "어떻게 도와줄지 생각" else "F"
             jp = "J" if q4 == "미리미리 깔끔하게" else "P"
-            st.session_state.mbti = ei + sn + tf + jp
+            result_mbti = ei + sn + tf + jp
+            st.session_state.mbti = result_mbti
+            st.success(f"테스트 결과: **{result_mbti}** 나왔어요! 🎉")
+            st.info(f"특징: {M[result_mbti].split(' ',1)[1]}")
             st.rerun()
 
 if st.session_state.mbti:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(year)
     if zodiac:
-        if st.button("🔮 2026년 운세 보기!", use_container_width=True, key="fortune"):
+        if st.button("🔮 2026년 운세 보기!", use_container_width=True, key="fortune_button"):
             score = random.randint(85,100)
             hit = random.choice(["올해 대박 터질 조합 🔥","인생 역전 각 🚀","주변 부러워할 운세 💎","인스타 스토리 터질 준비 📸"])
             st.success(f"{Z[zodiac][0]} **{zodiac}** + {M[mbti][0]} **{mbti}** 조합 완전 미쳤어!!")
@@ -72,7 +75,7 @@ if st.session_state.mbti:
             st.write(f"**요약**: {hit}")
             st.balloons()
 
-    if st.button("처음부터 다시 하기", key="reset"):
+    if st.button("처음부터 다시 하기", key="reset_button"):
         st.session_state.clear()
         st.rerun()
 
