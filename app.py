@@ -13,7 +13,7 @@ st.set_page_config(page_title="띠MBTI 운세", layout="centered")
 st.title("🌟 2026 띠+MBTI 초궁합 🌟")
 st.caption("완전 무료 😄")
 
-app_url = "https://your-app.streamlit.app"  # 배포 후 너의 주소로 바꿔!
+app_url = "https://my-fortune.streamlit.app/"  # 배포 후 너의 주소로 바꿔!
 st.markdown("### 📱 QR 코드 스캔!")
 st.image("frame.png", caption="폰으로 찍어보세요")
 st.markdown("""
