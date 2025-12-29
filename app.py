@@ -8,25 +8,6 @@ def get_zodiac(y):
     z = ["쥐띠","소띠","호랑이띠","토끼띠","용띠","뱀띠","말띠","양띠","원숭이띠","닭띠","개띠","돼지띠"]
     return z[(y-4)%12] if 1900<=y<=2030 else None
 
-# 조합별 고정 운세 (점수 + 한 마디)
-fortunes = {
-    "쥐띠INTJ": (95, "전략적 사고로 대박 기회 잡아! 리더십 발휘하는 해"),
-    "쥐띠INTP": (88, "아이디어 폭발! 새로운 발견 많아질 거야"),
-    # ... (모든 조합에 고정값 넣을 수 있지만, 간단히 기본값으로)
-    # 기본값 (조합 없으면 이거)
-    "default": (90, "좋은 운세! 노력한 만큼 보상 받는 해")
-}
-
-def get_fortune(zodiac, mbti):
-    key = zodiac + mbti
-    if key in fortunes:
-        return fortunes[key]
-    else:
-        score = random.randint(85,95)  # 기본도 약간 변동 (완전 고정 싫으면 이거 지우고 90으로)
-        hits = ["노력한 만큼 보상 받아", "안정적이고 좋은 해", "귀인 도움 많아", "사랑 운 좋음"]
-        hit = random.choice(hits)  # 기본은 약간 변동
-        return score, hit
-
 st.set_page_config(page_title="띠MBTI 운세", layout="centered")
 st.title("🌟 2026 띠+MBTI 초궁합 🌟")
 st.caption("완전 무료 😄")
@@ -56,41 +37,20 @@ if "mbti" not in st.session_state:
     st.session_state.mbti = None
 
 if st.session_state.mbti is None:
-    c = st.radio("MBTI 어떻게 할까?", ["직접 입력","간단 테스트 (4문제)"], key="mode")
+    c = st.radio("MBTI 어떻게 할까?", ["직접 입력","상세 테스트 (16문제, 정식 스타일)"], key="mode")
     if c == "직접 입력":
         m = st.selectbox("너의 MBTI", sorted(M.keys()), key="direct")
         if st.button("운세 보기", key="direct_go"):
             st.session_state.mbti = m
             st.rerun()
     else:
-        st.write("4문제만 답해줘!")
-        q1 = st.radio("주말에 뭐 하고 싶어?", ["친구들이랑 놀기", "혼자 쉬기"], key="q1")
-        q2 = st.radio("새로운 물건 보면?", ["실제로 만져보고 싶음", "상상만 해도 재밌음"], key="q2")
-        q3 = st.radio("친구가 울 때?", ["어떻게 도와줄지 생각", "먼저 위로하고 공감"], key="q3")
-        q4 = st.radio("방 정리?", ["미리미리 깔끔하게", "필요할 때 대충"], key="q4")
-        if st.button("테스트 결과 보기!", key="test_go"):
-            ei = "E" if q1 == "친구들이랑 놀기" else "I"
-            sn = "S" if q2 == "실제로 만져보고 싶음" else "N"
-            tf = "T" if q3 == "어떻게 도와줄지 생각" else "F"
-            jp = "J" if q4 == "미리미리 깔끔하게" else "P"
-            st.session_state.mbti = ei + sn + tf + jp
-            st.rerun()
-
-if st.session_state.mbti:
-    mbti = st.session_state.mbti
-    zodiac = get_zodiac(year)
-    if zodiac:
-        if st.button("🔮 2026년 운세 보기!", use_container_width=True, key="fortune"):
-            score, hit = get_fortune(zodiac, mbti)
-            st.success(f"{Z[zodiac][0]} **{zodiac}** + {M[mbti][0]} **{mbti}** 최고 조합!")
-            st.metric("운세 점수", f"{score}점", delta="안정적!")
-            st.info(f"**띠 운세**: {Z[zodiac].split(' ',1)[1]}")
-            st.info(f"**MBTI 특징**: {M[mbti].split(' ',1)[1]}")
-            st.write(f"**한 마디**: {hit}")
-            st.balloons()
-
-    if st.button("처음부터 다시 하기", key="reset"):
-        st.session_state.clear()
-        st.rerun()
-
-st.caption("재미로만 봐주세요! 같은 조합이면 항상 같은 운세 😊")
+        st.write("정식 MBTI처럼 16문제! 하나씩 답해주세요 😊")
+        
+        # 점수 계산 변수
+        e_i_score = 0
+        s_n_score = 0
+        t_f_score = 0
+        j_p_score = 0
+        
+        # E/I 4문제
+        st.sub
