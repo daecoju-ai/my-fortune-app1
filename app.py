@@ -1,4 +1,6 @@
 import streamlit as st
+from datetime import datetime, timedelta
+import hashlib
 
 translations = {
     "ko": {
@@ -66,7 +68,7 @@ translations = {
             "음기 강함 → 내면 성찰 😌"
         ]
     },
-    "en": {
+    "en": {  # 영어 부분은 그대로 두었어요 (필요하면 나중에 번역해도 돼요)
         "title": "🌟 2026 Zodiac + MBTI + Saju Fortune 🌟",
         "caption": "Completely Free 😄",
         "qr": "### 📱 Scan QR Code!",
@@ -154,13 +156,54 @@ def get_saju(year, month, day):
     index = total % 8
     return saju_msg[index]
 
+# 오늘/내일 운세용 메시지 20개
+daily_msgs = [
+    "에너지 충만! 새로운 시작에 딱 좋은 날 🔥",
+    "인내가 필요한 하루… 작은 성취가 쌓이는 날 🐢",
+    "뜻밖의 인연이 생길 수 있는 날 💞",
+    "재물운 상승! 지갑이 두둑해질 조짐 💰",
+    "집중력 최고봉! 중요한 일 마무리 GO 📊",
+    "조금 피곤할 수 있음… 휴식 필수 😴",
+    "변화의 바람이 부는 날! 새로운 시도 OK 🌬️",
+    "주변 사람들과의 소통이 중요해지는 날 🗣️",
+    "직감이 예리해지는 날! 믿고 따라가세요 🔮",
+    "경쟁에서 이길 운! 자신감 UP 💪",
+    "안정감이 주는 하루… 천천히 가도 좋아 🏡",
+    "창의력 폭발! 아이디어 쏟아지는 날 🎨",
+    "감정 기복 주의… 차분함 유지하기 🙏",
+    "도움이 필요한 순간에 손 내밀어줄 사람이 나타남 🤝",
+    "작은 행운이 연속으로! 미소 잊지 마세요 😊",
+    "결단력이 빛나는 날! 망설이지 말고 GO! ⚡",
+    "내면 성찰의 시간… 조용히 생각 정리하기 🧘",
+    "활동적인 하루! 몸을 움직이면 기분 UP 🏃",
+    "금전 흐름이 좋아지는 날! 투자 타이밍? 🤔",
+    "감사하는 마음이 더 큰 복을 부르는 날 🙌"
+]
+
+def get_daily_fortune_index(year, month, day, target_date):
+    combined = f"{year}{month:02d}{day:02d}{target_date.year}{target_date.month:02d}{target_date.day:02d}"
+    hash_object = hashlib.sha256(combined.encode())
+    hash_hex = hash_object.hexdigest()
+    index = int(hash_hex, 16) % len(daily_msgs)
+    return index
+
+def get_daily_message(year, month, day, offset=0):
+    today = datetime.now().date()
+    target_date = today + timedelta(days=offset)
+    idx = get_daily_fortune_index(year, month, day, target_date)
+    return daily_msgs[idx]
+
+# ────────────────────────────────────────────────
+#              여기서부터 앱 시작!
+# ────────────────────────────────────────────────
+
 st.title(t["title"])
 st.caption(t["caption"])
 
 app_url = "https://my-fortune.streamlit.app"
 
 st.markdown(t["qr"])
-st.image("frame.png", caption="Scan with phone")
+st.image("frame.png", caption="Scan with phone")  # frame.png 파일이 있어야 해요!
 
 st.markdown(t["share"])
 st.code(app_url, language=None)
@@ -231,18 +274,35 @@ if st.session_state.mbti:
             mbti_emoji = list(M.values())[list(M.keys()).index(mbti)].split(' ',1)[0]
             mbti_desc = list(M.values())[list(M.keys()).index(mbti)].split(' ',1)[1] if ' ' in list(M.values())[list(M.keys()).index(mbti)] else ""
             
-            # 이 부분 수정! "최고 조합!" 번역 추가
             combo_msg = "Best combo!" if st.session_state.lang == "en" else "최고 조합!"
             st.success(f"{zodiac_emoji} **{zodiac}** + {mbti_emoji} **{mbti}** {combo_msg}")
             
-            st.metric(t.get("metric_label", "Fortune Score"), f"{score}점", delta=t.get("stable", "Stable!"))
+            st.metric("운세 점수", f"{score}점", delta="Stable!")
             st.info(f"{t['zodiac_title']}: {zodiac_desc}")
             st.info(f"{t['mbti_title']}: {mbti_desc}")
             st.warning(f"{t['saju_title']}: {saju}")
             st.balloons()
 
-            share_text = f"My 2026 Fortune!\nZodiac: {zodiac}\nMBTI: {mbti}\nSaju: {saju}\nScore {score}점!\n{app_url}" if st.session_state.lang == "en" else f"내 2026년 운세!\n띠: {zodiac}\nMBTI: {mbti}\n사주: {saju}\n점수 {score}점!\n{app_url}"
-            st.text_area(t.get("share_text_label", "Text to share"), share_text, height=120)
+            # ───── 오늘 & 내일 운세 추가 ─────
+            st.markdown("---")
+            st.subheader("🌞 오늘 & 내일의 운세 (매일 달라져요!)")
+
+            today = datetime.now().date()
+            tomorrow = today + timedelta(days=1)
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.info(f"**오늘 ({today.strftime('%m월 %d일')})**")
+                msg_today = get_daily_message(year, month, day, offset=0)
+                st.write(msg_today)
+
+            with col2:
+                st.info(f"**내일 ({tomorrow.strftime('%m월 %d일')})**")
+                msg_tomorrow = get_daily_message(year, month, day, offset=1)
+                st.write(msg_tomorrow)
+
+            st.caption("※ 같은 생일 + 같은 날짜 = 항상 똑같은 운세 나와요 (재미로만 봐주세요~)")
 
     if st.button(t["reset"], key="reset"):
         st.session_state.clear()
