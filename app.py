@@ -1,32 +1,21 @@
 import streamlit as st
 import random
-import qrcode
-from io import BytesIO
-import base64
-
-@st.cache_data
-def qr_code(url): 
-    img = qrcode.make(url)
-    buf = BytesIO()
-    img.save(buf, "PNG")
-    return f"data:image/png;base64,{base64.b64encode(buf.getvalue()).decode()}"
-
-@st.cache_data
-def get_zodiac(y): 
-    z = ["쥐띠","소띠","호랑이띠","토끼띠","용띠","뱀띠","말띠","양띠","원숭이띠","닭띠","개띠","돼지띠"]
-    return z[(y-4)%12] if 1900<=y<=2030 else None
 
 Z = {"쥐띠":"🐭 활발·성장, 돈↑","소띠":"🐮 노력 결실","호랑이띠":"🐯 도전 성공, 돈 대박","토끼띠":"🐰 안정·사랑 운","용띠":"🐲 운↑ 리더십","뱀띠":"🐍 실속·직감","말띠":"🐴 새 도전·돈 기회","양띠":"🐑 편안+결혼 운","원숭이띠":"🐵 변화·재능","닭띠":"🐔 노력 결과","개띠":"🐶 친구·돈↑","돼지띠":"🐷 여유·돈 최고"}
 
 M = {"INTJ":"🧠 냉철 전략가","INTP":"💡 아이디어 천재","ENTJ":"👑 보스","ENTP":"⚡ 토론왕","INFJ":"🔮 마음 마스터","INFP":"🎨 감성 예술가","ENFJ":"🤗 모두 선생님","ENFP":"🎉 인간 비타민","ISTJ":"📋 규칙 지킴이","ISFJ":"🛡️ 세상 따뜻함","ESTJ":"📢 리더","ESFJ":"💕 분위기 메이커","ISTP":"🔧 고치는 장인","ISFP":"🌸 감성 힐러","ESTP":"🏄 모험왕","ESFP":"🎭 파티 주인공"}
 
+def get_zodiac(y): 
+    z = ["쥐띠","소띠","호랑이띠","토끼띠","용띠","뱀띠","말띠","양띠","원숭이띠","닭띠","개띠","돼지띠"]
+    return z[(y-4)%12] if 1900<=y<=2030 else None
+
 st.set_page_config(page_title="띠MBTI 운세", layout="centered")
 st.title("🌟 2026 띠+MBTI 초궁합 🌟")
 st.caption("완전 무료 😄")
 
-app_url = "https://your-app.streamlit.app"  # 배포 후 실제 주소로 변경!
+app_url = "https://your-app.streamlit.app"  # 배포 후 너의 주소로 바꿔!
 st.markdown("### 📱 QR 코드 스캔!")
-st.image(qr_code(app_url), caption="폰으로 찍어보세요")
+st.image("https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + app_url, caption="폰으로 찍어보세요")
 
 st.markdown("""
 <div style="background:#ffeb3b;padding:15px;border-radius:15px;text-align:center;margin:20px 0;">
