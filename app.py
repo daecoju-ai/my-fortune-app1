@@ -8,23 +8,24 @@ def get_zodiac(y):
     z = ["쥐띠","소띠","호랑이띠","토끼띠","용띠","뱀띠","말띠","양띠","원숭이띠","닭띠","개띠","돼지띠"]
     return z[(y-4)%12] if 1900<=y<=2030 else None
 
-# 조합별 특별 운세 (업그레이드 핵심!)
-special_fortune = {
-    "용띠ENFP": "리더십 + 인간 비타민 = 올해 최고 스타! 인기+성공 대박 🌟",
-    "호랑이띠ENTP": "도전 정신 + 토론왕 = 대박 기회 잡아! 사업/승진 확정 🚀",
-    "토끼띠ISFJ": "안정 + 따뜻함 = 사랑운 최고! 결혼/연애 대박 ❤️",
-    "돼지띠ESFP": "여유 + 파티 주인공 = 친구운 최고! 재물운 따라와 💰",
-    "쥐띠INTJ": "활발 + 전략가 = 계획대로 대성공! 돈 모이기 좋음 👑",
-    "개띠ENFJ": "친구 운 + 모두 선생님 = 인간관계 대박! 귀인 많아 🤝",
-    "default": "좋은 조합! 안정적이고 행복한 한 해 될 거야 ✨"
-}
+# 토정비결 스타일 추가 운세 (월·일 기반 간단 예시)
+tojung = [
+    "재물운이 좋습니다. 예상치 못한 수입이 생길 수 있어요 💰",
+    "연애운 대박! 새로운 인연이나 기존 관계가 깊어져요 ❤️",
+    "건강에 주의하세요. 규칙적인 생활이 중요합니다 🏥",
+    "커리어 운 좋음! 승진이나 새로운 기회 올 수 있어요 👔",
+    "가족·친구와의 시간이 행복할 거예요 👨‍👩‍👧‍👦",
+    "여행이나 이동이 많아질 해! 새로운 경험 쌓아요 ✈️",
+    "학업·자기계발 운 최고! 공부한 게 빛을 발해요 📚",
+    "스트레스 관리 필요. 휴식을 충분히 취하세요 😌"
+]
 
-def get_special(zodiac, mbti):
-    key = zodiac + mbti
-    return special_fortune.get(key, special_fortune["default"])
+def get_tojung(month, day):
+    index = (month + day) % 8  # 간단 계산
+    return tojung[index]
 
 st.set_page_config(page_title="띠MBTI 운세", layout="centered")
-st.title("🌟 2026 띠+MBTI 초궁합 🌟")
+st.title("🌟 2026 띠+MBTI + 토정비결 운세 🌟")
 st.caption("완전 무료 😄")
 
 app_url = "https://my-fortune.streamlit.app"
@@ -34,7 +35,7 @@ st.image("frame.png", caption="폰으로 찍어보세요")
 
 st.markdown("### 🔗 친구들한테 공유할 링크")
 st.code(app_url, language=None)
-st.write("위 링크 복사해서 카톡에 붙여넣기!")
+st.write("위 링크 복사해서 보내주세요!")
 
 st.markdown("""
 <div style="background:#ffeb3b;padding:15px;border-radius:15px;text-align:center;margin:20px 0;">
@@ -46,7 +47,11 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-year = st.number_input("출생 연도",1900,2030,2005,step=1)
+st.write("### 생년월일 입력 (더 정확한 운세를 위해!)")
+col1, col2, col3 = st.columns(3)
+year = col1.number_input("년", 1900, 2030, 2005, step=1)
+month = col2.number_input("월", 1, 12, 1, step=1)
+day = col3.number_input("일", 1, 31, 1, step=1)
 
 if "mbti" not in st.session_state: 
     st.session_state.mbti = None
@@ -102,20 +107,19 @@ if st.session_state.mbti:
     if zodiac:
         if st.button("🔮 2026년 운세 보기!", use_container_width=True, key="fortune"):
             score = 90
-            special_msg = get_special(zodiac, mbti)
+            tojung_msg = get_tojung(month, day)
             st.success(f"{Z[zodiac][0]} **{zodiac}** + {M[mbti][0]} **{mbti}** 최고 조합!")
             st.metric("운세 점수", f"{score}점", delta="안정적!")
             st.info(f"**띠 운세**: {Z[zodiac].split(' ',1)[1]}")
             st.info(f"**MBTI 특징**: {M[mbti].split(' ',1)[1]}")
-            st.write(f"**특별 메시지**: {special_msg}")
+            st.warning(f"**토정비결 스타일 추가 운세**: {tojung_msg}")
             st.balloons()
 
-            # 공유 텍스트 쉽게 복사
-            share_text = f"내 2026년 운세: {zodiac} + {mbti} = {special_msg} 점수 {score}점! 너도 해봐: {app_url}"
-            st.text_area("카톡에 붙여넣을 텍스트 (길게 눌러 복사)", share_text, height=100)
+            share_text = f"내 2026년 운세: {zodiac} + {mbti}\n토정비결: {tojung_msg}\n점수 {score}점! 너도 해봐: {app_url}"
+            st.text_area("카톡에 붙여넣을 텍스트", share_text, height=120)
 
     if st.button("처음부터 다시 하기", key="reset"):
         st.session_state.clear()
         st.rerun()
 
-st.caption("재미로만 봐주세요! 친구들이랑 결과 비교해보세요 😊")
+st.caption("재미로만 봐주세요! 생년월일로 더 정확한 토정비결 느낌 😊")
