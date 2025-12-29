@@ -37,20 +37,74 @@ if "mbti" not in st.session_state:
     st.session_state.mbti = None
 
 if st.session_state.mbti is None:
-    c = st.radio("MBTI 어떻게 할까?", ["직접 입력","상세 테스트 (16문제, 정식 스타일)"], key="mode")
+    c = st.radio("MBTI 어떻게 할까?", ["직접 입력","상세 테스트 (16문제)"], key="mode")
     if c == "직접 입력":
         m = st.selectbox("너의 MBTI", sorted(M.keys()), key="direct")
         if st.button("운세 보기", key="direct_go"):
             st.session_state.mbti = m
             st.rerun()
     else:
-        st.write("정식 MBTI처럼 16문제! 하나씩 답해주세요 😊")
+        st.write("상세 MBTI 테스트 시작! 하나씩 답해주세요 😊 (총 16문제)")
         
-        # 점수 계산 변수
-        e_i_score = 0
-        s_n_score = 0
-        t_f_score = 0
-        j_p_score = 0
+        # 점수 초기화
+        e_i, s_n, t_f, j_p = 0, 0, 0, 0
         
         # E/I 4문제
-        st.sub
+        st.subheader("에너지 방향")
+        if st.radio("1. 모임에서 에너지가 충전돼?", ["네 (E)", "아니 (I)"], key="ei1") == "네 (E)": e_i += 1
+        if st.radio("2. 새로운 사람 만나는 거 좋아해?", ["좋아해 (E)", "부담스러워 (I)"], key="ei2") == "좋아해 (E)": e_i += 1
+        if st.radio("3. 혼자 시간 많이 필요해?", ["많이 (I)", "가끔 (E)"], key="ei3") == "많이 (I)": e_i += 1
+        if st.radio("4. 생각 바로 말로 표현해?", ["바로 (E)", "정리 후 (I)"], key="ei4") == "바로 (E)": e_i += 1
+        
+        # S/N 4문제
+        st.subheader("정보 수집")
+        if st.radio("5. 구체적 사실 중요해?", ["네 (S)", "가능성 (N)"], key="sn1") == "네 (S)": s_n += 1
+        if st.radio("6. 세부 사항 잘 기억해?", ["잘해 (S)", "큰 그림 (N)"], key="sn2") == "잘해 (S)": s_n += 1
+        if st.radio("7. 미래 상상 좋아해?", ["좋아해 (N)", "현재 집중 (S)"], key="sn3") == "좋아해 (N)": s_n += 1
+        if st.radio("8. 실제 경험 선호해?", ["네 (S)", "추상 개념 (N)"], key="sn4") == "네 (S)": s_n += 1
+        
+        # T/F 4문제
+        st.subheader("결정 방식")
+        if st.radio("9. 논리가 우선이야?", ["네 (T)", "감정 고려 (F)"], key="tf1") == "네 (T)": t_f += 1
+        if st.radio("10. 비판 논리로 받아들여?", ["네 (T)", "마음 아파 (F)"], key="tf2") == "네 (T)": t_f += 1
+        if st.radio("11. 공감 잘 해줘?", ["공감 먼저 (F)", "조언 위주 (T)"], key="tf3") == "공감 먼저 (F)": t_f += 1
+        if st.radio("12. 진실 말하는 게 중요해?", ["네 (T)", "상처 주지 않게 (F)"], key="tf4") == "네 (T)": t_f += 1
+        
+        # J/P 4문제
+        st.subheader("생활 방식")
+        if st.radio("13. 계획 세우는 거 좋아해?", ["좋아해 (J)", "즉흥적 (P)"], key="jp1") == "좋아해 (J)": j_p += 1
+        if st.radio("14. 미리 끝내는 편이야?", ["미리 (J)", "마감 때 (P)"], key="jp2") == "미리 (J)": j_p += 1
+        if st.radio("15. 빨리 결정해?", ["빨리 (J)", "열어두고 (P)"], key="jp3") == "빨리 (J)": j_p += 1
+        if st.radio("16. 정리정돈 좋아해?", ["좋아해 (J)", "괜찮아 (P)"], key="jp4") == "좋아해 (J)": j_p += 1
+        
+        if st.button("상세 결과 보기!", key="test_go"):
+            ei = "E" if e_i >= 3 else "I"
+            sn = "S" if s_n >= 3 else "N"
+            tf = "T" if t_f >= 3 else "F"
+            jp = "J" if j_p >= 3 else "P"
+            result = ei + sn + tf + jp
+            st.session_state.mbti = result
+            st.success(f"상세 결과: **{result}** ! 🎉")
+            st.info(f"특징: {M[result].split(' ',1)[1]}")
+            st.info(f"상세 점수: E/I {e_i}/4, S/N {s_n}/4, T/F {t_f}/4, J/P {j_p}/4")
+            st.rerun()
+
+if st.session_state.mbti:
+    mbti = st.session_state.mbti
+    zodiac = get_zodiac(year)
+    if zodiac:
+        if st.button("🔮 2026년 운세 보기!", use_container_width=True, key="fortune"):
+            score = 90
+            hit = "안정적이고 좋은 한 해 될 거야! 노력하면 더 좋아요 ✨"
+            st.success(f"{Z[zodiac][0]} **{zodiac}** + {M[mbti][0]} **{mbti}** 최고 조합!")
+            st.metric("운세 점수", f"{score}점", delta="안정적")
+            st.info(f"**띠 운세**: {Z[zodiac].split(' ',1)[1]}")
+            st.info(f"**MBTI 특징**: {M[mbti].split(' ',1)[1]}")
+            st.write(f"**한 마디**: {hit}")
+            st.balloons()
+
+    if st.button("처음부터 다시 하기", key="reset"):
+        st.session_state.clear()
+        st.rerun()
+
+st.caption("재미로만 봐주세요! 상세 테스트로 정확한 MBTI 느껴보세요 😊")
