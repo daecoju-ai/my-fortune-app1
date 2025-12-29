@@ -18,6 +18,10 @@ app_url = "https://my-fortune.streamlit.app"
 st.markdown("### 📱 QR 코드 스캔!")
 st.image("frame.png", caption="폰으로 찍어보세요")
 
+st.markdown("### 🔗 친구들한테 공유할 링크")
+st.code(app_url, language=None)  # 복사하기 쉬운 URL 표시
+st.write("위 링크 복사해서 카톡·인스타·틱톡에 붙여넣기 하면 돼요!")
+
 st.markdown("""
 <div style="background:#ffeb3b;padding:15px;border-radius:15px;text-align:center;margin:20px 0;">
   <h3>💳 렌탈 궁금할 때?</h3>
@@ -59,4 +63,17 @@ if st.session_state.mbti:
     zodiac = get_zodiac(year)
     if zodiac:
         if st.button("🔮 2026년 운세 보기!", use_container_width=True, key="fortune"):
-            score
+            score = random.randint(85,100)
+            hit = random.choice(["올해 대박 터질 조합 🔥","인생 역전 각 🚀","주변 부러워할 운세 💎","인스타 스토리 터질 준비 📸"])
+            st.success(f"{Z[zodiac][0]} **{zodiac}** + {M[mbti][0]} **{mbti}** 조합 완전 미쳤어!!")
+            st.metric("운세 점수", f"{score}점", delta="역대급!")
+            st.info(f"**띠 운세**: {Z[zodiac].split(' ',1)[1]}")
+            st.info(f"**MBTI 특징**: {M[mbti].split(' ',1)[1]}")
+            st.write(f"**요약**: {hit}")
+            st.balloons()
+
+    if st.button("처음부터 다시 하기", key="reset"):
+        st.session_state.clear()
+        st.rerun()
+
+st.caption("재미로만 봐주세요! 친구들이랑 같이 해보세요 😊")
