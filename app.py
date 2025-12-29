@@ -13,10 +13,10 @@ st.set_page_config(page_title="띠MBTI 운세", layout="centered")
 st.title("🌟 2026 띠+MBTI 초궁합 🌟")
 st.caption("완전 무료 😄")
 
-app_url = "https://my-fortune.streamlit.app"  # 너의 주소로 바꿈!
+app_url = "https://my-fortune.streamlit.app"  # 너의 주소!
 
 st.markdown("### 📱 QR 코드 스캔!")
-st.image("frame.png", caption="폰으로 찍어보세요")  # 너의 QR 이미지 파일!
+st.image("frame.png", caption="폰으로 찍어보세요")
 
 st.markdown("""
 <div style="background:#ffeb3b;padding:15px;border-radius:15px;text-align:center;margin:20px 0;">
@@ -34,47 +34,48 @@ if "mbti" not in st.session_state:
     st.session_state.mbti = None
 
 if st.session_state.mbti is None:
-    c = st.radio("MBTI 어떻게 할까?", ["직접 입력","간단 테스트 (4문제)"])
+    c = st.radio("MBTI 어떻게 할까?", ["직접 입력","간단 테스트 (4문제)"], key="mbti_mode")
     if c == "직접 입력":
-        m = st.selectbox("너의 MBTI", sorted(M.keys()))
-        if st.button("이 MBTI로 운세 보기"):
+        m = st.selectbox("너의 MBTI", sorted(M.keys()), key="direct_mbti")
+        if st.button("이 MBTI로 운세 보기", key="direct_button"):
             st.session_state.mbti = m
             st.rerun()
     else:
         st.write("4문제만 답해줘!")
-        q1 = st.radio("주말에 뭐 하고 싶어?", ("친구들이랑 놀기", "혼자 쉬기"))
-        q2 = st.radio("새로운 물건 보면?", ("실제로 만져보고 싶음", "상상만 해도 재밌음"))
-        q3 = st.radio("친구가 울 때?", ("어떻게 도와줄지 생각", "먼저 위로하고 공감"))
-        q4 = st.radio("방 정리?", ("미리미리 깔끔하게", "필요할 때 대충"))
-        if st.button("테스트 결과 보기!"):
-            ei = "E" if "친구들" in q1 else "I"
-            sn = "S" if "만져" in q2 else "N"
-            tf = "T" if "도와줄" in q3 else "F"
-            jp = "J" if "미리" in q4 else "P"
+        q1 = st.radio("주말에 뭐 하고 싶어?", ("친구들이랑 놀기", "혼자 쉬기"), key="q1")
+        q2 = st.radio("새로운 물건 보면?", ("실제로 만져보고 싶음", "상상만 해도 재밌음"), key="q2")
+        q3 = st.radio("친구가 울 때?", ("어떻게 도와줄지 생각", "먼저 위로하고 공감"), key="q3")
+        q4 = st.radio("방 정리?", ("미리미리 깔끔하게", "필요할 때 대충"), key="q4")
+        if st.button("테스트 결과 보기!", key="test_button"):
+            ei = "E" if q1 == "친구들이랑 놀기" else "I"
+            sn = "S" if q2 == "실제로 만져보고 싶음" else "N"
+            tf = "T" if q3 == "어떻게 도와줄지 생각" else "F"
+            jp = "J" if q4 == "미리미리 깔끔하게" else "P"
             st.session_state.mbti = ei + sn + tf + jp
             st.rerun()
 
 if st.session_state.mbti:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(year)
-    if zodiac and st.button("🔮 2026년 운세 보기!", use_container_width=True):
-        score = random.randint(85,100)
-        hit = random.choice(["올해 대박 터질 조합 🔥","인생 역전 각 🚀","주변 부러워할 운세 💎","인스타 스토리 터질 준비 📸"])
-        st.success(f"{Z[zodiac][0]} **{zodiac}** + {M[mbti][0]} **{mbti}** 조합 완전 미쳤어!!")
-        st.metric("운세 점수", f"{score}점", delta="역대급!")
-        st.info(f"**띠 운세**: {Z[zodiac].split(' ',1)[1]}")
-        st.info(f"**MBTI 특징**: {M[mbti].split(' ',1)[1]}")
-        st.write(f"**요약**: {hit}")
-        st.balloons()
+    if zodiac:
+        if st.button("🔮 2026년 운세 보기!", use_container_width=True, key="fortune_button"):
+            score = random.randint(85,100)
+            hit = random.choice(["올해 대박 터질 조합 🔥","인생 역전 각 🚀","주변 부러워할 운세 💎","인스타 스토리 터질 준비 📸"])
+            st.success(f"{Z[zodiac][0]} **{zodiac}** + {M[mbti][0]} **{mbti}** 조합 완전 미쳤어!!")
+            st.metric("운세 점수", f"{score}점", delta="역대급!")
+            st.info(f"**띠 운세**: {Z[zodiac].split(' ',1)[1]}")
+            st.info(f"**MBTI 특징**: {M[mbti].split(' ',1)[1]}")
+            st.write(f"**요약**: {hit}")
+            st.balloons()
 
-        st.markdown("### 📲 친구한테 공유하기!")
-        col1,col2,col3,col4 = st.columns(4)
-        with col1: st.markdown(f'<a href="https://story.kakao.com/s/share?url={app_url}" target="_blank"><img src="https://developers.kakao.com/assets/img/about/logos/kakaostory/kakaostory-ko.png" width="100%"></a><p>카톡</p>', unsafe_allow_html=True)
-        with col2: st.markdown(f'<a href="https://www.instagram.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" width="100%"></a><p>인스타</p>', unsafe_allow_html=True)
-        with col3: st.markdown(f'<a href="https://www.tiktok.com/share?url={app_url}" target="_blank"><img src="https://sf16-scmcdn-va.ibytedtos.com/goofy/tiktok/web/node/_next/static/images/logo-dark-1e0ed760fa3bc5d3a2f5d9f2f3c3d3d9.svg" width="100%"></a><p>틱톡</p>', unsafe_allow_html=True)
-        with col4: st.markdown(f'<a href="https://line.me/R/msg/text/?{zodiac}+{mbti} 운세 대박! {app_url}" target="_blank"><img src="https://scdn.line-apps.com/n/line_add_friends/btn/en.png" width="100%"></a><p>라인</p>', unsafe_allow_html=True)
+            st.markdown("### 📲 친구한테 공유하기!")
+            col1,col2,col3,col4 = st.columns(4)
+            with col1: st.markdown(f'<a href="https://story.kakao.com/s/share?url={app_url}" target="_blank"><img src="https://developers.kakao.com/assets/img/about/logos/kakaostory/kakaostory-ko.png" width="100%"></a><p>카톡</p>', unsafe_allow_html=True)
+            with col2: st.markdown(f'<a href="https://www.instagram.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" width="100%"></a><p>인스타</p>', unsafe_allow_html=True)
+            with col3: st.markdown(f'<a href="https://www.tiktok.com/share?url={app_url}" target="_blank"><img src="https://sf16-scmcdn-va.ibytedtos.com/goofy/tiktok/web/node/_next/static/images/logo-dark-1e0ed760fa3bc5d3a2f5d9f2f3c3d3d9.svg" width="100%"></a><p>틱톡</p>', unsafe_allow_html=True)
+            with col4: st.markdown(f'<a href="https://line.me/R/msg/text/?{zodiac}+{mbti} 운세 대박! {app_url}" target="_blank"><img src="https://scdn.line-apps.com/n/line_add_friends/btn/en.png" width="100%"></a><p>라인</p>', unsafe_allow_html=True)
 
-    if st.button("처음부터 다시 하기"):
+    if st.button("처음부터 다시 하기", key="reset_button"):
         st.session_state.clear()
         st.rerun()
 
