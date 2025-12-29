@@ -230,12 +230,19 @@ if st.session_state.mbti:
             zodiac_desc = list(Z.values())[list(Z.keys()).index(zodiac)].split(' ',1)[1] if ' ' in list(Z.values())[list(Z.keys()).index(zodiac)] else ""
             mbti_emoji = list(M.values())[list(M.keys()).index(mbti)].split(' ',1)[0]
             mbti_desc = list(M.values())[list(M.keys()).index(mbti)].split(' ',1)[1] if ' ' in list(M.values())[list(M.keys()).index(mbti)] else ""
-            st.success(f"{zodiac_emoji} **{zodiac}** + {mbti_emoji} **{mbti}** 최고 조합!")
-            st.metric("운세 점수", f"{score}점", delta="안정적!")
+            
+            # 이 부분 수정! "최고 조합!" 번역 추가
+            combo_msg = "Best combo!" if st.session_state.lang == "en" else "최고 조합!"
+            st.success(f"{zodiac_emoji} **{zodiac}** + {mbti_emoji} **{mbti}** {combo_msg}")
+            
+            st.metric(t.get("metric_label", "Fortune Score"), f"{score}점", delta=t.get("stable", "Stable!"))
             st.info(f"{t['zodiac_title']}: {zodiac_desc}")
             st.info(f"{t['mbti_title']}: {mbti_desc}")
             st.warning(f"{t['saju_title']}: {saju}")
             st.balloons()
+
+            share_text = f"My 2026 Fortune!\nZodiac: {zodiac}\nMBTI: {mbti}\nSaju: {saju}\nScore {score}점!\n{app_url}" if st.session_state.lang == "en" else f"내 2026년 운세!\n띠: {zodiac}\nMBTI: {mbti}\n사주: {saju}\n점수 {score}점!\n{app_url}"
+            st.text_area(t.get("share_text_label", "Text to share"), share_text, height=120)
 
     if st.button(t["reset"], key="reset"):
         st.session_state.clear()
