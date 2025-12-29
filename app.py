@@ -15,8 +15,7 @@ st.caption("완전 무료 😄")
 
 app_url = "https://your-app.streamlit.app"  # 배포 후 너의 주소로 바꿔!
 st.markdown("### 📱 QR 코드 스캔!")
-st.image("https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + app_url, caption="폰으로 찍어보세요")
-
+st.image("frame.png", caption="폰으로 찍어보세요")
 st.markdown("""
 <div style="background:#ffeb3b;padding:15px;border-radius:15px;text-align:center;margin:20px 0;">
   <h3>💳 렌탈 궁금할 때?</h3>
