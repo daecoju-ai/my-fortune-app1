@@ -167,7 +167,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 카드 (인스타 감성 디자인 + 공유 버튼 st.components.v1.html 방식)
+# 결과 카드 (인스타 감성 디자인 + 결과 내용 더 상세하게 + 공유 버튼 st.components.v1.html 방식)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -207,9 +207,11 @@ if st.session_state.result_shown:
             <p style="font-size:1.15em; margin:8px 0;"><b>{t['today_title']}</b>: {today}</p>
             <p style="font-size:1.15em; margin:8px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
             <hr style="border:none; border-top:1px solid rgba(255,255,255,0.5); margin:12px 0;">
-            <p style="font-size:1.1em; margin:8px 0; color:#ffd700;"><b>2026 키워드</b>: 성장 · 사랑 · 재물 ✨</p>
-            <p style="font-size:1.1em; margin:8px 0;"><b>럭키 컬러</b>: 골드 💛 | <b>아이템</b>: 황금 액세서리</p>
-            <p style="font-size:1.0em; margin:8px 0; font-style:italic;">"{mbti}의 따뜻함과 {zodiac}의 노력으로 최고의 한 해가 될 거예요!"</p>
+            <p style="font-size:1.1em; margin:8px 0; color:#ffd700;"><b>2026 전체 운세</b>: 성장과 재물이 함께하는 최고의 해! 대박 기운 가득 ✨</p>
+            <p style="font-size:1.1em; margin:8px 0;"><b>조합 한 마디</b>: {zodiac}의 노력과 {mbti}의 따뜻함으로 모두를 이끄는 리더가 될 거예요!</p>
+            <p style="font-size:1.1em; margin:8px 0;"><b>럭키 컬러</b>: 골드 💛 | <b>럭키 아이템</b>: 황금 액세서리 or 노란 지갑</p>
+            <p style="font-size:1.0em; margin:8px 0; font-style:italic;">"90점: 작은 행동 하나가 큰 행운으로 돌아올 해! 자신을 믿고 도전하세요 🚀"</p>
+            <p style="font-size:1.0em; margin:8px 0;">💡 <b>팁</b>: 이번 달 새로운 사람 만나는 기회 많아요. 적극적으로 나서보세요!</p>
           </div>
           <p style="font-size:0.8em; opacity:0.8; margin:15px 0;">{app_url}</p>
         </div>
@@ -218,7 +220,7 @@ if st.session_state.result_shown:
         st.balloons()
         st.snow()
 
-        # 공유 버튼 (st.components.v1.html 방식 - 너가 원하는 스타일)
+        # 공유 버튼 (st.components.v1.html 방식)
         share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
         <div style="text-align:center; margin:20px 0;">
