@@ -10,9 +10,6 @@ translations = {
         "qr": "### 📱 QR 코드 스캔!",
         "share": "### 🔗 공유 링크",
         "share_desc": "위 링크 복사해서 친구들한테 보내주세요!",
-        "ad_title": "💳 렌탈 궁금할 때?",
-        "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 페이백</b>!",
-        "ad_btn": "🔗 보러가기",
         "birth": "### 생년월일 입력",
         "name_placeholder": "이름 입력 (결과에 표시돼요)",
         "mbti_mode": "MBTI 어떻게 할까?",
@@ -49,137 +46,29 @@ translations = {
             "돼지띠": "🐷 여유·돈 최고"
         },
         "mbtis": {
-            "INTJ": "🧠 냉철 전략가",
-            "INTP": "💡 아이디어 천재",
-            "ENTJ": "👑 보스",
-            "ENTP": "⚡ 토론왕",
-            "INFJ": "🔮 마음 마스터",
-            "INFP": "🎨 감성 예술가",
-            "ENFJ": "🤗 모두 선생님",
-            "ENFP": "🎉 인간 비타민",
-            "ISTJ": "📋 규칙 지킴이",
-            "ISFJ": "🛡️ 세상 따뜻함",
-            "ESTJ": "📢 리더",
-            "ESFJ": "💕 분위기 메이커",
-            "ISTP": "🔧 고치는 장인",
-            "ISFP": "🌸 감성 힐러",
-            "ESTP": "🏄 모험왕",
-            "ESFP": "🎭 파티 주인공"
+            "INTJ": "🧠 냉철 전략가", "INTP": "💡 아이디어 천재", "ENTJ": "👑 보스", "ENTP": "⚡ 토론왕",
+            "INFJ": "🔮 마음 마스터", "INFP": "🎨 감성 예술가", "ENFJ": "🤗 모두 선생님", "ENFP": "🎉 인간 비타민",
+            "ISTJ": "📋 규칙 지킴이", "ISFJ": "🛡️ 세상 따뜻함", "ESTJ": "📢 리더", "ESFJ": "💕 분위기 메이커",
+            "ISTP": "🔧 고치는 장인", "ISFP": "🌸 감성 힐러", "ESTP": "🏄 모험왕", "ESFP": "🎭 파티 주인공"
         },
         "saju_msgs": [
-            "목(木) 기운 강함 → 성장과 발전의 해! 🌱",
-            "화(火) 기운 강함 → 열정 폭발! ❤️",
-            "토(土) 기운 강함 → 안정과 재물운 💰",
-            "금(金) 기운 강함 → 결단력 좋음! 👔",
-            "수(水) 기운 강함 → 지혜와 흐름 🌊",
-            "오행 균형 → 행복한 한 해 ✨",
-            "양기 강함 → 도전 성공 🚀",
-            "음기 강함 → 내면 성찰 😌"
+            "목(木) 기운 강함 → 성장과 발전의 해! 🌱", "화(火) 기운 강함 → 열정 폭발! ❤️",
+            "토(土) 기운 강함 → 안정과 재물운 💰", "금(金) 기운 강함 → 결단력 좋음! 👔",
+            "수(水) 기운 강함 → 지혜와 흐름 🌊", "오행 균형 → 행복한 한 해 ✨",
+            "양기 강함 → 도전 성공 🚀", "음기 강함 → 내면 성찰 😌"
         ],
         "daily_msgs": [
-            "재물운 좋음! 작은 투자도 이득 봐요 💰",
-            "연애운 최고! 고백하거나 데이트 좋음 ❤️",
-            "건강 주의! 과로 피하고 쉬세요 😴",
-            "전체운 대박! 좋은 일만 생길 거예요 🌟",
-            "인간관계 운 좋음! 귀인 만남 가능 🤝",
-            "학업/일 운 최고! 집중력 최고 📚",
-            "여행운 좋음! 갑자기 떠나도 괜찮아요 ✈️",
-            "기분 좋은 하루! 웃음이 가득할 거예요 😄"
-        ]
-    },
-    "en": {
-        "title": "🌟 2026 Zodiac + MBTI + Saju + Today/Tomorrow Fortune 🌟",
-        "caption": "Completely Free 😄",
-        "qr": "### 📱 Scan QR Code!",
-        "share": "### 🔗 Share Link",
-        "share_desc": "Copy the link and share with friends!",
-        "ad_title": "💳 Curious about rental?",
-        "ad_text": "<b>Dananum Rental</b> partner card: <b>0 won/month</b> + <b>Cashback</b>!",
-        "ad_btn": "🔗 Check it out",
-        "birth": "### Enter Birth Date",
-        "name_placeholder": "Enter your name (shown in result)",
-        "mbti_mode": "How to get MBTI?",
-        "direct": "Enter directly",
-        "test": "Detailed Test (16 questions)",
-        "test_start": "Start detailed test! Answer one by one 😊",
-        "energy": "Energy Direction",
-        "info": "Information Gathering",
-        "decision": "Decision Making",
-        "life": "Lifestyle",
-        "result_btn": "View Results!",
-        "fortune_btn": "🔮 View 2026 Fortune!",
-        "reset": "Start Over",
-        "zodiac_title": "Zodiac Fortune",
-        "mbti_title": "MBTI Traits",
-        "saju_title": "Saju Message",
-        "today_title": "Today's Fortune",
-        "tomorrow_title": "Tomorrow's Fortune",
-        "combo": "Best combo!",
-        "your_fortune": "'s 2026 Fortune",
-        "footer": "For fun only 😊",
-        "zodiacs": {
-            "Rat": "🐭 Active growth, money ↑",
-            "Ox": "🐮 Effort pays off",
-            "Tiger": "🐯 Challenge success, big money",
-            "Rabbit": "🐰 Stability, love luck",
-            "Dragon": "🐲 Luck ↑ leadership",
-            "Snake": "🐍 Practical, intuition",
-            "Horse": "🐴 New challenge, money chance",
-            "Goat": "🐑 Comfort + marriage luck",
-            "Monkey": "🐵 Change, talent",
-            "Rooster": "🐔 Effort result",
-            "Dog": "🐶 Friends, money ↑",
-            "Pig": "🐷 Leisure, best money"
-        },
-        "mbtis": {
-            "INTJ": "🧠 Cool strategist",
-            "INTP": "💡 Idea genius",
-            "ENTJ": "👑 Boss",
-            "ENTP": "⚡ Debate king",
-            "INFJ": "🔮 Mind master",
-            "INFP": "🎨 Emotional artist",
-            "ENFJ": "🤗 Teacher to all",
-            "ENFP": "🎉 Human vitamin",
-            "ISTJ": "📋 Rule keeper",
-            "ISFJ": "🛡️ World warmer",
-            "ESTJ": "📢 Leader",
-            "ESFJ": "💕 Mood maker",
-            "ISTP": "🔧 Fixer artisan",
-            "ISFP": "🌸 Emotional healer",
-            "ESTP": "🏄 Adventure king",
-            "ESFP": "🎭 Party protagonist"
-        },
-        "saju_msgs": [
-            "Wood strong → Growth year! 🌱",
-            "Fire strong → Passion explosion! ❤️",
-            "Earth strong → Stability & wealth 💰",
-            "Metal strong → Good decisiveness! 👔",
-            "Water strong → Wisdom & flow 🌊",
-            "Balanced elements → Happy year ✨",
-            "Yang strong → Challenge success 🚀",
-            "Yin strong → Inner reflection 😌"
-        ],
-        "daily_msgs": [
-            "Good money luck! Small investments pay off 💰",
-            "Great love luck! Perfect for confession or date ❤️",
-            "Health caution! Avoid overwork and rest 😴",
-            "Overall great luck! Only good things happen 🌟",
-            "Good relationships! Chance to meet helpful person 🤝",
-            "Best for study/work! Maximum focus 📚",
-            "Good travel luck! Spontaneous trip OK ✈️",
-            "Happy day! Full of smiles 😄"
+            "재물운 좋음! 작은 투자도 이득 봐요 💰", "연애운 최고! 고백하거나 데이트 좋음 ❤️",
+            "건강 주의! 과로 피하고 쉬세요 😴", "전체운 대박! 좋은 일만 생길 거예요 🌟",
+            "인간관계 운 좋음! 귀인 만남 가능 🤝", "학업/일 운 최고! 집중력 최고 📚",
+            "여행운 좋음! 갑자기 떠나도 괜찮아요 ✈️", "기분 좋은 하루! 웃음이 가득할 거예요 😄"
         ]
     }
+    # 영어는 필요시 추가 (현재 한국어 우선)
 }
 
-# 언어 선택
-if "lang" not in st.session_state:
-    st.session_state.lang = "ko"
-
-lang = st.selectbox("🌐 Language", ["한국어", "English"], index=0 if st.session_state.lang == "ko" else 1)
-st.session_state.lang = "ko" if lang == "한국어" else "en"
-
-t = translations[st.session_state.lang]
+# 언어 기본 한국어
+t = translations["ko"]
 Z = t["zodiacs"]
 M = t["mbtis"]
 saju_msg = t["saju_msgs"]
@@ -202,56 +91,76 @@ def get_daily_fortune(zodiac, offset=0):
 
 st.set_page_config(page_title="운세", layout="centered")
 
-# 초기 화면
-st.markdown(f"<h1 style='text-align:center; color:#ff6b6b;'>{t['title']}</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#666;'>{t['caption']}</p>", unsafe_allow_html=True)
-
-app_url = "https://my-fortune.streamlit.app"
-
-st.markdown(f"<h3 style='text-align:center;'>{t['qr']}</h3>", unsafe_allow_html=True)
-st.image("frame.png", use_column_width=True)
-
-st.markdown(f"<h3 style='text-align:center;'>{t['share']}</h3>", unsafe_allow_html=True)
-st.code(app_url, language=None)
-st.markdown(f"<p style='text-align:center;'>{t['share_desc']}</p>", unsafe_allow_html=True)
-
-# 이름 입력
-name = st.text_input(t["name_placeholder"], placeholder="예: 홍길동")
-
-st.markdown(f"<h3 style='text-align:center;'>{t['birth']}</h3>", unsafe_allow_html=True)
-year = st.number_input("Year", 1900, 2030, 2005, step=1)
-month = st.number_input("Month", 1, 12, 1, step=1)
-day = st.number_input("Day", 1, 31, 1, step=1)
-
+# 세션 초기화
 if "mbti" not in st.session_state:
     st.session_state.mbti = None
 if "result_shown" not in st.session_state:
     st.session_state.result_shown = False
 
-if st.session_state.mbti is None:
+# 초기 화면
+if st.session_state.result_shown == False or st.session_state.mbti is None:
+    st.markdown(f"<h1 style='text-align:center; color:#ff6b6b;'>{t['title']}</h1>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align:center; color:#666;'>{t['caption']}</p>", unsafe_allow_html=True)
+
+    app_url = "https://my-fortune.streamlit.app"
+    st.code(app_url, language=None)
+
+    name = st.text_input(t["name_placeholder"], placeholder="예: 홍길동")
+
+    st.markdown(f"<h3 style='text-align:center;'>{t['birth']}</h3>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+    year = col1.number_input("년", 1900, 2030, 2005, step=1)
+    month = col2.number_input("월", 1, 12, 1, step=1)
+    day = col3.number_input("일", 1, 31, 1, step=1)
+
     choice = st.radio(t["mbti_mode"], [t["direct"], t["test"]])
+
     if choice == t["direct"]:
-        mbti_input = st.selectbox("MBTI", sorted(M.keys()))
+        mbti_input = st.selectbox("MBTI 선택", sorted(M.keys()))
         if st.button(t["fortune_btn"], use_container_width=True):
             st.session_state.mbti = mbti_input
-            st.session_state.result_shown = False
+            st.session_state.result_shown = True
             st.rerun()
+
     else:
         st.markdown(f"<h3 style='text-align:center; color:#3498db;'>{t['test_start']}</h3>", unsafe_allow_html=True)
         e_i = s_n = t_f = j_p = 0
-        # (16문제 테스트 코드 생략 - 이전과 동일하게 유지)
-        # ... (테스트 질문들 그대로)
+
+        st.subheader(t["energy"])
+        if st.radio("1. 사람 많을수록 좋아?", ["네 (E)", "아니 (I)"], key="q1") == "네 (E)": e_i += 1
+        if st.radio("2. 새로운 사람 만나는 거 좋아?", ["좋아 (E)", "부담 (I)"], key="q2") == "좋아 (E)": e_i += 1
+        if st.radio("3. 혼자 시간 필요해?", ["많이 (I)", "가끔 (E)"], key="q3") == "많이 (I)": e_i += 1
+        if st.radio("4. 생각 바로 말해?", ["바로 (E)", "정리 후 (I)"], key="q4") == "바로 (E)": e_i += 1
+
+        st.subheader(t["info"])
+        if st.radio("5. 구체적 사실 중요?", ["네 (S)", "가능성 (N)"], key="q5") == "네 (S)": s_n += 1
+        if st.radio("6. 세부 기억 잘해?", ["잘해 (S)", "큰 그림 (N)"], key="q6") == "잘해 (S)": s_n += 1
+        if st.radio("7. 미래 상상 좋아?", ["좋아 (N)", "현재 집중 (S)"], key="q7") == "좋아 (N)": s_n += 1
+        if st.radio("8. 실제 경험 선호?", ["네 (S)", "추상 (N)"], key="q8") == "네 (S)": s_n += 1
+
+        st.subheader(t["decision"])
+        if st.radio("9. 논리 우선?", ["네 (T)", "감정 고려 (F)"], key="q9") == "네 (T)": t_f += 1
+        if st.radio("10. 비판 논리로 받아?", ["네 (T)", "마음 아파 (F)"], key="q10") == "네 (T)": t_f += 1
+        if st.radio("11. 공감 잘 해?", ["공감 먼저 (F)", "조언 위주 (T)"], key="q11") == "공감 먼저 (F)": t_f += 1
+        if st.radio("12. 진실 중요?", ["네 (T)", "상처 주지 않게 (F)"], key="q12") == "네 (T)": t_f += 1
+
+        st.subheader(t["life"])
+        if st.radio("13. 계획 좋아?", ["좋아 (J)", "즉흥 (P)"], key="q13") == "좋아 (J)": j_p += 1
+        if st.radio("14. 미리 끝내?", ["미리 (J)", "마감 때 (P)"], key="q14") == "미리 (J)": j_p += 1
+        if st.radio("15. 빨리 결정?", ["빨리 (J)", "열어두기 (P)"], key="q15") == "빨리 (J)": j_p += 1
+        if st.radio("16. 정리정돈 좋아?", ["좋아 (J)", "괜찮아 (P)"], key="q16") == "좋아 (J)": j_p += 1
+
         if st.button(t["result_btn"], use_container_width=True):
             ei = "E" if e_i >= 3 else "I"
             sn = "S" if s_n >= 3 else "N"
             tf = "T" if t_f >= 3 else "F"
             jp = "J" if j_p >= 3 else "P"
             st.session_state.mbti = ei + sn + tf + jp
-            st.session_state.result_shown = False
+            st.session_state.result_shown = True
             st.rerun()
 
-# 최종 결과 카드 (전체 화면 꽉 채움)
-if st.session_state.mbti and not st.session_state.result_shown:
+# 결과 카드 (전체 화면 꽉 채움 + 글씨 작게 조정)
+if st.session_state.mbti and st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(year)
     if zodiac:
@@ -269,42 +178,37 @@ if st.session_state.mbti and not st.session_state.result_shown:
         <div style="background:linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
                      width:100vw;
                      height:100vh;
-                     margin:-80px 0 0 -20px;
-                     padding:40px 20px;
+                     margin:-80px -20px 0 -20px;
+                     padding:30px 15px;
                      box-sizing:border-box;
                      display:flex;
                      flex-direction:column;
                      justify-content:space-between;
-                     align-items:center;
                      color:white;
-                     position:relative;
+                     text-align:center;
                      overflow:hidden;">
-          <div style="text-align:center;">
-            <h1 style="font-size:2.8em; margin:0;">{name_text}</h1>
-          </div>
-          <div style="text-align:center;">
-            <h2 style="font-size:2.5em; margin:30px 0;">
-              {zodiac_emoji} <b>{zodiac}</b> + {mbti_emoji} <b>{mbti}</b>
+          <div>
+            <h1 style="font-size:2.2em; margin:10px 0;">{name_text}</h1>
+            <h2 style="font-size:2em; margin:15px 0;">
+              {zodiac_emoji} {zodiac} + {mbti_emoji} {mbti}
             </h2>
-            <h3 style="font-size:2.2em; margin:30px 0;">{t['combo']}</h3>
-            <h2 style="font-size:5em; margin:40px 0; color:#ffd700;">{score}점</h2>
+            <h3 style="font-size:1.8em; margin:15px 0;">{t['combo']}</h3>
+            <h1 style="font-size:4.5em; margin:20px 0; color:#ffd700;">{score}점</h1>
           </div>
-          <div style="width:90%; background:rgba(255,255,255,0.15); border-radius:20px; padding:20px;">
-            <p style="font-size:1.4em; margin:15px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
-            <p style="font-size:1.4em; margin:15px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
-            <p style="font-size:1.4em; margin:15px 0;"><b>{t['saju_title']}</b>: {saju}</p>
-            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.3); margin:25px 0;">
-            <p style="font-size:1.5em; margin:15px 0;"><b>{t['today_title']}</b>: {today}</p>
-            <p style="font-size:1.5em; margin:15px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
+          <div style="background:rgba(255,255,255,0.15); border-radius:20px; padding:15px;">
+            <p style="font-size:1.1em; margin:10px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
+            <p style="font-size:1.1em; margin:10px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
+            <p style="font-size:1.1em; margin:10px 0;"><b>{t['saju_title']}</b>: {saju}</p>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.3); margin:15px 0;">
+            <p style="font-size:1.2em; margin:10px 0;"><b>{t['today_title']}</b>: {today}</p>
+            <p style="font-size:1.2em; margin:10px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
           </div>
-          <p style="font-size:0.9em; opacity:0.7; margin-top:20px;">{app_url}</p>
+          <p style="font-size:0.8em; opacity:0.7; margin-bottom:20px;">{app_url}</p>
         </div>
         """, unsafe_allow_html=True)
 
         st.balloons()
         st.snow()
-
-        st.session_state.result_shown = True
 
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
