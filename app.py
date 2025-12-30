@@ -1,6 +1,6 @@
 import streamlit as st
 
-# 다국어 사전 (한국어·영어)
+# 다국어 사전 (한국어·영어 완벽)
 translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 운세 🌟",
@@ -8,7 +8,10 @@ translations = {
         "qr": "### 📱 QR 코드 스캔!",
         "share": "### 🔗 공유 링크",
         "share_desc": "위 링크 복사해서 친구들한테 보내주세요!",
-        "birth": "### 생년월일 입력",
+        "ad_title": "💳 렌탈 궁금할 때?",
+        "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 페이백</b>!",
+        "ad_btn": "🔗 보러가기",
+        "birth": "### 생년월일 입력 (사주 계산을 위해!)",
         "mbti_mode": "MBTI 어떻게 할까?",
         "direct": "직접 입력",
         "test": "상세 테스트 (16문제)",
@@ -24,7 +27,7 @@ translations = {
         "mbti_title": "**MBTI 특징**",
         "saju_title": "**사주 한 마디**",
         "combo": "최고 조합!",
-        "footer": "재미로만 봐주세요 😊",
+        "footer": "재미로만 봐주세요! 친구들이랑 같이 해보세요 😊",
         "zodiacs": {
             "쥐띠": "🐭 활발·성장, 돈↑",
             "소띠": "🐮 노력 결실",
@@ -73,7 +76,10 @@ translations = {
         "caption": "Completely Free 😄",
         "qr": "### 📱 Scan QR Code!",
         "share": "### 🔗 Share Link",
-        "share_desc": "Copy and share the link!",
+        "share_desc": "Copy the link and share with friends!",
+        "ad_title": "💳 Curious about rental?",
+        "ad_text": "<b>Dananum Rental</b> partner card: <b>0 won/month</b> + <b>Cashback</b>!",
+        "ad_btn": "🔗 Check it out",
         "birth": "### Enter Birth Date",
         "mbti_mode": "How to get MBTI?",
         "direct": "Enter directly",
@@ -90,7 +96,7 @@ translations = {
         "mbti_title": "**MBTI Traits**",
         "saju_title": "**Saju Message**",
         "combo": "Best combo!",
-        "footer": "For fun only 😊",
+        "footer": "For fun only! Try with friends 😊",
         "zodiacs": {
             "Rat": "🐭 Active growth, money ↑",
             "Ox": "🐮 Effort pays off",
@@ -136,6 +142,7 @@ translations = {
     }
 }
 
+# 언어 선택
 if "lang" not in st.session_state:
     st.session_state.lang = "ko"
 
@@ -157,14 +164,11 @@ def get_saju(year, month, day):
     index = total % 8
     return saju_msg[index]
 
-# 모바일 최적화 디자인 업그레이드!
+# 모바일 최적화 디자인
 st.set_page_config(page_title="띠MBTI 사주", layout="centered")
 
-# 중앙 정렬 + 여백
-st.markdown("<div style='text-align: center; padding: 20px;'>", unsafe_allow_html=True)
-st.markdown(f"<h1 style='font-size: 2.5em; color: #ff6b6b;'>{t['title']}</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='font-size: 1.2em; color: #666;'>{t['caption']}</p>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+st.markdown(f"<h1 style='text-align: center; color: #ff6b6b; font-size: 2.5em;'>{t['title']}</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: center; font-size: 1.2em; color: #666;'>{t['caption']}</p>", unsafe_allow_html=True)
 
 app_url = "https://my-fortune.streamlit.app"
 
@@ -175,13 +179,12 @@ st.markdown(f"<h3 style='text-align: center;'>{t['share']}</h3>", unsafe_allow_h
 st.code(app_url, language=None)
 st.markdown(f"<p style='text-align: center;'>{t['share_desc']}</p>", unsafe_allow_html=True)
 
-# 광고 카드 스타일
 st.markdown(f"""
 <div style="background:#fffbe6;padding:20px;border-radius:20px;text-align:center;margin:30px 0;box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-  <h3 style="color:#d35400;">💳 {t.get('ad_title', '렌탈 궁금할 때?')}</h3>
-  <p style="font-size:1.1em;">{t.get('ad_text', '<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 페이백</b>!')}</p>
+  <h3 style="color:#d35400;">{t['ad_title']}</h3>
+  <p style="font-size:1.1em;">{t['ad_text']}</p>
   <a href="https://www.다나눔렌탈.com" target="_blank">
-    <button style="background:#e67e22;color:white;padding:15px 30px;border:none;border-radius:15px;font-size:1.2em;">{t.get('ad_btn', '🔗 보러가기')}</button>
+    <button style="background:#e67e22;color:white;padding:15px 30px;border:none;border-radius:15px;font-size:1.2em;">{t['ad_btn']}</button>
   </a>
 </div>
 """, unsafe_allow_html=True)
@@ -198,7 +201,38 @@ if st.session_state.mbti is None:
     c = st.radio(t["mbti_mode"], [t["direct"], t["test"]], key="mode")
     if c == t["direct"]:
         m = st.selectbox("MBTI", sorted(M.keys()), key="direct")
-    if st.button(t["result_btn"], use_container_width=True, key="test_go"):
+        if st.button(t["fortune_btn"], use_container_width=True, key="direct_go"):
+            st.session_state.mbti = m
+            st.rerun()
+    else:
+        st.markdown(f"<h3 style='text-align: center; color:#3498db;'>{t['test_start']}</h3>", unsafe_allow_html=True)
+        e_i, s_n, t_f, j_p = 0, 0, 0, 0
+        
+        st.markdown("<h4 style='color:#2ecc71;'>1-4. 에너지 방향</h4>", unsafe_allow_html=True)
+        if st.radio("1.", ["네 (E)", "아니 (I)"], key="ei1") == "네 (E)": e_i += 1
+        if st.radio("2.", ["좋아 (E)", "부담 (I)"], key="ei2") == "좋아 (E)": e_i += 1
+        if st.radio("3.", ["많이 (I)", "가끔 (E)"], key="ei3") == "많이 (I)": e_i += 1
+        if st.radio("4.", ["바로 (E)", "정리 후 (I)"], key="ei4") == "바로 (E)": e_i += 1
+        
+        st.markdown("<h4 style='color:#2ecc71;'>5-8. 정보 수집</h4>", unsafe_allow_html=True)
+        if st.radio("5.", ["네 (S)", "가능성 (N)"], key="sn1") == "네 (S)": s_n += 1
+        if st.radio("6.", ["잘해 (S)", "큰 그림 (N)"], key="sn2") == "잘해 (S)": s_n += 1
+        if st.radio("7.", ["좋아 (N)", "현재 집중 (S)"], key="sn3") == "좋아 (N)": s_n += 1
+        if st.radio("8.", ["네 (S)", "추상 (N)"], key="sn4") == "네 (S)": s_n += 1
+        
+        st.markdown("<h4 style='color:#2ecc71;'>9-12. 결정 방식</h4>", unsafe_allow_html=True)
+        if st.radio("9.", ["네 (T)", "감정 고려 (F)"], key="tf1") == "네 (T)": t_f += 1
+        if st.radio("10.", ["네 (T)", "마음 아파 (F)"], key="tf2") == "네 (T)": t_f += 1
+        if st.radio("11.", ["공감 먼저 (F)", "조언 위주 (T)"], key="tf3") == "공감 먼저 (F)": t_f += 1
+        if st.radio("12.", ["네 (T)", "상처 주지 않게 (F)"], key="tf4") == "네 (T)": t_f += 1
+        
+        st.markdown("<h4 style='color:#2ecc71;'>13-16. 생활 방식</h4>", unsafe_allow_html=True)
+        if st.radio("13.", ["좋아 (J)", "즉흥 (P)"], key="jp1") == "좋아 (J)": j_p += 1
+        if st.radio("14.", ["미리 (J)", "마감 때 (P)"], key="jp2") == "미리 (J)": j_p += 1
+        if st.radio("15.", ["빨리 (J)", "열어두기 (P)"], key="jp3") == "빨리 (J)": j_p += 1
+        if st.radio("16.", ["좋아 (J)", "괜찮아 (P)"], key="jp4") == "좋아 (J)": j_p += 1
+        
+        if st.button(t["result_btn"], use_container_width=True, key="test_go"):
             ei = "E" if e_i >= 3 else "I"
             sn = "S" if s_n >= 3 else "N"
             tf = "T" if t_f >= 3 else "F"
@@ -238,5 +272,41 @@ if st.session_state.mbti is None:
                 if st.button(t["reset"], use_container_width=True, key="reset_after_test"):
                     st.session_state.clear()
                     st.rerun()
-            else:
-                st.error("출생 연도가 범위 밖이에요 (1900~2030)")        
+
+if st.session_state.mbti and 'result_shown' not in st.session_state:
+    # 직접 입력 후 운세 보기 버튼 눌렀을 때
+    mbti = st.session_state.mbti
+    zodiac = get_zodiac(year)
+    if zodiac:
+        score = 90
+        saju = get_saju(year, month, day)
+        zodiac_emoji = Z[zodiac].split(' ',1)[0]
+        zodiac_desc = Z[zodiac].split(' ',1)[1] if ' ' in Z[zodiac] else ""
+        mbti_emoji = M[mbti].split(' ',1)[0]
+        mbti_desc = M[mbti].split(' ',1)[1] if ' ' in M[mbti] else ""
+        
+        st.markdown(f"""
+        <div style="background:#e8f5e8;padding:20px;border-radius:20px;text-align:center;margin:20px 0;box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+          <h2 style="color:#27ae60;">{zodiac_emoji} <b>{zodiac}</b> + {mbti_emoji} <b>{mbti}</b> {t['combo']}</h2>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.metric("운세 점수", f"{score}점", delta="안정적!")
+        
+        st.info(f"{t['zodiac_title']}: {zodiac_desc}")
+        st.info(f"{t['mbti_title']}: {mbti_desc}")
+        st.warning(f"{t['saju_title']}: {saju}")
+        
+        st.balloons()
+        st.snow()
+
+        share_text = f"My 2026 Fortune!\nZodiac: {zodiac}\nMBTI: {mbti}\nSaju: {saju}\nScore {score}점!\n{app_url}" if st.session_state.lang == "en" else f"내 2026년 운세!\n띠: {zodiac}\nMBTI: {mbti}\n사주: {saju}\n점수 {score}점!\n{app_url}"
+        st.text_area("공유 텍스트", share_text, height=120)
+
+        st.session_state.result_shown = True
+
+    if st.button(t["reset"], use_container_width=True, key="reset"):
+        st.session_state.clear()
+        st.rerun()
+
+st.markdown(f"<p style='text-align: center; color: #95a5a6; font-size: 0.9em;'>{t['footer']}</p>", unsafe_allow_html=True)
