@@ -2,11 +2,17 @@ import streamlit as st
 from datetime import datetime, timedelta
 import random
 
-# 다국어 사전 (한국어 + 영어 완벽 지원)
+# 다국어 사전 (한국어 + 영어)
 translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 + 오늘/내일 운세 🌟",
         "caption": "완전 무료 😄",
+        "qr": "### 📱 QR 코드 스캔!",
+        "share": "### 🔗 공유 링크",
+        "share_desc": "위 링크 복사해서 친구들한테 보내주세요!",
+        "ad_title": "💳 렌탈 궁금할 때?",
+        "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 페이백</b>!",
+        "ad_btn": "🔗 보러가기",
         "birth": "### 생년월일 입력",
         "name_placeholder": "이름 입력 (결과에 표시돼요)",
         "mbti_mode": "MBTI 어떻게 할까?",
@@ -56,6 +62,12 @@ translations = {
     "en": {
         "title": "🌟 2026 Zodiac + MBTI + Saju + Today/Tomorrow Fortune 🌟",
         "caption": "Completely Free 😄",
+        "qr": "### 📱 Scan QR Code!",
+        "share": "### 🔗 Share Link",
+        "share_desc": "Copy the link and share with friends!",
+        "ad_title": "💳 Curious about rental?",
+        "ad_text": "<b>Dananum Rental</b> partner card: <b>0 won/month</b> + <b>Cashback</b>!",
+        "ad_btn": "🔗 Check it out",
         "birth": "### Enter Birth Date",
         "name_placeholder": "Enter your name (shown in result)",
         "mbti_mode": "How to get MBTI?",
@@ -149,7 +161,24 @@ app_url = "https://my-fortune.streamlit.app"
 if not st.session_state.result_shown:
     st.markdown(f"<h1 style='text-align:center; color:#ff6b6b;'>{t['title']}</h1>", unsafe_allow_html=True)
     st.markdown(f"<p style='text-align:center; color:#666;'>{t['caption']}</p>", unsafe_allow_html=True)
+
+    st.markdown(f"<h3 style='text-align:center;'>{t['qr']}</h3>", unsafe_allow_html=True)
+    st.image("frame.png", use_column_width=True)
+
+    st.markdown(f"<h3 style='text-align:center;'>{t['share']}</h3>", unsafe_allow_html=True)
     st.code(app_url, language=None)
+    st.markdown(f"<p style='text-align:center;'>{t['share_desc']}</p>", unsafe_allow_html=True)
+
+    # 다나눔렌탈 광고 복구
+    st.markdown(f"""
+    <div style="background:#fffbe6;padding:20px;border-radius:20px;text-align:center;margin:30px 0;box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <h3 style="color:#d35400;">{t['ad_title']}</h3>
+      <p style="font-size:1.1em;">{t['ad_text']}</p>
+      <a href="https://www.다나눔렌탈.com" target="_blank">
+        <button style="background:#e67e22;color:white;padding:15px 30px;border:none;border-radius:15px;font-size:1.2em;">{t['ad_btn']}</button>
+      </a>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.session_state.name = st.text_input(t["name_placeholder"], value=st.session_state.name)
 
@@ -204,7 +233,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 카드 (완벽 조정 버전)
+# 결과 카드 (스크롤 없이 한 화면에 다 보이게 최적화)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -224,31 +253,29 @@ if st.session_state.result_shown:
                      width:100vw;
                      height:100vh;
                      margin:-80px -20px 0 -20px;
-                     padding:20px 15px;
+                     padding:15px;
                      box-sizing:border-box;
                      display:flex;
                      flex-direction:column;
-                     justify-content:space-between;
                      color:white;
-                     text-align:center;
-                     overflow-y:auto;">
+                     text-align:center;">
           <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-            <h1 style="font-size:2.0em; margin:10px 0;">{name_text}</h1>
-            <h2 style="font-size:1.9em; margin:15px 0;">
+            <h1 style="font-size:1.9em; margin:5px 0;">{name_text}</h1>
+            <h2 style="font-size:1.8em; margin:10px 0;">
               {zodiac_emoji} {zodiac} + {mbti_emoji} {mbti}
             </h2>
-            <h3 style="font-size:1.7em; margin:15px 0;">{t['combo']}</h3>
-            <h1 style="font-size:4.0em; margin:20px 0; color:#ffd700;">{score}점</h1>
+            <h3 style="font-size:1.6em; margin:10px 0;">{t['combo']}</h3>
+            <h1 style="font-size:4em; margin:15px 0; color:#ffd700;">{score}점</h1>
           </div>
-          <div style="background:rgba(255,255,255,0.18); border-radius:20px; padding:15px; margin:0 10px;">
-            <p style="font-size:1.15em; margin:10px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
-            <p style="font-size:1.15em; margin:10px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
-            <p style="font-size:1.15em; margin:10px 0;"><b>{t['saju_title']}</b>: {saju}</p>
-            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.4); margin:15px 0;">
-            <p style="font-size:1.25em; margin:10px 0;"><b>{t['today_title']}</b>: {today}</p>
-            <p style="font-size:1.25em; margin:10px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
+          <div style="background:rgba(255,255,255,0.18); border-radius:20px; padding:12px;">
+            <p style="font-size:1.0em; margin:8px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
+            <p style="font-size:1.0em; margin:8px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
+            <p style="font-size:1.0em; margin:8px 0;"><b>{t['saju_title']}</b>: {saju}</p>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.4); margin:12px 0;">
+            <p style="font-size:1.1em; margin:8px 0;"><b>{t['today_title']}</b>: {today}</p>
+            <p style="font-size:1.1em; margin:8px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
           </div>
-          <p style="font-size:0.8em; opacity:0.7; margin-top:15px;">{app_url}</p>
+          <p style="font-size:0.7em; opacity:0.7; margin-top:10px;">{app_url}</p>
         </div>
         """, unsafe_allow_html=True)
 
