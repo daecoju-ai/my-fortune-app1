@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import random
+from streamlit.components.v1 import html as st_html
 
 # 다국어 사전 (한국어)
 translations = {
@@ -166,7 +167,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 카드 (공유 버튼 완벽 작동)
+# 결과 카드 (공유 버튼 완벽 작동 - st.components.v1.html 사용)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -211,11 +212,16 @@ if st.session_state.result_shown:
         st.balloons()
         st.snow()
 
-        # 공유 버튼 (완벽 작동 - st.button + JS)
-        if st.button(t["share_btn"], use_container_width=True, key="share_final"):
-            share_text = f"{name_text}\n{zodiac} + {mbti}\n{t['combo']}\n{score}점!\n{t['today_title']}: {today}\n{t['tomorrow_title']}: {tomorrow}\n\n{app_url}"
-            js = f"""
-            <script>
+        # 공유 버튼 (st.components.v1.html 사용으로 완벽 작동)
+        share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
+        share_component = f"""
+        <div style="text-align:center; margin:20px 0;">
+            <button style="background:white; color:#6a11cb; padding:12px 50px; border:none; border-radius:30px; font-size:1.2em; font-weight:bold;" onclick="shareResult()">
+              {t["share_btn"]}
+            </button>
+        </div>
+        <script>
+        function shareResult() {{
             if (navigator.share) {{
                 navigator.share({{
                     title: '내 2026년 운세 결과',
@@ -227,9 +233,10 @@ if st.session_state.result_shown:
                     alert('운세 결과가 복사되었습니다! 카톡, 라인, X 등에 붙여넣기 해서 공유해주세요 😊');
                 }});
             }}
-            </script>
-            """
-            st.markdown(js, unsafe_allow_html=True)
+        }}
+        </script>
+        """
+        st_html(share_component, height=100)
 
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
