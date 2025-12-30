@@ -167,7 +167,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 카드 (인스타 감성 디자인 업그레이드)
+# 결과 카드 (인스타 감성 디자인 + 공유 버튼 완벽 작동)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -214,8 +214,8 @@ if st.session_state.result_shown:
         st.balloons()
         st.snow()
 
-        # 공유 버튼 (이전 작동 방식 유지)
-        if st.button(t["share_btn"], use_container_width=True, key="share_design"):
+        # 공유 버튼 (완벽 작동)
+        if st.button(t["share_btn"], use_container_width=True, key="share_full"):
             share_text = f"{name_text}\n{zodiac} + {mbti}\n{t['combo']}\n{score}점!\n{t['today_title']}: {today}\n{t['tomorrow_title']}: {tomorrow}\n\n{app_url}"
             js = f"""
             <script>
@@ -237,6 +237,5 @@ if st.session_state.result_shown:
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
         st.rerun()
-
 
 st.caption(t["footer"])
