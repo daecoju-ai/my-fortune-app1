@@ -1,6 +1,6 @@
 import streamlit as st
 
-# 다국어 사전 (한국어·영어 완벽)
+# 다국어 사전
 translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 운세 🌟",
@@ -27,7 +27,8 @@ translations = {
         "mbti_title": "**MBTI 특징**",
         "saju_title": "**사주 한 마디**",
         "combo": "최고 조합!",
-        "footer": "재미로만 봐주세요! 친구들이랑 같이 해보세요 😊",
+        "footer": "재미로만 봐주세요 😊",
+        "share_text_label": "공유 텍스트 (길게 눌러 복사)",
         "zodiacs": {
             "쥐띠": "🐭 활발·성장, 돈↑",
             "소띠": "🐮 노력 결실",
@@ -96,7 +97,8 @@ translations = {
         "mbti_title": "**MBTI Traits**",
         "saju_title": "**Saju Message**",
         "combo": "Best combo!",
-        "footer": "For fun only! Try with friends 😊",
+        "footer": "For fun only 😊",
+        "share_text_label": "Text to share (long press to copy)",
         "zodiacs": {
             "Rat": "🐭 Active growth, money ↑",
             "Ox": "🐮 Effort pays off",
@@ -164,7 +166,7 @@ def get_saju(year, month, day):
     index = total % 8
     return saju_msg[index]
 
-# 모바일 최적화 디자인
+# 디자인
 st.set_page_config(page_title="띠MBTI 사주", layout="centered")
 
 st.markdown(f"<h1 style='text-align: center; color: #ff6b6b; font-size: 2.5em;'>{t['title']}</h1>", unsafe_allow_html=True)
@@ -190,12 +192,16 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.markdown(f"<h3 style='text-align: center;'>{t['birth']}</h3>", unsafe_allow_html=True)
-year = st.number_input("Year / 년", 1900, 2030, 2005, step=1)
-month = st.number_input("Month / 월", 1, 12, 1, step=1)
-day = st.number_input("Day / 일", 1, 31, 1, step=1)
+year = st.number_input("Year", 1900, 2030, 2005, step=1)
+month = st.number_input("Month", 1, 12, 1, step=1)
+day = st.number_input("Day", 1, 31, 1, step=1)
 
 if "mbti" not in st.session_state: 
     st.session_state.mbti = None
+
+# 결과 보여줬는지 플래그
+if "result_shown" not in st.session_state:
+    st.session_state.result_shown = False
 
 if st.session_state.mbti is None:
     c = st.radio(t["mbti_mode"], [t["direct"], t["test"]], key="mode")
@@ -203,6 +209,7 @@ if st.session_state.mbti is None:
         m = st.selectbox("MBTI", sorted(M.keys()), key="direct")
         if st.button(t["fortune_btn"], use_container_width=True, key="direct_go"):
             st.session_state.mbti = m
+            st.session_state.result_shown = False
             st.rerun()
     else:
         st.markdown(f"<h3 style='text-align: center; color:#3498db;'>{t['test_start']}</h3>", unsafe_allow_html=True)
@@ -239,42 +246,11 @@ if st.session_state.mbti is None:
             jp = "J" if j_p >= 3 else "P"
             result = ei + sn + tf + jp
             st.session_state.mbti = result
-            
-            # 바로 운세 결과 보여주기
-            mbti = result
-            zodiac = get_zodiac(year)
-            if zodiac:
-                score = 90
-                saju = get_saju(year, month, day)
-                zodiac_emoji = Z[zodiac].split(' ',1)[0]
-                zodiac_desc = Z[zodiac].split(' ',1)[1] if ' ' in Z[zodiac] else ""
-                mbti_emoji = M[mbti].split(' ',1)[0]
-                mbti_desc = M[mbti].split(' ',1)[1] if ' ' in M[mbti] else ""
-                
-                st.markdown(f"""
-                <div style="background:#e8f5e8;padding:20px;border-radius:20px;text-align:center;margin:20px 0;box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                  <h2 style="color:#27ae60;">{zodiac_emoji} <b>{zodiac}</b> + {mbti_emoji} <b>{mbti}</b> {t['combo']}</h2>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.metric("운세 점수", f"{score}점", delta="안정적!")
-                
-                st.info(f"{t['zodiac_title']}: {zodiac_desc}")
-                st.info(f"{t['mbti_title']}: {mbti_desc}")
-                st.warning(f"{t['saju_title']}: {saju}")
-                
-                st.balloons()
-                st.snow()
+            st.session_state.result_shown = False
+            st.rerun()
 
-                share_text = f"My 2026 Fortune!\nZodiac: {zodiac}\nMBTI: {mbti}\nSaju: {saju}\nScore {score}점!\n{app_url}" if st.session_state.lang == "en" else f"내 2026년 운세!\n띠: {zodiac}\nMBTI: {mbti}\n사주: {saju}\n점수 {score}점!\n{app_url}"
-                st.text_area("공유 텍스트", share_text, height=120)
-
-                if st.button(t["reset"], use_container_width=True, key="reset_after_test"):
-                    st.session_state.clear()
-                    st.rerun()
-
-if st.session_state.mbti and 'result_shown' not in st.session_state:
-    # 직접 입력 후 운세 보기 버튼 눌렀을 때
+# 결과 보여주는 부분 (중복 방지 + 바로 결과)
+if st.session_state.mbti and not st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(year)
     if zodiac:
@@ -301,7 +277,7 @@ if st.session_state.mbti and 'result_shown' not in st.session_state:
         st.snow()
 
         share_text = f"My 2026 Fortune!\nZodiac: {zodiac}\nMBTI: {mbti}\nSaju: {saju}\nScore {score}점!\n{app_url}" if st.session_state.lang == "en" else f"내 2026년 운세!\n띠: {zodiac}\nMBTI: {mbti}\n사주: {saju}\n점수 {score}점!\n{app_url}"
-        st.text_area("공유 텍스트", share_text, height=120)
+        st.text_area(t["share_text_label"], share_text, height=120, key="share_text_unique")
 
         st.session_state.result_shown = True
 
