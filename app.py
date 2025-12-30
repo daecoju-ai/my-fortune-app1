@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime, timedelta
 import random
 
-# 다국어 사전 (한국어 우선)
+# 다국어 사전 (한국어)
 translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 + 오늘/내일 운세 🌟",
@@ -134,28 +134,28 @@ if not st.session_state.result_shown:
         e_i = s_n = t_f = j_p = 0
 
         st.subheader(t["energy"])
-        if st.radio("1. 사람 많을수록 에너지 충전?", ["네 (E)", "아니 (I)"], key="q1") == "네 (E)": e_i += 1
-        if st.radio("2. 파티나 모임 즐겨?", ["좋아 (E)", "부담 (I)"], key="q2") == "좋아 (E)": e_i += 1
-        if st.radio("3. 혼자 있는 시간 많이 필요?", ["많이 (I)", "가끔 (E)"], key="q3") == "많이 (I)": e_i += 1
-        if st.radio("4. 생각난 즉시 말하는 편?", ["바로 (E)", "정리 후 (I)"], key="q4") == "바로 (E)": e_i += 1
+        if st.radio("1.", ["네 (E)", "아니 (I)"], key="q1") == "네 (E)": e_i += 1
+        if st.radio("2.", ["좋아 (E)", "부담 (I)"], key="q2") == "좋아 (E)": e_i += 1
+        if st.radio("3.", ["많이 (I)", "가끔 (E)"], key="q3") == "많이 (I)": e_i += 1
+        if st.radio("4.", ["바로 (E)", "정리 후 (I)"], key="q4") == "바로 (E)": e_i += 1
 
         st.subheader(t["info"])
-        if st.radio("5. 구체적인 사실·현실에 집중?", ["네 (S)", "가능성·아이디어 (N)"], key="q5") == "네 (S)": s_n += 1
-        if st.radio("6. 세부 사항 잘 기억하는 편?", ["잘해 (S)", "큰 그림 (N)"], key="q6") == "잘해 (S)": s_n += 1
-        if st.radio("7. 미래 가능성 상상하는 거 좋아?", ["좋아 (N)", "현재 집중 (S)"], key="q7") == "좋아 (N)": s_n += 1
-        if st.radio("8. 실제 경험·현실적인 것 선호?", ["네 (S)", "추상·이론 (N)"], key="q8") == "네 (S)": s_n += 1
+        if st.radio("5.", ["네 (S)", "가능성 (N)"], key="q5") == "네 (S)": s_n += 1
+        if st.radio("6.", ["잘해 (S)", "큰 그림 (N)"], key="q6") == "잘해 (S)": s_n += 1
+        if st.radio("7.", ["좋아 (N)", "현재 집중 (S)"], key="q7") == "좋아 (N)": s_n += 1
+        if st.radio("8.", ["네 (S)", "추상 (N)"], key="q8") == "네 (S)": s_n += 1
 
         st.subheader(t["decision"])
-        if st.radio("9. 결정할 때 논리·객관성 우선?", ["네 (T)", "감정·조화 (F)"], key="q9") == "네 (T)": t_f += 1
-        if st.radio("10. 비판받아도 논리면 받아들여?", ["네 (T)", "마음 아파 (F)"], key="q10") == "네 (T)": t_f += 1
-        if st.radio("11. 상대 감정 공감 먼저 해?", ["공감 먼저 (F)", "조언 위주 (T)"], key="q11") == "공감 먼저 (F)": t_f += 1
-        if st.radio("12. 진실 말하기 vs 상처 주지 않기?", ["진실 (T)", "상처 주지 않게 (F)"], key="q12") == "진실 (T)": t_f += 1
+        if st.radio("9.", ["네 (T)", "감정 고려 (F)"], key="q9") == "네 (T)": t_f += 1
+        if st.radio("10.", ["네 (T)", "마음 아파 (F)"], key="q10") == "네 (T)": t_f += 1
+        if st.radio("11.", ["공감 먼저 (F)", "조언 위주 (T)"], key="q11") == "공감 먼저 (F)": t_f += 1
+        if st.radio("12.", ["네 (T)", "상처 주지 않게 (F)"], key="q12") == "네 (T)": t_f += 1
 
         st.subheader(t["life"])
-        if st.radio("13. 계획 세우고 실행하는 거 좋아?", ["좋아 (J)", "즉흥 (P)"], key="q13") == "좋아 (J)": j_p += 1
-        if st.radio("14. 일 미리 끝내는 편?", ["미리 (J)", "마감 직전 (P)"], key="q14") == "미리 (J)": j_p += 1
-        if st.radio("15. 결정 빨리 내리는 편?", ["빨리 (J)", "옵션 열어두기 (P)"], key="q15") == "빨리 (J)": j_p += 1
-        if st.radio("16. 정리정돈 잘 돼 있어야 마음 편해?", ["좋아 (J)", "괜찮아 (P)"], key="q16") == "좋아 (J)": j_p += 1
+        if st.radio("13.", ["좋아 (J)", "즉흥 (P)"], key="q13") == "좋아 (J)": j_p += 1
+        if st.radio("14.", ["미리 (J)", "마감 때 (P)"], key="q14") == "미리 (J)": j_p += 1
+        if st.radio("15.", ["빨리 (J)", "열어두기 (P)"], key="q15") == "빨리 (J)": j_p += 1
+        if st.radio("16.", ["좋아 (J)", "괜찮아 (P)"], key="q16") == "좋아 (J)": j_p += 1
 
         if st.button(t["result_btn"], use_container_width=True):
             ei = "E" if e_i >= 3 else "I"
@@ -166,7 +166,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 카드 (최적화 + 공유 버튼 + 정수기는 다나눔렌탈)
+# 결과 카드 (줄 간격 줄여서 다 보이게 + 공유 버튼 정상 작동)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -183,51 +183,51 @@ if st.session_state.result_shown:
 
         st.markdown(f"""
         <div style="background:linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:20px 15px;
+                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:15px 10px;
                      box-sizing:border-box; display:flex; flex-direction:column; color:white; text-align:center;">
-          <div style="position:absolute; top:15px; right:15px; font-size:0.8em; opacity:0.8;">
+          <div style="position:absolute; top:10px; right:10px; font-size:0.7em; opacity:0.8;">
             {t["water_purifier"]}
           </div>
           <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-            <h1 style="font-size:1.9em; margin:10px 0;">{name_text}</h1>
-            <h2 style="font-size:1.9em; margin:15px 0;">
+            <h1 style="font-size:1.8em; margin:5px 0;">{name_text}</h1>
+            <h2 style="font-size:1.8em; margin:10px 0;">
               {zodiac_emoji} {zodiac} + {mbti_emoji} {mbti}
             </h2>
-            <h3 style="font-size:1.7em; margin:15px 0;">{t['combo']}</h3>
-            <h1 style="font-size:4.2em; margin:20px 0; color:#ffd700;">{score}점</h1>
+            <h3 style="font-size:1.5em; margin:10px 0;">{t['combo']}</h3>
+            <h1 style="font-size:3.8em; margin:15px 0; color:#ffd700;">{score}점</h1>
           </div>
-          <div style="background:rgba(255,255,255,0.18); border-radius:20px; padding:12px;">
-            <p style="font-size:1.0em; margin:6px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
-            <p style="font-size:1.0em; margin:6px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
-            <p style="font-size:1.0em; margin:6px 0;"><b>{t['saju_title']}</b>: {saju}</p>
-            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.4); margin:10px 0;">
-            <p style="font-size:1.1em; margin:6px 0;"><b>{t['today_title']}</b>: {today}</p>
-            <p style="font-size:1.1em; margin:6px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
+          <div style="background:rgba(255,255,255,0.18); border-radius:20px; padding:10px; margin:0 5px;">
+            <p style="font-size:0.95em; margin:5px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
+            <p style="font-size:0.95em; margin:5px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
+            <p style="font-size:0.95em; margin:5px 0;"><b>{t['saju_title']}</b>: {saju}</p>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.4); margin:8px 0;">
+            <p style="font-size:1.0em; margin:5px 0;"><b>{t['today_title']}</b>: {today}</p>
+            <p style="font-size:1.0em; margin:5px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
           </div>
-          <div style="margin-top:20px;">
-            <button style="background:white; color:#6a11cb; padding:12px 40px; border:none; border-radius:30px; font-size:1.2em; font-weight:bold;">
+          <div style="margin:15px 0 10px 0;">
+            <button id="shareBtn" style="background:white; color:#6a11cb; padding:10px 35px; border:none; border-radius:30px; font-size:1.1em; font-weight:bold;">
               {t["share_btn"]}
             </button>
           </div>
-          <p style="font-size:0.7em; opacity:0.7; margin-top:10px;">{app_url}</p>
+          <p style="font-size:0.7em; opacity:0.7; margin:0;">{app_url}</p>
         </div>
         """, unsafe_allow_html=True)
 
-        # 공유 기능
+        # 공유 버튼 정상 작동 JavaScript
         share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n{app_url}"
         st.markdown(f"""
         <script>
-        const btn = document.querySelector('button');
-        btn.addEventListener('click', () => {{
+        document.getElementById('shareBtn').addEventListener('click', function() {{
             if (navigator.share) {{
                 navigator.share({{
                     title: '내 2026년 운세',
-                    text: `{share_text}`,
-                    url: '{app_url}'
-                }});
-            }} else {{
+                    text: `{share_text}`
+                }}).catch(console.error);
+            }} else if (navigator.clipboard) {{
                 navigator.clipboard.writeText(`{share_text}`);
-                alert('텍스트가 복사되었습니다! 붙여넣기 해서 공유해주세요.');
+                alert('결과가 복사되었습니다! 붙여넣기 해서 공유해주세요 😊');
+            }} else {{
+                alert('공유 기능을 지원하지 않습니다. 스크린샷을 찍어 공유해주세요!');
             }}
         }});
         </script>
