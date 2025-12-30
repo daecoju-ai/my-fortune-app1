@@ -26,7 +26,7 @@ translations = {
         "result_btn": "결과 보기!",
         "fortune_btn": "🔮 2026년 운세 보기!",
         "reset": "처음부터 다시 하기",
-        "share_btn": "친구에게 공유",
+        "share_btn": "친구에게 결과 공유",
         "water_purifier": "정수기는 다나눔렌탈",
         "zodiac_title": "띠 운세",
         "mbti_title": "MBTI 특징",
@@ -166,7 +166,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 카드 (줄 간격 줄여서 다 보이게 + 공유 버튼 정상 작동)
+# 결과 카드 (스크롤 없이 다 보이게 + 공유 버튼 완벽 작동)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -196,7 +196,7 @@ if st.session_state.result_shown:
             <h3 style="font-size:1.5em; margin:10px 0;">{t['combo']}</h3>
             <h1 style="font-size:3.8em; margin:15px 0; color:#ffd700;">{score}점</h1>
           </div>
-          <div style="background:rgba(255,255,255,0.18); border-radius:20px; padding:10px; margin:0 5px;">
+          <div style="background:rgba(255,255,255,0.18); border-radius:20px; padding:10px;">
             <p style="font-size:0.95em; margin:5px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
             <p style="font-size:0.95em; margin:5px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
             <p style="font-size:0.95em; margin:5px 0;"><b>{t['saju_title']}</b>: {saju}</p>
@@ -204,37 +204,32 @@ if st.session_state.result_shown:
             <p style="font-size:1.0em; margin:5px 0;"><b>{t['today_title']}</b>: {today}</p>
             <p style="font-size:1.0em; margin:5px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
           </div>
-          <div style="margin:15px 0 10px 0;">
-            <button id="shareBtn" style="background:white; color:#6a11cb; padding:10px 35px; border:none; border-radius:30px; font-size:1.1em; font-weight:bold;">
-              {t["share_btn"]}
-            </button>
-          </div>
-          <p style="font-size:0.7em; opacity:0.7; margin:0;">{app_url}</p>
+          <p style="font-size:0.7em; opacity:0.7; margin:10px 0;">{app_url}</p>
         </div>
-        """, unsafe_allow_html=True)
-
-        # 공유 버튼 정상 작동 JavaScript
-        share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n{app_url}"
-        st.markdown(f"""
-        <script>
-        document.getElementById('shareBtn').addEventListener('click', function() {{
-            if (navigator.share) {{
-                navigator.share({{
-                    title: '내 2026년 운세',
-                    text: `{share_text}`
-                }}).catch(console.error);
-            }} else if (navigator.clipboard) {{
-                navigator.clipboard.writeText(`{share_text}`);
-                alert('결과가 복사되었습니다! 붙여넣기 해서 공유해주세요 😊');
-            }} else {{
-                alert('공유 기능을 지원하지 않습니다. 스크린샷을 찍어 공유해주세요!');
-            }}
-        }});
-        </script>
         """, unsafe_allow_html=True)
 
         st.balloons()
         st.snow()
+
+        # 공유 버튼 (완벽 디버깅 버전)
+        if st.button(t["share_btn"], use_container_width=True, key="share_result"):
+            share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
+            js = f"""
+            <script>
+            if (navigator.share) {{
+                navigator.share({{
+                    title: '내 2026년 운세 결과',
+                    text: `{share_text}`,
+                    url: '{app_url}'
+                }});
+            }} else {{
+                navigator.clipboard.writeText(`{share_text}`).then(() => {{
+                    alert('운세 결과가 복사되었습니다! 카톡, 라인, X 등에 붙여넣기 해서 공유해주세요 😊');
+                }});
+            }}
+            </script>
+            """
+            st.markdown(js, unsafe_allow_html=True)
 
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
