@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import random
+from streamlit.components.v1 import html as st_html
 
 # 다국어 사전 (한국어)
 translations = {
@@ -166,7 +167,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 카드 (인스타 감성 디자인 + 공유 버튼 완벽 작동)
+# 결과 카드 (공유 버튼 완벽 작동 - st.components.v1.html 사용)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -182,42 +183,60 @@ if st.session_state.result_shown:
         name_text = f"{st.session_state.name}{t['your_fortune']}" if st.session_state.name else "2026년 운세"
 
         st.markdown(f"""
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-        <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
-                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:20px 15px;
-                     box-sizing:border-box; display:flex; flex-direction:column; color:white; text-align:center;
-                     font-family:'Noto Sans KR', sans-serif;">
-          <div style="position:absolute; top:15px; right:15px; font-size:0.8em; opacity:0.8; font-weight:bold;">
+        <div style="background:linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:15px 10px;
+                     box-sizing:border-box; display:flex; flex-direction:column; color:white; text-align:center;">
+          <div style="position:absolute; top:10px; right:10px; font-size:0.7em; opacity:0.8;">
             {t["water_purifier"]}
           </div>
           <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-            <h1 style="font-size:2.0em; margin:10px 0; font-family:'Playfair Display', serif; text-shadow: 2px 2px 10px rgba(0,0,0,0.3);">{name_text}</h1>
-            <h2 style="font-size:2.0em; margin:20px 0;">
-              <span style="font-size:1.5em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:1.5em;">{mbti_emoji}</span> {mbti}
+            <h1 style="font-size:1.8em; margin:5px 0;">{name_text}</h1>
+            <h2 style="font-size:1.8em; margin:10px 0;">
+              {zodiac_emoji} {zodiac} + {mbti_emoji} {mbti}
             </h2>
-            <h3 style="font-size:1.7em; margin:20px 0; color:#fff; text-shadow: 1px 1px 5px rgba(0,0,0,0.5);">{t['combo']}</h3>
-            <h1 style="font-size:4.5em; margin:30px 0; color:#ffd700; text-shadow: 3px 3px 15px rgba(0,0,0,0.6);">{score}점</h1>
+            <h3 style="font-size:1.5em; margin:10px 0;">{t['combo']}</h3>
+            <h1 style="font-size:3.8em; margin:15px 0; color:#ffd700;">{score}점</h1>
           </div>
-          <div style="background:rgba(255,255,255,0.25); border-radius:25px; padding:15px; margin:0 10px; backdrop-filter: blur(10px);">
-            <p style="font-size:1.05em; margin:8px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
-            <p style="font-size:1.05em; margin:8px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
-            <p style="font-size:1.05em; margin:8px 0;"><b>{t['saju_title']}</b>: {saju}</p>
-            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.5); margin:12px 0;">
-            <p style="font-size:1.15em; margin:8px 0;"><b>{t['today_title']}</b>: {today}</p>
-            <p style="font-size:1.15em; margin:8px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
+          <div style="background:rgba(255,255,255,0.18); border-radius:20px; padding:10px;">
+            <p style="font-size:0.95em; margin:5px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
+            <p style="font-size:0.95em; margin:5px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
+            <p style="font-size:0.95em; margin:5px 0;"><b>{t['saju_title']}</b>: {saju}</p>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.4); margin:8px 0;">
+            <p style="font-size:1.0em; margin:5px 0;"><b>{t['today_title']}</b>: {today}</p>
+            <p style="font-size:1.0em; margin:5px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
           </div>
-          <p style="font-size:0.8em; opacity:0.8; margin:15px 0;">{app_url}</p>
+          <p style="font-size:0.7em; opacity:0.7; margin:10px 0;">{app_url}</p>
         </div>
         """, unsafe_allow_html=True)
 
         st.balloons()
         st.snow()
 
-        # 공유 버튼 (복사 방식 - 100% 작동)
-        if st.button(t["share_btn"], use_container_width=True, key="share_success"):
-            share_text = f"{name_text}\n{zodiac} + {mbti}\n{t['combo']}\n{score}점!\n{t['today_title']}: {today}\n{t['tomorrow_title']}: {tomorrow}\n\n{app_url}"
-            st.code(share_text, language=None)
-            st.success("위 텍스트를 길게 눌러 복사한 후 카톡, 라인, X 등에 붙여넣기 해서 공유해주세요! 📱✨ (스크린샷과 함께 붙이면 더 예쁘게 공유돼요!)")
+        # 공유 버튼 (st.components.v1.html 사용으로 완벽 작동)
+        share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
+        share_component = f"""
+        <div style="text-align:center; margin:20px 0;">
+            <button style="background:white; color:#6a11cb; padding:12px 50px; border:none; border-radius:30px; font-size:1.2em; font-weight:bold;" onclick="shareResult()">
+              {t["share_btn"]}
+            </button>
+        </div>
+        <script>
+        function shareResult() {{
+            if (navigator.share) {{
+                navigator.share({{
+                    title: '내 2026년 운세 결과',
+                    text: `{share_text}`,
+                    url: '{app_url}'
+                }});
+            }} else {{
+                navigator.clipboard.writeText(`{share_text}`).then(() => {{
+                    alert('운세 결과가 복사되었습니다! 카톡, 라인, X 등에 붙여넣기 해서 공유해주세요 😊');
+                }});
+            }}
+        }}
+        </script>
+        """
+        st_html(share_component, height=100)
 
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
