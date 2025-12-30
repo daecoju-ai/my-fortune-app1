@@ -1,7 +1,6 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import random
-from streamlit.components.v1 import html as st_html
 
 # 다국어 사전 (한국어)
 translations = {
@@ -134,30 +133,30 @@ if not st.session_state.result_shown:
         st.markdown(f"<h3 style='text-align:center; color:#3498db;'>{t['test_start']}</h3>", unsafe_allow_html=True)
         e_i = s_n = t_f = j_p = 0
 
-        st.subheader(t["energy"])  # 외향(E) vs 내향(I)
+        st.subheader(t["energy"])
         if st.radio("1. 주말에 친구들이 갑자기 '놀자!' 하면?", ["와 좋아! 바로 나감 (E)", "집에서 쉬고 싶어... (I)"], key="q1") == "와 좋아! 바로 나감 (E)": e_i += 1
         if st.radio("2. 모임에서 처음 본 사람들과 대화하는 거?", ["재밌고 신나! (E)", "조금 피곤하고 부담스러워 (I)"], key="q2") == "재밌고 신나! (E)": e_i += 1
         if st.radio("3. 하루 종일 사람 만난 후에?", ["아직 에너지 넘쳐! (E)", "완전 지쳐서 혼자 있고 싶어 (I)"], key="q3") == "아직 에너지 넘쳐! (E)": e_i += 1
         if st.radio("4. 생각이 떠오르면?", ["바로 말로 풀어냄 (E)", "머릿속에서 먼저 정리함 (I)"], key="q4") == "바로 말로 풀어냄 (E)": e_i += 1
 
-        st.subheader(t["info"])  # 감각(S) vs 직관(N)
+        st.subheader(t["info"])
         if st.radio("5. 새로운 카페 가면 뭐가 먼저 눈에 들어?", ["메뉴판 가격과 메뉴 (S)", "분위기, 인테리어, 컨셉 (N)"], key="q5") == "메뉴판 가격과 메뉴 (S)": s_n += 1
         if st.radio("6. 친구가 고민 상담하면?", ["지금 상황과 사실 위주로 들어줌 (S)", "가능성과 미래 방향으로 생각함 (N)"], key="q6") == "지금 상황과 사실 위주로 들어줌 (S)": s_n += 1
         if st.radio("7. 책이나 영화 볼 때?", ["스토리와 디테일에 집중 (S)", "상징과 숨은 의미 찾는 재미 (N)"], key="q7") == "스토리와 디테일에 집중 (S)": s_n += 1
         if st.radio("8. 쇼핑할 때?", ["필요한 거 보고 바로 사 (S)", "이거 사면 나중에 뭐랑 입히지? 상상함 (N)"], key="q8") == "필요한 거 보고 바로 사 (S)": s_n += 1
 
-        st.subheader(t["decision"])  # 사고(T) vs 감정(F)
+        st.subheader(t["decision"])
         if st.radio("9. 친구가 늦어서 화날 때?", ["늦었으면 늦었다고 솔직히 말함 (T)", "기분 상할까 봐 부드럽게 말함 (F)"], key="q9") == "늦었으면 늦었다고 솔직히 말함 (T)": t_f += 1
         if st.radio("10. 팀 프로젝트에서 의견 충돌 시?", ["논리적으로 누가 맞는지 따짐 (T)", "다른 사람 기분 상하지 않게 조율 (F)"], key="q10") == "논리적으로 누가 맞는지 따짐 (T)": t_f += 1
         if st.radio("11. 누가 울면서 상담하면?", ["문제 해결 방법 조언해줌 (T)", "일단 공감하고 들어줌 (F)"], key="q11") == "일단 공감하고 들어줌 (F)": t_f += 1
         if st.radio("12. 거짓말 탐지 시?", ["바로 지적함 (T)", "상처 줄까 봐 넘김 (F)"], key="q12") == "바로 지적함 (T)": t_f += 1
 
-        st.subheader(t["life"])  # 판단(J) vs 인식(P)
+        st.subheader(t["life"])
         if st.radio("13. 여행 갈 때?", ["일정 꽉꽉 짜서 효율적으로 (J)", "그때그때 기분 따라 즉흥적으로 (P)"], key="q13") == "일정 꽉꽉 짜서 효율적으로 (J)": j_p += 1
         if st.radio("14. 숙제나 과제 마감 앞두고?", ["미리미리 끝냄 (J)", "마감 직전에 몰아서 함 (P)"], key="q14") == "미리미리 끝냄 (J)": j_p += 1
         if st.radio("15. 방 정리할 때?", ["정해진 기준으로 깔끔히 (J)", "대충 써도 괜찮아 (P)"], key="q15") == "정해진 기준으로 깔끔히 (J)": j_p += 1
         if st.radio("16. 선택해야 할 때?", ["빨리 결정하고 넘김 (J)", "옵션 더 알아보고 싶어 (P)"], key="q16") == "빨리 결정하고 넘김 (J)": j_p += 1
-            
+
         if st.button(t["result_btn"], use_container_width=True):
             ei = "E" if e_i >= 3 else "I"
             sn = "S" if s_n >= 3 else "N"
@@ -167,7 +166,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 카드 (공유 버튼 완벽 작동 - st.components.v1.html 사용)
+# 결과 카드 (인스타 감성 디자인 + 공유 복사 방식)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -183,60 +182,46 @@ if st.session_state.result_shown:
         name_text = f"{st.session_state.name}{t['your_fortune']}" if st.session_state.name else "2026년 운세"
 
         st.markdown(f"""
-        <div style="background:linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:15px 10px;
-                     box-sizing:border-box; display:flex; flex-direction:column; color:white; text-align:center;">
-          <div style="position:absolute; top:10px; right:10px; font-size:0.7em; opacity:0.8;">
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+        <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
+                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:20px 15px;
+                     box-sizing:border-box; display:flex; flex-direction:column; color:white; text-align:center;
+                     font-family:'Noto Sans KR', sans-serif;">
+          <div style="position:absolute; top:15px; right:15px; font-size:0.8em; opacity:0.8; font-weight:bold;">
             {t["water_purifier"]}
           </div>
           <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-            <h1 style="font-size:1.8em; margin:5px 0;">{name_text}</h1>
-            <h2 style="font-size:1.8em; margin:10px 0;">
-              {zodiac_emoji} {zodiac} + {mbti_emoji} {mbti}
+            <h1 style="font-size:2.0em; margin:10px 0; font-family:'Playfair Display', serif; text-shadow: 2px 2px 10px rgba(0,0,0,0.3);">{name_text}</h1>
+            <h2 style="font-size:2.0em; margin:20px 0;">
+              <span style="font-size:1.5em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:1.5em;">{mbti_emoji}</span> {mbti}
             </h2>
-            <h3 style="font-size:1.5em; margin:10px 0;">{t['combo']}</h3>
-            <h1 style="font-size:3.8em; margin:15px 0; color:#ffd700;">{score}점</h1>
+            <h3 style="font-size:1.7em; margin:20px 0; color:#fff; text-shadow: 1px 1px 5px rgba(0,0,0,0.5);">{t['combo']}</h3>
+            <h1 style="font-size:4.5em; margin:30px 0; color:#ffd700; text-shadow: 3px 3px 15px rgba(0,0,0,0.6);">{score}점</h1>
           </div>
-          <div style="background:rgba(255,255,255,0.18); border-radius:20px; padding:10px;">
-            <p style="font-size:0.95em; margin:5px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
-            <p style="font-size:0.95em; margin:5px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
-            <p style="font-size:0.95em; margin:5px 0;"><b>{t['saju_title']}</b>: {saju}</p>
-            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.4); margin:8px 0;">
-            <p style="font-size:1.0em; margin:5px 0;"><b>{t['today_title']}</b>: {today}</p>
-            <p style="font-size:1.0em; margin:5px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
+          <div style="background:rgba(255,255,255,0.25); border-radius:25px; padding:15px; margin:0 10px; backdrop-filter: blur(10px);">
+            <p style="font-size:1.05em; margin:8px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
+            <p style="font-size:1.05em; margin:8px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
+            <p style="font-size:1.05em; margin:8px 0;"><b>{t['saju_title']}</b>: {saju}</p>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.5); margin:12px 0;">
+            <p style="font-size:1.15em; margin:8px 0;"><b>{t['today_title']}</b>: {today}</p>
+            <p style="font-size:1.15em; margin:8px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.5); margin:12px 0;">
+            <p style="font-size:1.1em; margin:8px 0; color:#ffd700;"><b>2026 키워드</b>: 성장 · 사랑 · 재물 ✨</p>
+            <p style="font-size:1.1em; margin:8px 0;"><b>럭키 컬러</b>: 골드 💛 | <b>아이템</b>: 황금 액세서리</p>
+            <p style="font-size:1.0em; margin:8px 0; font-style:italic;">"{mbti}의 따뜻함과 {zodiac}의 노력으로 최고의 한 해가 될 거예요!"</p>
           </div>
-          <p style="font-size:0.7em; opacity:0.7; margin:10px 0;">{app_url}</p>
+          <p style="font-size:0.8em; opacity:0.8; margin:15px 0;">{app_url}</p>
         </div>
         """, unsafe_allow_html=True)
 
         st.balloons()
         st.snow()
 
-        # 공유 버튼 (st.components.v1.html 사용으로 완벽 작동)
-        share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
-        share_component = f"""
-        <div style="text-align:center; margin:20px 0;">
-            <button style="background:white; color:#6a11cb; padding:12px 50px; border:none; border-radius:30px; font-size:1.2em; font-weight:bold;" onclick="shareResult()">
-              {t["share_btn"]}
-            </button>
-        </div>
-        <script>
-        function shareResult() {{
-            if (navigator.share) {{
-                navigator.share({{
-                    title: '내 2026년 운세 결과',
-                    text: `{share_text}`,
-                    url: '{app_url}'
-                }});
-            }} else {{
-                navigator.clipboard.writeText(`{share_text}`).then(() => {{
-                    alert('운세 결과가 복사되었습니다! 카톡, 라인, X 등에 붙여넣기 해서 공유해주세요 😊');
-                }});
-            }}
-        }}
-        </script>
-        """
-        st_html(share_component, height=100)
+        # 공유 버튼 (복사 방식 - 완벽 작동)
+        if st.button(t["share_btn"], use_container_width=True, key="share_final"):
+            share_text = f"{name_text}\n{zodiac} + {mbti}\n{t['combo']}\n{score}점!\n{t['today_title']}: {today}\n{t['tomorrow_title']}: {tomorrow}\n\n{app_url}"
+            st.code(share_text, language=None)
+            st.success("위 텍스트를 길게 눌러 복사한 후 카톡, 라인, X 등에 붙여넣기 해서 공유해주세요! 📱✨ (스크린샷과 함께 붙이면 더 예쁘게 공유돼요!)")
 
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
