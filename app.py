@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import random
+from streamlit.components.v1 import html as st_html
 
 # 다국어 사전 (한국어)
 translations = {
@@ -27,7 +28,7 @@ translations = {
         "fortune_btn": "🔮 2026년 운세 보기!",
         "reset": "처음부터 다시 하기",
         "share_btn": "친구에게 결과 공유",
-        "water_purifier": "정수기는 다나눔렌탈 제휴카드 적용 월0원부터~ 설치일에 현금 최대 50만원 + 사은품",
+        "water_purifier": "정수기는 다나눔렌탈",
         "zodiac_title": "띠 운세",
         "mbti_title": "MBTI 특징",
         "saju_title": "사주 한 마디",
@@ -166,7 +167,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 카드 (인스타 감성 디자인 + 공유 복사 방식)
+# 결과 카드 (인스타 감성 디자인 + 공유 버튼 st.components.v1.html 방식)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -217,7 +218,7 @@ if st.session_state.result_shown:
         st.balloons()
         st.snow()
 
-        # 공유 버튼 (st.components.v1.html 사용으로 완벽 작동)
+        # 공유 버튼 (st.components.v1.html 방식 - 너가 원하는 스타일)
         share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
         <div style="text-align:center; margin:20px 0;">
