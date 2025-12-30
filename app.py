@@ -1,7 +1,6 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import random
-from streamlit.components.v1 import html as st_html
 
 # 다국어 사전 (한국어)
 translations = {
@@ -214,25 +213,11 @@ if st.session_state.result_shown:
         st.balloons()
         st.snow()
 
-        # 공유 버튼 (완벽 작동)
-        if st.button(t["share_btn"], use_container_width=True, key="share_full"):
+        # 공유 버튼 (복사 방식 - 100% 작동)
+        if st.button(t["share_btn"], use_container_width=True, key="share_success"):
             share_text = f"{name_text}\n{zodiac} + {mbti}\n{t['combo']}\n{score}점!\n{t['today_title']}: {today}\n{t['tomorrow_title']}: {tomorrow}\n\n{app_url}"
-            js = f"""
-            <script>
-            if (navigator.share) {{
-                navigator.share({{
-                    title: '내 2026년 운세 결과',
-                    text: `{share_text}`,
-                    url: '{app_url}'
-                }});
-            }} else {{
-                navigator.clipboard.writeText(`{share_text}`).then(() => {{
-                    alert('운세 결과가 복사되었습니다! 카톡, 라인, X 등에 붙여넣기 해서 공유해주세요 😊');
-                }});
-            }}
-            </script>
-            """
-            st.markdown(js, unsafe_allow_html=True)
+            st.code(share_text, language=None)
+            st.success("위 텍스트를 길게 눌러 복사한 후 카톡, 라인, X 등에 붙여넣기 해서 공유해주세요! 📱✨ (스크린샷과 함께 붙이면 더 예쁘게 공유돼요!)")
 
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
