@@ -1,7 +1,6 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import random
-from streamlit.components.v1 import html
 
 # 다국어 사전 (한국어)
 translations = {
@@ -212,31 +211,25 @@ if st.session_state.result_shown:
           </div>
           <p style="font-size:0.7em; opacity:0.7; margin:0;">{app_url}</p>
         </div>
-        """, unsafe_allow_html=True)
-
-        st.balloons()
-        st.snow()
-
-        # 공유 기능 (완벽 작동 - st.components.v1.html 사용)
-        share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
-        share_js = f"""
         <script>
         function shareResult() {{
             if (navigator.share) {{
                 navigator.share({{
                     title: '내 2026년 운세 결과',
-                    text: `{share_text}`,
+                    text: `{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}`,
                     url: '{app_url}'
                 }});
             }} else {{
-                navigator.clipboard.writeText(`{share_text}`).then(() => {{
+                navigator.clipboard.writeText(`{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}`).then(() => {{
                     alert('운세 결과가 복사되었습니다! 카톡, 라인, X 등에 붙여넣기 해서 공유해주세요 😊');
                 }});
             }}
         }}
         </script>
-        """
-        html(share_js, height=0)
+        """, unsafe_allow_html=True)
+
+        st.balloons()
+        st.snow()
 
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
