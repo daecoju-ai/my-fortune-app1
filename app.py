@@ -198,38 +198,15 @@ if st.session_state.mbti is None:
     c = st.radio(t["mbti_mode"], [t["direct"], t["test"]], key="mode")
     if c == t["direct"]:
         m = st.selectbox("MBTI", sorted(M.keys()), key="direct")
-        if st.button(t["fortune_btn"], use_container_width=True, key="direct_go"):
-            st.session_state.mbti = m
-            st.rerun()
-    else:
-        st.markdown(f"<h3 style='text-align: center; color:#3498db;'>{t['test_start']}</h3>", unsafe_allow_html=True)
-        e_i, s_n, t_f, j_p = 0, 0, 0, 0
-        
-        st.markdown("<h4 style='color:#2ecc71;'>1-4. 에너지 방향</h4>", unsafe_allow_html=True)
-        if st.radio("1.", ["네 (E)", "아니 (I)"], key="ei1") == "네 (E)": e_i += 1
-        if st.radio("2.", ["좋아 (E)", "부담 (I)"], key="ei2") == "좋아 (E)": e_i += 1
-        if st.radio("3.", ["많이 (I)", "가끔 (E)"], key="ei3") == "많이 (I)": e_i += 1
-        if st.radio("4.", ["바로 (E)", "정리 후 (I)"], key="ei4") == "바로 (E)": e_i += 1
-        
-        st.markdown("<h4 style='color:#2ecc71;'>5-8. 정보 수집</h4>", unsafe_allow_html=True)
-        if st.radio("5.", ["네 (S)", "가능성 (N)"], key="sn1") == "네 (S)": s_n += 1
-        if st.radio("6.", ["잘해 (S)", "큰 그림 (N)"], key="sn2") == "잘해 (S)": s_n += 1
-        if st.radio("7.", ["좋아 (N)", "현재 집중 (S)"], key="sn3") == "좋아 (N)": s_n += 1
-        if st.radio("8.", ["네 (S)", "추상 (N)"], key="sn4") == "네 (S)": s_n += 1
-        
-        st.markdown("<h4 style='color:#2ecc71;'>9-12. 결정 방식</h4>", unsafe_allow_html=True)
-        if st.radio("9.", ["네 (T)", "감정 고려 (F)"], key="tf1") == "네 (T)": t_f += 1
-        if st.radio("10.", ["네 (T)", "마음 아파 (F)"], key="tf2") == "네 (T)": t_f += 1
-        if st.radio("11.", ["공감 먼저 (F)", "조언 위주 (T)"], key="tf3") == "공감 먼저 (F)": t_f += 1
-        if st.radio("12.", ["네 (T)", "상처 주지 않게 (F)"], key="tf4") == "네 (T)": t_f += 1
-        
-        st.markdown("<h4 style='color:#2ecc71;'>13-16. 생활 방식</h4>", unsafe_allow_html=True)
-        if st.radio("13.", ["좋아 (J)", "즉흥 (P)"], key="jp1") == "좋아 (J)": j_p += 1
-        if st.radio("14.", ["미리 (J)", "마감 때 (P)"], key="jp2") == "미리 (J)": j_p += 1
-        if st.radio("15.", ["빨리 (J)", "열어두기 (P)"], key="jp3") == "빨리 (J)": j_p += 1
-        if st.radio("16.", ["좋아 (J)", "괜찮아 (P)"], key="jp4") == "좋아 (J)": j_p += 1
-        
-       # 바로 운세 결과 보여주기 (rerun 없이!)
+    if st.button(t["result_btn"], use_container_width=True, key="test_go"):
+            ei = "E" if e_i >= 3 else "I"
+            sn = "S" if s_n >= 3 else "N"
+            tf = "T" if t_f >= 3 else "F"
+            jp = "J" if j_p >= 3 else "P"
+            result = ei + sn + tf + jp
+            st.session_state.mbti = result
+            
+            # 바로 운세 결과 보여주기
             mbti = result
             zodiac = get_zodiac(year)
             if zodiac:
@@ -262,4 +239,4 @@ if st.session_state.mbti is None:
                     st.session_state.clear()
                     st.rerun()
             else:
-                st.error("출생 연도가 범위 밖이에요 (1900~2030)") 
+                st.error("출생 연도가 범위 밖이에요 (1900~2030)")        
