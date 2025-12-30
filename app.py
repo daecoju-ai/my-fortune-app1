@@ -229,48 +229,37 @@ if st.session_state.mbti is None:
         if st.radio("15.", ["빨리 (J)", "열어두기 (P)"], key="jp3") == "빨리 (J)": j_p += 1
         if st.radio("16.", ["좋아 (J)", "괜찮아 (P)"], key="jp4") == "좋아 (J)": j_p += 1
         
-        if st.button(t["result_btn"], use_container_width=True, key="test_go"):
-            ei = "E" if e_i >= 3 else "I"
-            sn = "S" if s_n >= 3 else "N"
-            tf = "T" if t_f >= 3 else "F"
-            jp = "J" if j_p >= 3 else "P"
-            result = ei + sn + tf + jp
-            st.session_state.mbti = result
-            st.rerun()
+       # 바로 운세 결과 보여주기 (rerun 없이!)
+            mbti = result
+            zodiac = get_zodiac(year)
+            if zodiac:
+                score = 90
+                saju = get_saju(year, month, day)
+                zodiac_emoji = Z[zodiac].split(' ',1)[0]
+                zodiac_desc = Z[zodiac].split(' ',1)[1] if ' ' in Z[zodiac] else ""
+                mbti_emoji = M[mbti].split(' ',1)[0]
+                mbti_desc = M[mbti].split(' ',1)[1] if ' ' in M[mbti] else ""
+                
+                st.markdown(f"""
+                <div style="background:#e8f5e8;padding:20px;border-radius:20px;text-align:center;margin:20px 0;box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                  <h2 style="color:#27ae60;">{zodiac_emoji} <b>{zodiac}</b> + {mbti_emoji} <b>{mbti}</b> {t['combo']}</h2>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.metric("운세 점수", f"{score}점", delta="안정적!")
+                
+                st.info(f"{t['zodiac_title']}: {zodiac_desc}")
+                st.info(f"{t['mbti_title']}: {mbti_desc}")
+                st.warning(f"{t['saju_title']}: {saju}")
+                
+                st.balloons()
+                st.snow()
 
-if st.session_state.mbti:
-    mbti = st.session_state.mbti
-    zodiac = get_zodiac(year)
-    if zodiac:
-        if st.button(t["fortune_btn"], use_container_width=True, key="fortune"):
-            score = 90
-            saju = get_saju(year, month, day)
-            zodiac_emoji = Z[zodiac].split(' ',1)[0]
-            zodiac_desc = Z[zodiac].split(' ',1)[1] if ' ' in Z[zodiac] else ""
-            mbti_emoji = M[mbti].split(' ',1)[0]
-            mbti_desc = M[mbti].split(' ',1)[1] if ' ' in M[mbti] else ""
-            
-            # 카드 스타일 결과
-            st.markdown(f"""
-            <div style="background:#e8f5e8;padding:20px;border-radius:20px;text-align:center;margin:20px 0;box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-              <h2 style="color:#27ae60;">{zodiac_emoji} <b>{zodiac}</b> + {mbti_emoji} <b>{mbti}</b> {t['combo']}</h2>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.metric("운세 점수 / Fortune Score", f"{score}점", delta="안정적! / Stable!")
-            
-            st.info(f"{t['zodiac_title']}: {zodiac_desc}")
-            st.info(f"{t['mbti_title']}: {mbti_desc}")
-            st.warning(f"{t['saju_title']}: {saju}")
-            
-            st.balloons()
-            st.snow()
+                share_text = f"My 2026 Fortune!\nZodiac: {zodiac}\nMBTI: {mbti}\nSaju: {saju}\nScore {score}점!\n{app_url}" if st.session_state.lang == "en" else f"내 2026년 운세!\n띠: {zodiac}\nMBTI: {mbti}\n사주: {saju}\n점수 {score}점!\n{app_url}"
+                st.text_area("공유 텍스트", share_text, height=120)
 
-            share_text = f"My 2026 Fortune!\nZodiac: {zodiac}\nMBTI: {mbti}\nSaju: {saju}\nScore {score}점!\n{app_url}" if st.session_state.lang == "en" else f"내 2026년 운세!\n띠: {zodiac}\nMBTI: {mbti}\n사주: {saju}\n점수 {score}점!\n{app_url}"
-            st.text_area("공유 텍스트 / Text to share", share_text, height=120)
-
-    if st.button(t["reset"], use_container_width=True, key="reset"):
-        st.session_state.clear()
-        st.rerun()
-
-st.markdown("<p style='text-align: center; color: #95a5a6; font-size: 0.9em;'>{t['footer']}</p>", unsafe_allow_html=True)
+                if st.button(t["reset"], use_container_width=True, key="reset_after_test"):
+                    st.session_state.clear()
+                    st.rerun()
+            else:
+                st.error("출생 연도가 범위 밖이에요 (1900~2030)") 
