@@ -1,296 +1,276 @@
 import streamlit as st
-from datetime import datetime, timedelta
-import hashlib
-import random
 
-# ────────────────────────────────────────────────
-#                  언어 3개 (한국어·영어·중국어)
-# ────────────────────────────────────────────────
+# 다국어 사전 (한국어·영어)
 translations = {
     "ko": {
-        "title": "🔮 2026년 나의 운세",
-        "caption": "재미로만 보는 운세예요~ 😄",
+        "title": "🌟 2026 띠 + MBTI + 사주 운세 🌟",
+        "caption": "완전 무료 😄",
+        "qr": "### 📱 QR 코드 스캔!",
+        "share": "### 🔗 공유 링크",
+        "share_desc": "위 링크 복사해서 친구들한테 보내주세요!",
         "birth": "### 생년월일 입력",
-        "year": "년", "month": "월", "day": "일",
-        "next_btn": "✅ 다 적었어! 다음으로 →",
         "mbti_mode": "MBTI 어떻게 할까?",
-        "direct": "직접 골라볼래",
-        "test": "16문제 풀어볼래",
-        "test_start": "상세 테스트 시작! 😊",
+        "direct": "직접 입력",
+        "test": "상세 테스트 (16문제)",
+        "test_start": "상세 테스트 시작! 하나씩 답해주세요 😊",
         "energy": "에너지 방향",
         "info": "정보 수집",
         "decision": "결정 방식",
         "life": "생활 방식",
         "result_btn": "결과 보기!",
         "fortune_btn": "🔮 2026년 운세 보기!",
-        "reset": "처음부터 다시",
-        "zodiac_title": "띠 운세",
-        "mbti_title": "MBTI 특징",
-        "saju_title": "사주 한마디",
-        "daily_title": "🌞 오늘 & 내일 운세",
-        "today": "오늘", "tomorrow": "내일",
-        "footer": "재미로만 봐주세요~",
-        "best_combo": "최고 조합!",
-        "fortune_score": "운세 점수",
-        "stable": "안정적!",
-        "monthly_title": "2026년 월별 운세 미리보기"
+        "reset": "처음부터 다시 하기",
+        "zodiac_title": "**띠 운세**",
+        "mbti_title": "**MBTI 특징**",
+        "saju_title": "**사주 한 마디**",
+        "combo": "최고 조합!",
+        "footer": "재미로만 봐주세요 😊",
+        "zodiacs": {
+            "쥐띠": "🐭 활발·성장, 돈↑",
+            "소띠": "🐮 노력 결실",
+            "호랑이띠": "🐯 도전 성공, 돈 대박",
+            "토끼띠": "🐰 안정·사랑 운",
+            "용띠": "🐲 운↑ 리더십",
+            "뱀띠": "🐍 실속·직감",
+            "말띠": "🐴 새 도전·돈 기회",
+            "양띠": "🐑 편안+결혼 운",
+            "원숭이띠": "🐵 변화·재능",
+            "닭띠": "🐔 노력 결과",
+            "개띠": "🐶 친구·돈↑",
+            "돼지띠": "🐷 여유·돈 최고"
+        },
+        "mbtis": {
+            "INTJ": "🧠 냉철 전략가",
+            "INTP": "💡 아이디어 천재",
+            "ENTJ": "👑 보스",
+            "ENTP": "⚡ 토론왕",
+            "INFJ": "🔮 마음 마스터",
+            "INFP": "🎨 감성 예술가",
+            "ENFJ": "🤗 모두 선생님",
+            "ENFP": "🎉 인간 비타민",
+            "ISTJ": "📋 규칙 지킴이",
+            "ISFJ": "🛡️ 세상 따뜻함",
+            "ESTJ": "📢 리더",
+            "ESFJ": "💕 분위기 메이커",
+            "ISTP": "🔧 고치는 장인",
+            "ISFP": "🌸 감성 힐러",
+            "ESTP": "🏄 모험왕",
+            "ESFP": "🎭 파티 주인공"
+        },
+        "saju_msgs": [
+            "목(木) 기운 강함 → 성장과 발전의 해! 🌱",
+            "화(火) 기운 강함 → 열정 폭발! ❤️",
+            "토(土) 기운 강함 → 안정과 재물운 💰",
+            "금(金) 기운 강함 → 결단력 좋음! 👔",
+            "수(水) 기운 강함 → 지혜와 흐름 🌊",
+            "오행 균형 → 행복한 한 해 ✨",
+            "양기 강함 → 도전 성공 🚀",
+            "음기 강함 → 내면 성찰 😌"
+        ]
     },
     "en": {
-        "title": "🔮 My 2026 Fortune",
-        "caption": "Just for fun! 😄",
+        "title": "🌟 2026 Zodiac + MBTI + Saju Fortune 🌟",
+        "caption": "Completely Free 😄",
+        "qr": "### 📱 Scan QR Code!",
+        "share": "### 🔗 Share Link",
+        "share_desc": "Copy and share the link!",
         "birth": "### Enter Birth Date",
-        "year": "Year", "month": "Month", "day": "Day",
-        "next_btn": "✅ Done! Go next →",
         "mbti_mode": "How to get MBTI?",
-        "direct": "Choose directly",
-        "test": "Take 16-question test",
-        "test_start": "Start detailed test! 😊",
+        "direct": "Enter directly",
+        "test": "Detailed Test (16 questions)",
+        "test_start": "Start detailed test! Answer one by one 😊",
         "energy": "Energy Direction",
         "info": "Information Gathering",
         "decision": "Decision Making",
         "life": "Lifestyle",
-        "result_btn": "See Results!",
+        "result_btn": "View Results!",
         "fortune_btn": "🔮 View 2026 Fortune!",
         "reset": "Start Over",
-        "zodiac_title": "Zodiac Fortune",
-        "mbti_title": "MBTI Traits",
-        "saju_title": "Saju Message",
-        "daily_title": "🌞 Today & Tomorrow",
-        "today": "Today", "tomorrow": "Tomorrow",
-        "footer": "For fun only~",
-        "best_combo": "Best Combo!",
-        "fortune_score": "Fortune Score",
-        "stable": "Stable!",
-        "monthly_title": "2026 Monthly Preview"
-    },
-    "zh": {
-        "title": "🔮 2026年我的运势",
-        "caption": "仅供娱乐哦 😄",
-        "birth": "### 输入出生日期",
-        "year": "年", "month": "月", "day": "日",
-        "next_btn": "✅ 填好了！下一步 →",
-        "mbti_mode": "MBTI怎么选？",
-        "direct": "直接选择",
-        "test": "16题测试",
-        "test_start": "开始详细测试！😊",
-        "energy": "能量方向",
-        "info": "信息收集",
-        "decision": "决策方式",
-        "life": "生活方式",
-        "result_btn": "查看结果！",
-        "fortune_btn": "🔮 查看2026年运势！",
-        "reset": "重新开始",
-        "zodiac_title": "生肖运势",
-        "mbti_title": "MBTI特点",
-        "saju_title": "四柱一句话",
-        "daily_title": "🌞 今日 & 明日运势",
-        "today": "今天", "tomorrow": "明天",
-        "footer": "仅供娱乐~",
-        "best_combo": "最佳组合！",
-        "fortune_score": "运势分数",
-        "stable": "非常稳定！",
-        "monthly_title": "2026年月度预览"
+        "zodiac_title": "**Zodiac Fortune**",
+        "mbti_title": "**MBTI Traits**",
+        "saju_title": "**Saju Message**",
+        "combo": "Best combo!",
+        "footer": "For fun only 😊",
+        "zodiacs": {
+            "Rat": "🐭 Active growth, money ↑",
+            "Ox": "🐮 Effort pays off",
+            "Tiger": "🐯 Challenge success, big money",
+            "Rabbit": "🐰 Stability, love luck",
+            "Dragon": "🐲 Luck ↑ leadership",
+            "Snake": "🐍 Practical, intuition",
+            "Horse": "🐴 New challenge, money chance",
+            "Goat": "🐑 Comfort + marriage luck",
+            "Monkey": "🐵 Change, talent",
+            "Rooster": "🐔 Effort result",
+            "Dog": "🐶 Friends, money ↑",
+            "Pig": "🐷 Leisure, best money"
+        },
+        "mbtis": {
+            "INTJ": "🧠 Cool strategist",
+            "INTP": "💡 Idea genius",
+            "ENTJ": "👑 Boss",
+            "ENTP": "⚡ Debate king",
+            "INFJ": "🔮 Mind master",
+            "INFP": "🎨 Emotional artist",
+            "ENFJ": "🤗 Teacher to all",
+            "ENFP": "🎉 Human vitamin",
+            "ISTJ": "📋 Rule keeper",
+            "ISFJ": "🛡️ World warmer",
+            "ESTJ": "📢 Leader",
+            "ESFJ": "💕 Mood maker",
+            "ISTP": "🔧 Fixer artisan",
+            "ISFP": "🌸 Emotional healer",
+            "ESTP": "🏄 Adventure king",
+            "ESFP": "🎭 Party protagonist"
+        },
+        "saju_msgs": [
+            "Wood strong → Growth year! 🌱",
+            "Fire strong → Passion explosion! ❤️",
+            "Earth strong → Stability & wealth 💰",
+            "Metal strong → Good decisiveness! 👔",
+            "Water strong → Wisdom & flow 🌊",
+            "Balanced elements → Happy year ✨",
+            "Yang strong → Challenge success 🚀",
+            "Yin strong → Inner reflection 😌"
+        ]
     }
 }
-
-# ────────────────────────────────────────────────
-#                  띠, MBTI, 사주, 일일운세 데이터
-# ────────────────────────────────────────────────
-zodiacs = {
-    "ko": ["쥐띠", "소띠", "호랑이띠", "토끼띠", "용띠", "뱀띠", "말띠", "양띠", "원숭이띠", "닭띠", "개띠", "돼지띠"],
-    "en": ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"],
-    "zh": ["鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊", "猴", "鸡", "狗", "猪"]
-}
-
-mbtis = {
-    "ko": ["INTJ: 🧠 냉철 전략가", "INTP: 💡 아이디어 천재", "ENTJ: 👑 보스", "ENTP: ⚡ 토론왕",
-           "INFJ: 🔮 마음 마스터", "INFP: 🎨 감성 예술가", "ENFJ: 🤗 모두 선생님", "ENFP: 🎉 인간 비타민",
-           "ISTJ: 📋 규칙 지킴이", "ISFJ: 🛡️ 세상 따뜻함", "ESTJ: 📢 리더", "ESFJ: 💕 분위기 메이커",
-           "ISTP: 🔧 고치는 장인", "ISFP: 🌸 감성 힐러", "ESTP: 🏄 모험왕", "ESFP: 🎭 파티 주인공"],
-    "en": ["INTJ: 🧠 Strategic", "INTP: 💡 Idea Genius", "ENTJ: 👑 Boss", "ENTP: ⚡ Debater",
-           "INFJ: 🔮 Insightful", "INFP: 🎨 Dreamer", "ENFJ: 🤗 Teacher", "ENFP: 🎉 Enthusiast",
-           "ISTJ: 📋 Responsible", "ISFJ: 🛡️ Protector", "ESTJ: 📢 Leader", "ESFJ: 💕 Supporter",
-           "ISTP: 🔧 Craftsman", "ISFP: 🌸 Artist", "ESTP: 🏄 Adventurer", "ESFP: 🎭 Performer"],
-    "zh": ["INTJ: 🧠 冷静战略家", "INTP: 💡 创意天才", "ENTJ: 👑 领袖", "ENTP: ⚡ 辩论王",
-           "INFJ: 🔮 心灵大师", "INFP: 🎨 感性艺术家", "ENFJ: 🤗 万人导师", "ENFP: 🎉 人类维生素",
-           "ISTJ: 📋 规则守护者", "ISFJ: 🛡️ 温暖守护者", "ESTJ: 📢 高效领导", "ESFJ: 💕 气氛制造者",
-           "ISTP: 🔧 修理大师", "ISFP: 🌸 感性治疗师", "ESTP: 🏄 冒险王", "ESFP: 🎭 派对主角"]
-}
-
-saju_msgs = {
-    "ko": ["목 기운 강함 → 성장·발전의 해!", "화 기운 강함 → 열정 폭발!", "토 기운 강함 → 안정·재물", "금 기운 → 결단력 UP",
-           "수 기운 → 지혜·흐름", "오행 균형 → 행복한 해", "양기 강함 → 도전 성공", "음기 강함 → 내면 성찰"],
-    "en": ["Strong Wood → Growth!", "Strong Fire → Passion!", "Strong Earth → Stability!", "Strong Metal → Decisiveness!",
-           "Strong Water → Wisdom!", "Balanced → Happy year!", "Strong Yang → Success!", "Strong Yin → Reflection!"],
-    "zh": ["木气旺 → 成长！", "火气旺 → 热情！", "土气旺 → 稳定！", "金气旺 → 决断！",
-           "水气旺 → 智慧！", "平衡 → 幸福！", "阳气旺 → 成功！", "阴气旺 → 反省！"]
-}
-
-daily_messages = {
-    "ko": ["에너지 충만! GO GO!", "천천히 가도 괜찮아~", "돈 들어올 조짐!", "친구랑 놀면 최고!",
-           "공부 집중 잘 돼!", "조금 피곤... 쉬어!", "새로운 도전 OK!", "소통이 중요!", "직감 믿어!", "자신감 UP!"],
-    "en": ["Energy full! GO!", "Take it slow~", "Money coming!", "Friends make it best!", "Study focus good!", "Rest a bit!", "New challenge OK!", "Talk more!", "Trust gut!", "Confidence UP!"],
-    "zh": ["能量满满！冲！", "慢慢来也没关系~", "财运来了！", "和朋友玩最棒！", "学习超专注！", "有点累…休息！", "新挑战OK！", "沟通最重要！", "相信直觉！", "自信爆棚！"]
-}
-
-# 2026년 띠별 한 줄 운세 (12개)
-yearly_fortunes = {
-    "쥐띠": "돈이 들어오고 나갈 때 많아! 잘 관리하면 대박",
-    "소띠": "꾸준히 하면 결실 보는 해! 인내가 최고",
-    "호랑이띠": "도전하면 다 성공! 네가 제일 빛나는 해",
-    "토끼띠": "사랑·결혼 운 좋음! 따뜻한 한 해",
-    "용띠": "리더십 발휘! 승진·사업 기회 많아",
-    "뱀띠": "직감이 딱! 투자·부동산 잘 맞음",
-    "말띠": "에너지 최고! 하지만 무리하지 마",
-    "양띠": "관계가 중요! 친구·가족과 행복",
-    "원숭이띠": "재능 폭발! 창의적인 일 최고",
-    "닭띠": "노력의 결실! 서서히 빛남",
-    "개띠": "도움 많이 받는 해! 인맥이 복",
-    "돼지띠": "여유롭게 즐기며 큰 복 받음"
-}
-
-# ────────────────────────────────────────────────
-#                  앱 시작
-# ────────────────────────────────────────────────
 
 if "lang" not in st.session_state:
     st.session_state.lang = "ko"
 
-lang_map = {"한국어": "ko", "English": "en", "中文": "zh"}
-selected = st.selectbox("🌐 Language", list(lang_map.keys()))
-lang = lang_map[selected]
+lang = st.selectbox("🌐 Language", ["한국어", "English"], 
+                    index=0 if st.session_state.lang == "ko" else 1)
+st.session_state.lang = "ko" if lang == "한국어" else "en"
 
-t = translations[lang]
+t = translations[st.session_state.lang]
+Z = t["zodiacs"]
+M = t["mbtis"]
+saju_msg = t["saju_msgs"]
 
-st.title(t["title"])
-st.caption(t["caption"])
+def get_zodiac(y): 
+    z_list = list(Z.keys())
+    return z_list[(y-4)%12] if 1900<=y<=2030 else None
 
-# 생년월일
-st.write(t["birth"])
-col1, col2, col3 = st.columns(3)
-year = col1.number_input(t["year"], 1900, 2030, 2005)
-month = col2.number_input(t["month"], 1, 12, 1)
-day = col3.number_input(t["day"], 1, 31, 1)
+def get_saju(year, month, day):
+    total = year + month + day
+    index = total % 8
+    return saju_msg[index]
 
-# 다음 버튼
-if st.button(t["next_btn"], type="primary", use_container_width=True):
-    st.session_state.birth_done = True
-    st.balloons()
-    st.success("좋아! 이제 MBTI 고르자~")
-    st.rerun()
+# 모바일 최적화 디자인 업그레이드!
+st.set_page_config(page_title="띠MBTI 사주", layout="centered")
 
-# MBTI 선택
-if st.session_state.get("birth_done", False):
-    if "mbti" not in st.session_state:
-        st.session_state.mbti = None
+# 중앙 정렬 + 여백
+st.markdown("<div style='text-align: center; padding: 20px;'>", unsafe_allow_html=True)
+st.markdown(f"<h1 style='font-size: 2.5em; color: #ff6b6b;'>{t['title']}</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='font-size: 1.2em; color: #666;'>{t['caption']}</p>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
-    if st.session_state.mbti is None:
-        c = st.radio(t["mbti_mode"], [t["direct"], t["test"]])
-        if c == t["direct"]:
-            m = st.selectbox("MBTI", [m.split(":")[0] for m in mbtis[lang]])
-            if st.button("결정!"):
-                st.session_state.mbti = m
-                st.rerun()
-        else:
-            st.write(t["test_start"])
-            e_i = s_n = t_f = j_p = 0
+app_url = "https://my-fortune.streamlit.app"
 
-            questions = [
-                ("1. 사람 많은 곳에서 에너지 충전?", "E", "I"),
-                ("2. 새로운 사람 만나는 게 좋아?", "E", "I"),
-                ("3. 세세한 사실 잘 기억해?", "S", "N"),
-                ("4. 큰 그림·미래 생각 좋아해?", "S", "N"),
-                ("5. 논리·사실로 판단해?", "T", "F"),
-                ("6. 사람 감정 먼저 고려해?", "T", "F"),
-                ("7. 계획 세우고 따라가는 게 편해?", "J", "P"),
-                ("8. 즉흥적인 게 재미있어?", "J", "P"),
-                ("9. 혼자 있을 때 더 편안해?", "E", "I"),
-                ("10. 상상력·아이디어 떠올리는 게 좋아?", "S", "N"),
-                ("11. 옳고 그름이 명확해야 해?", "T", "F"),
-                ("12. 다른 사람 기분 맞춰주는 게 중요해?", "T", "F"),
-                ("13. 일정표·목록 좋아해?", "J", "P"),
-                ("14. 갑자기 결정하는 게 좋아?", "J", "P"),
-                ("15. 친구들과 자주 어울려?", "E", "I"),
-                ("16. 창의적인 활동 즐겨?", "S", "N")
-            ]
+st.markdown(f"<h3 style='text-align: center;'>{t['qr']}</h3>", unsafe_allow_html=True)
+st.image("frame.png", use_column_width=True)
 
-            for i, (q, yes, no) in enumerate(questions, 1):
-                ans = st.radio(f"Q{i}. {q}", ["네!", "아니요~"], key=f"q{i}")
-                if ans == "네!":
-                    if yes == "E": e_i += 1
-                    if yes == "I": e_i -= 1
-                    if yes == "S": s_n += 1
-                    if yes == "N": s_n -= 1
-                    if yes == "T": t_f += 1
-                    if yes == "F": t_f -= 1
-                    if yes == "J": j_p += 1
-                    if yes == "P": j_p -= 1
+st.markdown(f"<h3 style='text-align: center;'>{t['share']}</h3>", unsafe_allow_html=True)
+st.code(app_url, language=None)
+st.markdown(f"<p style='text-align: center;'>{t['share_desc']}</p>", unsafe_allow_html=True)
 
-            if st.button(t["result_btn"]):
-                ei = "E" if e_i >= 0 else "I"
-                sn = "N" if s_n >= 0 else "S"
-                tf = "T" if t_f >= 0 else "F"
-                jp = "J" if j_p >= 0 else "P"
-                st.session_state.mbti = ei + sn + tf + jp
-                st.success(f"너의 MBTI는 **{st.session_state.mbti}** 이야!")
-                st.rerun()
+# 광고 카드 스타일
+st.markdown(f"""
+<div style="background:#fffbe6;padding:20px;border-radius:20px;text-align:center;margin:30px 0;box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+  <h3 style="color:#d35400;">💳 {t.get('ad_title', '렌탈 궁금할 때?')}</h3>
+  <p style="font-size:1.1em;">{t.get('ad_text', '<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 페이백</b>!')}</p>
+  <a href="https://www.다나눔렌탈.com" target="_blank">
+    <button style="background:#e67e22;color:white;padding:15px 30px;border:none;border-radius:15px;font-size:1.2em;">{t.get('ad_btn', '🔗 보러가기')}</button>
+  </a>
+</div>
+""", unsafe_allow_html=True)
 
-# 결과 화면
-if st.session_state.get("mbti"):
+st.markdown(f"<h3 style='text-align: center;'>{t['birth']}</h3>", unsafe_allow_html=True)
+year = st.number_input("Year / 년", 1900, 2030, 2005, step=1)
+month = st.number_input("Month / 월", 1, 12, 1, step=1)
+day = st.number_input("Day / 일", 1, 31, 1, step=1)
+
+if "mbti" not in st.session_state: 
+    st.session_state.mbti = None
+
+if st.session_state.mbti is None:
+    c = st.radio(t["mbti_mode"], [t["direct"], t["test"]], key="mode")
+    if c == t["direct"]:
+        m = st.selectbox("MBTI", sorted(M.keys()), key="direct")
+        if st.button(t["fortune_btn"], use_container_width=True, key="direct_go"):
+            st.session_state.mbti = m
+            st.rerun()
+    else:
+        st.markdown(f"<h3 style='text-align: center; color:#3498db;'>{t['test_start']}</h3>", unsafe_allow_html=True)
+        e_i, s_n, t_f, j_p = 0, 0, 0, 0
+        
+        st.markdown("<h4 style='color:#2ecc71;'>1-4. 에너지 방향</h4>", unsafe_allow_html=True)
+        if st.radio("1.", ["네 (E)", "아니 (I)"], key="ei1") == "네 (E)": e_i += 1
+        if st.radio("2.", ["좋아 (E)", "부담 (I)"], key="ei2") == "좋아 (E)": e_i += 1
+        if st.radio("3.", ["많이 (I)", "가끔 (E)"], key="ei3") == "많이 (I)": e_i += 1
+        if st.radio("4.", ["바로 (E)", "정리 후 (I)"], key="ei4") == "바로 (E)": e_i += 1
+        
+        st.markdown("<h4 style='color:#2ecc71;'>5-8. 정보 수집</h4>", unsafe_allow_html=True)
+        if st.radio("5.", ["네 (S)", "가능성 (N)"], key="sn1") == "네 (S)": s_n += 1
+        if st.radio("6.", ["잘해 (S)", "큰 그림 (N)"], key="sn2") == "잘해 (S)": s_n += 1
+        if st.radio("7.", ["좋아 (N)", "현재 집중 (S)"], key="sn3") == "좋아 (N)": s_n += 1
+        if st.radio("8.", ["네 (S)", "추상 (N)"], key="sn4") == "네 (S)": s_n += 1
+        
+        st.markdown("<h4 style='color:#2ecc71;'>9-12. 결정 방식</h4>", unsafe_allow_html=True)
+        if st.radio("9.", ["네 (T)", "감정 고려 (F)"], key="tf1") == "네 (T)": t_f += 1
+        if st.radio("10.", ["네 (T)", "마음 아파 (F)"], key="tf2") == "네 (T)": t_f += 1
+        if st.radio("11.", ["공감 먼저 (F)", "조언 위주 (T)"], key="tf3") == "공감 먼저 (F)": t_f += 1
+        if st.radio("12.", ["네 (T)", "상처 주지 않게 (F)"], key="tf4") == "네 (T)": t_f += 1
+        
+        st.markdown("<h4 style='color:#2ecc71;'>13-16. 생활 방식</h4>", unsafe_allow_html=True)
+        if st.radio("13.", ["좋아 (J)", "즉흥 (P)"], key="jp1") == "좋아 (J)": j_p += 1
+        if st.radio("14.", ["미리 (J)", "마감 때 (P)"], key="jp2") == "미리 (J)": j_p += 1
+        if st.radio("15.", ["빨리 (J)", "열어두기 (P)"], key="jp3") == "빨리 (J)": j_p += 1
+        if st.radio("16.", ["좋아 (J)", "괜찮아 (P)"], key="jp4") == "좋아 (J)": j_p += 1
+        
+        if st.button(t["result_btn"], use_container_width=True, key="test_go"):
+            ei = "E" if e_i >= 3 else "I"
+            sn = "S" if s_n >= 3 else "N"
+            tf = "T" if t_f >= 3 else "F"
+            jp = "J" if j_p >= 3 else "P"
+            result = ei + sn + tf + jp
+            st.session_state.mbti = result
+            st.rerun()
+
+if st.session_state.mbti:
     mbti = st.session_state.mbti
-    zodiac_idx = (year - 4) % 12
-    zodiac = zodiacs[lang][zodiac_idx]
+    zodiac = get_zodiac(year)
+    if zodiac:
+        if st.button(t["fortune_btn"], use_container_width=True, key="fortune"):
+            score = 90
+            saju = get_saju(year, month, day)
+            zodiac_emoji = Z[zodiac].split(' ',1)[0]
+            zodiac_desc = Z[zodiac].split(' ',1)[1] if ' ' in Z[zodiac] else ""
+            mbti_emoji = M[mbti].split(' ',1)[0]
+            mbti_desc = M[mbti].split(' ',1)[1] if ' ' in M[mbti] else ""
+            
+            # 카드 스타일 결과
+            st.markdown(f"""
+            <div style="background:#e8f5e8;padding:20px;border-radius:20px;text-align:center;margin:20px 0;box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+              <h2 style="color:#27ae60;">{zodiac_emoji} <b>{zodiac}</b> + {mbti_emoji} <b>{mbti}</b> {t['combo']}</h2>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.metric("운세 점수 / Fortune Score", f"{score}점", delta="안정적! / Stable!")
+            
+            st.info(f"{t['zodiac_title']}: {zodiac_desc}")
+            st.info(f"{t['mbti_title']}: {mbti_desc}")
+            st.warning(f"{t['saju_title']}: {saju}")
+            
+            st.balloons()
+            st.snow()
 
-    if st.button(t["fortune_btn"], type="primary", use_container_width=True):
-        st.balloons()
-        st.success(f"{zodiac} + {mbti} → {t['best_combo']}")
+            share_text = f"My 2026 Fortune!\nZodiac: {zodiac}\nMBTI: {mbti}\nSaju: {saju}\nScore {score}점!\n{app_url}" if st.session_state.lang == "en" else f"내 2026년 운세!\n띠: {zodiac}\nMBTI: {mbti}\n사주: {saju}\n점수 {score}점!\n{app_url}"
+            st.text_area("공유 텍스트 / Text to share", share_text, height=120)
 
-        # 2026년 전체 운세
-        st.subheader("2026년 전체 운세")
-        st.write(random.choice(["열정 폭발하는 해! 도전하면 성공!", "변화의 해! 새로운 시작 최고!", "꾸준히 하면 결실 보는 해!"]))
-
-        # MBTI 조언
-        st.subheader("MBTI 기반 2026년 조언")
-        st.write(random.choice(["너의 강점 살려서 리더 되어봐!", "아이디어 폭발! 창의적인 일 해봐!", "감정 잘 다루면 인기 많아질 거야!"]))
-
-        # 오늘·내일 운세
-        st.subheader(t["daily_title"])
-        today = datetime.now().date()
-        tomorrow = today + timedelta(days=1)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.info(f"{t['today']} ({today.strftime('%m/%d')})")
-            st.write(random.choice(daily_messages[lang]))
-        with col2:
-            st.info(f"{t['tomorrow']} ({tomorrow.strftime('%m/%d')})")
-            st.write(random.choice(daily_messages[lang]))
-
-        # 월별 운세 표
-        st.subheader(t["monthly_title"])
-        st.markdown("""
-        | 월 | 운세 요약 |
-        |---|----------|
-        | 1~2월 | 새해 시작! 계획 세우기 최고 |
-        | 3~4월 | 기회 많음! 적극적으로 움직여 |
-        | 5~6월 | 재물·성공 타이밍 |
-        | 7~8월 | 열정 폭발! 무리 주의 |
-        | 9~10월 | 성과 수확기 |
-        | 11~12월 | 한 해 잘 마무리! |
-        """)
-
-        # 홍보
-        st.markdown("---")
-        st.markdown("### 💧 생활 편하게! **다나눔렌탈** 문의 GO!")
-        st.markdown("""
-        정수기 / 안마의자 / 공기청정기 / 주방가전 / 서빙로봇 / 인터넷 가입  
-        **정수기 렌탈료 제휴카드 → 월 0원~**  
-        **설치 당일 최대 50만원 페이백!**  
-        👉 [www.다나눔렌탈.com](http://www.다나눔렌탈.com)
-        """)
-
-    if st.button(t["reset"]):
+    if st.button(t["reset"], use_container_width=True, key="reset"):
         st.session_state.clear()
         st.rerun()
 
-st.caption(t["footer"])
+st.markdown("<p style='text-align: center; color: #95a5a6; font-size: 0.9em;'>{t['footer']}</p>", unsafe_allow_html=True)
