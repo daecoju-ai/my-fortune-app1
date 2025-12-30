@@ -27,7 +27,7 @@ translations = {
         "fortune_btn": "🔮 2026년 운세 보기!",
         "reset": "처음부터 다시 하기",
         "share_btn": "친구에게 결과 공유",
-        "water_purifier": "정수기는 다나눔렌탈",
+        "water_purifier": "정수기는 다나눔렌탈 제휴카드 적용 월0원부터~ 설치일에 현금 최대 50만원 + 사은품",
         "zodiac_title": "띠 운세",
         "mbti_title": "MBTI 특징",
         "saju_title": "사주 한 마디",
