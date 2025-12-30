@@ -166,7 +166,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 카드 (공유 버튼 완벽 작동)
+# 결과 카드 (공유 버튼 완벽 작동 - 복사 방식)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -204,32 +204,18 @@ if st.session_state.result_shown:
             <p style="font-size:1.0em; margin:5px 0;"><b>{t['today_title']}</b>: {today}</p>
             <p style="font-size:1.0em; margin:5px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
           </div>
-          <div style="margin:15px 0;">
-            <button onclick="shareResult()" style="background:white; color:#6a11cb; padding:12px 50px; border:none; border-radius:30px; font-size:1.2em; font-weight:bold;">
-              {t["share_btn"]}
-            </button>
-          </div>
-          <p style="font-size:0.7em; opacity:0.7; margin:0;">{app_url}</p>
+          <p style="font-size:0.7em; opacity:0.7; margin:10px 0;">{app_url}</p>
         </div>
-        <script>
-        function shareResult() {{
-            if (navigator.share) {{
-                navigator.share({{
-                    title: '내 2026년 운세 결과',
-                    text: `{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}`,
-                    url: '{app_url}'
-                }});
-            }} else {{
-                navigator.clipboard.writeText(`{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}`).then(() => {{
-                    alert('운세 결과가 복사되었습니다! 카톡, 라인, X 등에 붙여넣기 해서 공유해주세요 😊');
-                }});
-            }}
-        }}
-        </script>
         """, unsafe_allow_html=True)
 
         st.balloons()
         st.snow()
+
+        # 공유 버튼 (복사 방식 - 100% 작동)
+        if st.button(t["share_btn"], use_container_width=True, key="share_copy"):
+            share_text = f"{name_text}\n{zodiac} + {mbti}\n{t['combo']}\n{score}점!\n{t['today_title']}: {today}\n{t['tomorrow_title']}: {tomorrow}\n\n{app_url}"
+            st.code(share_text, language=None)
+            st.success("위 텍스트를 길게 눌러 복사한 후 카톡, 라인, X 등에 붙여넣기 해서 공유해주세요! 📱✨")
 
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
