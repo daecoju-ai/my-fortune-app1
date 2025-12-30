@@ -1,6 +1,6 @@
 import streamlit as st
 
-# 다국어 사전
+# 다국어 사전 (한국어·영어)
 translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 운세 🌟",
@@ -12,6 +12,7 @@ translations = {
         "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 페이백</b>!",
         "ad_btn": "🔗 보러가기",
         "birth": "### 생년월일 입력 (사주 계산을 위해!)",
+        "name_placeholder": "이름 입력 (결과에 표시돼요)",
         "mbti_mode": "MBTI 어떻게 할까?",
         "direct": "직접 입력",
         "test": "상세 테스트 (16문제)",
@@ -23,10 +24,11 @@ translations = {
         "result_btn": "결과 보기!",
         "fortune_btn": "🔮 2026년 운세 보기!",
         "reset": "처음부터 다시 하기",
-        "zodiac_title": "**띠 운세**",
-        "mbti_title": "**MBTI 특징**",
-        "saju_title": "**사주 한 마디**",
+        "zodiac_title": "띠 운세",
+        "mbti_title": "MBTI 특징",
+        "saju_title": "사주 한 마디",
         "combo": "최고 조합!",
+        "your_fortune": "님의 2026년 운세",
         "footer": "재미로만 봐주세요 😊",
         "share_text_label": "공유 텍스트 (길게 눌러 복사)",
         "zodiacs": {
@@ -82,6 +84,7 @@ translations = {
         "ad_text": "<b>Dananum Rental</b> partner card: <b>0 won/month</b> + <b>Cashback</b>!",
         "ad_btn": "🔗 Check it out",
         "birth": "### Enter Birth Date",
+        "name_placeholder": "Enter your name (shown in result)",
         "mbti_mode": "How to get MBTI?",
         "direct": "Enter directly",
         "test": "Detailed Test (16 questions)",
@@ -93,10 +96,11 @@ translations = {
         "result_btn": "View Results!",
         "fortune_btn": "🔮 View 2026 Fortune!",
         "reset": "Start Over",
-        "zodiac_title": "**Zodiac Fortune**",
-        "mbti_title": "**MBTI Traits**",
-        "saju_title": "**Saju Message**",
+        "zodiac_title": "Zodiac Fortune",
+        "mbti_title": "MBTI Traits",
+        "saju_title": "Saju Message",
         "combo": "Best combo!",
+        "your_fortune": "'s 2026 Fortune",
         "footer": "For fun only 😊",
         "share_text_label": "Text to share (long press to copy)",
         "zodiacs": {
@@ -144,7 +148,6 @@ translations = {
     }
 }
 
-# 언어 선택
 if "lang" not in st.session_state:
     st.session_state.lang = "ko"
 
@@ -166,11 +169,10 @@ def get_saju(year, month, day):
     index = total % 8
     return saju_msg[index]
 
-# 디자인
 st.set_page_config(page_title="띠MBTI 사주", layout="centered")
 
-st.markdown(f"<h1 style='text-align: center; color: #ff6b6b; font-size: 2.5em;'>{t['title']}</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align: center; font-size: 1.2em; color: #666;'>{t['caption']}</p>", unsafe_allow_html=True)
+st.markdown(f"<h1 style='text-align: center; color: #ff6b6b;'>{t['title']}</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: center; color: #666;'>{t['caption']}</p>", unsafe_allow_html=True)
 
 app_url = "https://my-fortune.streamlit.app"
 
@@ -184,12 +186,15 @@ st.markdown(f"<p style='text-align: center;'>{t['share_desc']}</p>", unsafe_allo
 st.markdown(f"""
 <div style="background:#fffbe6;padding:20px;border-radius:20px;text-align:center;margin:30px 0;box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
   <h3 style="color:#d35400;">{t['ad_title']}</h3>
-  <p style="font-size:1.1em;">{t['ad_text']}</p>
+  <p>{t['ad_text']}</p>
   <a href="https://www.다나눔렌탈.com" target="_blank">
-    <button style="background:#e67e22;color:white;padding:15px 30px;border:none;border-radius:15px;font-size:1.2em;">{t['ad_btn']}</button>
+    <button style="background:#e67e22;color:white;padding:15px 30px;border:none;border-radius:15px;">{t['ad_btn']}</button>
   </a>
 </div>
 """, unsafe_allow_html=True)
+
+# 이름 입력란 추가!
+name = st.text_input(t["name_placeholder"], value="", placeholder="예: 홍길동")
 
 st.markdown(f"<h3 style='text-align: center;'>{t['birth']}</h3>", unsafe_allow_html=True)
 year = st.number_input("Year", 1900, 2030, 2005, step=1)
@@ -199,7 +204,6 @@ day = st.number_input("Day", 1, 31, 1, step=1)
 if "mbti" not in st.session_state: 
     st.session_state.mbti = None
 
-# 결과 보여줬는지 플래그
 if "result_shown" not in st.session_state:
     st.session_state.result_shown = False
 
@@ -249,7 +253,7 @@ if st.session_state.mbti is None:
             st.session_state.result_shown = False
             st.rerun()
 
-# 결과 보여주는 부분 (중복 방지 + 바로 결과)
+# 결과 카드 (한 장으로 예쁘게!)
 if st.session_state.mbti and not st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(year)
@@ -261,23 +265,25 @@ if st.session_state.mbti and not st.session_state.result_shown:
         mbti_emoji = M[mbti].split(' ',1)[0]
         mbti_desc = M[mbti].split(' ',1)[1] if ' ' in M[mbti] else ""
         
+        name_text = f"{name}{t['your_fortune']}" if name else "2026년 운세"
+        
         st.markdown(f"""
-        <div style="background:#e8f5e8;padding:20px;border-radius:20px;text-align:center;margin:20px 0;box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-          <h2 style="color:#27ae60;">{zodiac_emoji} <b>{zodiac}</b> + {mbti_emoji} <b>{mbti}</b> {t['combo']}</h2>
+        <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);padding:30px;border-radius:30px;text-align:center;margin:30px 0;box-shadow: 0 10px 30px rgba(0,0,0,0.3);color:white;">
+          <h1 style="font-size:2.5em;margin-bottom:10px;">{name_text}</h1>
+          <h2 style="font-size:2em;margin:20px 0;">{zodiac_emoji} <b>{zodiac}</b> + {mbti_emoji} <b>{mbti}</b></h2>
+          <h3 style="font-size:1.8em;margin:20px 0;">{t['combo']}</h3>
+          <h2 style="font-size:3em;margin:30px 0;color:#ffd700;">{score}점</h2>
+          <p style="font-size:1.3em;background:rgba(255,255,255,0.2);padding:15px;border-radius:15px;margin:20px 0;">{t['zodiac_title']}: {zodiac_desc}</p>
+          <p style="font-size:1.3em;background:rgba(255,255,255,0.2);padding:15px;border-radius:15px;margin:20px 0;">{t['mbti_title']}: {mbti_desc}</p>
+          <p style="font-size:1.3em;background:rgba(255,255,255,0.2);padding:15px;border-radius:15px;margin:20px 0;">{t['saju_title']}: {saju}</p>
         </div>
         """, unsafe_allow_html=True)
-        
-        st.metric("운세 점수", f"{score}점", delta="안정적!")
-        
-        st.info(f"{t['zodiac_title']}: {zodiac_desc}")
-        st.info(f"{t['mbti_title']}: {mbti_desc}")
-        st.warning(f"{t['saju_title']}: {saju}")
         
         st.balloons()
         st.snow()
 
-        share_text = f"My 2026 Fortune!\nZodiac: {zodiac}\nMBTI: {mbti}\nSaju: {saju}\nScore {score}점!\n{app_url}" if st.session_state.lang == "en" else f"내 2026년 운세!\n띠: {zodiac}\nMBTI: {mbti}\n사주: {saju}\n점수 {score}점!\n{app_url}"
-        st.text_area(t["share_text_label"], share_text, height=120, key="share_text_unique")
+        share_text = f"{name_text}!\n띠: {zodiac}\nMBTI: {mbti}\n사주: {saju}\n점수 {score}점!\n{app_url}" if st.session_state.lang == "ko" else f"{name}'s 2026 Fortune!\nZodiac: {zodiac}\nMBTI: {mbti}\nSaju: {saju}\nScore {score}점!\n{app_url}"
+        st.text_area(t["share_text_label"], share_text, height=120, key="share_unique")
 
         st.session_state.result_shown = True
 
@@ -285,4 +291,4 @@ if st.session_state.mbti and not st.session_state.result_shown:
         st.session_state.clear()
         st.rerun()
 
-st.markdown(f"<p style='text-align: center; color: #95a5a6; font-size: 0.9em;'>{t['footer']}</p>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: center; color: #95a5a6;'>{t['footer']}</p>", unsafe_allow_html=True)
