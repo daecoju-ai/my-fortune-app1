@@ -197,7 +197,7 @@ translations = {
 if "lang" not in st.session_state:
     st.session_state.lang = "ko"
 
-# 언어 선택 라디오 (고정 텍스트로 에러 방지)
+# 언어 선택 라디오 (고정 텍스트)
 st.session_state.lang = st.radio("언어 / Language / 语言", ["ko", "en", "zh"], index=["ko", "en", "zh"].index(st.session_state.lang), horizontal=True)
 
 # t 정의
@@ -273,56 +273,40 @@ if not st.session_state.result_shown:
         e_i = s_n = t_f = j_p = 0
 
         st.subheader(t["energy"])
-        q1_options = ["와 좋아! 바로 나감 (E)", "집에서 쉬고 싶어... (I)"] if st.session_state.lang == "ko" else ["Yes! Go out right away (E)", "Want to stay home... (I)"] if st.session_state.lang == "en" else ["好啊！马上出门 (E)", "想在家休息... (I)"]
-        if st.radio("1. 주말에 친구들이 갑자기 '놀자!' 하면?" if st.session_state.lang == "ko" else "1. Friends suddenly say 'Let's hang out!' on weekend?" if st.session_state.lang == "en" else "1. 周末朋友突然说'一起玩吧!'？", q1_options, key="q1") == q1_options[0]: e_i += 1
+        if st.radio("1. 주말에 친구들이 갑자기 '놀자!' 하면?" if st.session_state.lang == "ko" else "1. Friends suddenly say 'Let's hang out!' on weekend?" if st.session_state.lang == "en" else "1. 周末朋友突然说'一起玩吧!'？", ["와 좋아! 바로 나감 (E)", "집에서 쉬고 싶어... (I)"] if st.session_state.lang == "ko" else ["Yes! Go out right away (E)", "Want to stay home... (I)"] if st.session_state.lang == "en" else ["好啊！马上出门 (E)", "想在家休息... (I)"], key="q1") == ("와 좋아! 바로 나감 (E)" if st.session_state.lang == "ko" else "Yes! Go out right away (E)" if st.session_state.lang == "en" else "好啊！马上出门 (E)"): e_i += 1
 
-        q2_options = ["재밌고 신나! (E)", "조금 피곤하고 부담스러워 (I)"] if st.session_state.lang == "ko" else ["Fun and exciting! (E)", "A bit tiring and burdensome (I)"] if st.session_state.lang == "en" else ["有趣又兴奋! (E)", "有点累和负担 (I)"]
-        if st.radio("2. 모임에서 처음 본 사람들과 대화하는 거?" if st.session_state.lang == "ko" else "2. Talking to strangers at a gathering?" if st.session_state.lang == "en" else "2. 和聚会中新认识的人聊天？", q2_options, key="q2") == q2_options[0]: e_i += 1
+        if st.radio("2. 모임에서 처음 본 사람들과 대화하는 거?" if st.session_state.lang == "ko" else "2. Talking to strangers at a gathering?" if st.session_state.lang == "en" else "2. 和聚会中新认识的人聊天？", ["재밌고 신나! (E)", "조금 피곤하고 부담스러워 (I)"] if st.session_state.lang == "ko" else ["Fun and exciting! (E)", "A bit tiring and burdensome (I)"] if st.session_state.lang == "en" else ["有趣又兴奋! (E)", "有点累和负担 (I)"], key="q2") == ("재밌고 신나! (E)" if st.session_state.lang == "ko" else "Fun and exciting! (E)" if st.session_state.lang == "en" else "有趣又兴奋! (E)"): e_i += 1
 
-        q3_options = ["아직 에너지 넘쳐! (E)", "완전 지쳐서 혼자 있고 싶어 (I)"] if st.session_state.lang == "ko" else ["Still full of energy! (E)", "Totally exhausted, want to be alone (I)"] if st.session_state.lang == "en" else ["还精力充沛! (E)", "完全累了，想一个人待着 (I)"]
-        if st.radio("3. 하루 종일 사람 만난 후에?" if st.session_state.lang == "ko" else "3. After meeting people all day?" if st.session_state.lang == "en" else "3. 一整天见人之后？", q3_options, key="q3") == q3_options[0]: e_i += 1
+        if st.radio("3. 하루 종일 사람 만난 후에?" if st.session_state.lang == "ko" else "3. After meeting people all day?" if st.session_state.lang == "en" else "3. 一整天见人之后？", ["아직 에너지 넘쳐! (E)", "완전 지쳐서 혼자 있고 싶어 (I)"] if st.session_state.lang == "ko" else ["Still full of energy! (E)", "Totally exhausted, want to be alone (I)"] if st.session_state.lang == "en" else ["还精力充沛! (E)", "完全累了，想一个人待着 (I)"], key="q3") == ("아직 에너지 넘쳐! (E)" if st.session_state.lang == "ko" else "Still full of energy! (E)" if st.session_state.lang == "en" else "还精力充沛! (E)"): e_i += 1
 
-        q4_options = ["바로 말로 풀어냄 (E)", "머릿속에서 먼저 정리함 (I)"] if st.session_state.lang == "ko" else ["Express thoughts out loud (E)", "Organize in head first (I)"] if st.session_state.lang == "en" else ["马上说出来 (E)", "先在脑中整理 (I)"]
-        if st.radio("4. 생각이 떠오르면?" if st.session_state.lang == "ko" else "4. When a thought comes to mind?" if st.session_state.lang == "en" else "4. 想到事情时？", q4_options, key="q4") == q4_options[0]: e_i += 1
+        if st.radio("4. 생각이 떠오르면?" if st.session_state.lang == "ko" else "4. When a thought comes to mind?" if st.session_state.lang == "en" else "4. 想到事情时？", ["바로 말로 풀어냄 (E)", "머릿속에서 먼저 정리함 (I)"] if st.session_state.lang == "ko" else ["Express thoughts out loud (E)", "Organize in head first (I)"] if st.session_state.lang == "en" else ["马上说出来 (E)", "先在脑中整理 (I)"], key="q4") == ("바로 말로 풀어냄 (E)" if st.session_state.lang == "ko" else "Express thoughts out loud (E)" if st.session_state.lang == "en" else "马上说出来 (E)"): e_i += 1
 
         st.subheader(t["info"])
-        q5_options = ["메뉴판 가격과 메뉴 (S)", "분위기, 인테리어, 컨셉 (N)"] if st.session_state.lang == "ko" else ["Menu prices and items (S)", "Atmosphere, interior, concept (N)"] if st.session_state.lang == "en" else ["菜单价格和菜品 (S)", "氛围、装修、概念 (N)"]
-        if st.radio("5. 새로운 카페 가면 뭐가 먼저 눈에 들어?" if st.session_state.lang == "ko" else "5. What catches your eye first in a new cafe?" if st.session_state.lang == "en" else "5. 新咖啡店先注意到什么？", q5_options, key="q5") == q5_options[0]: s_n += 1
+        if st.radio("5. 새로운 카페 가면 뭐가 먼저 눈에 들어?" if st.session_state.lang == "ko" else "5. What catches your eye first in a new cafe?" if st.session_state.lang == "en" else "5. 新咖啡店先注意到什么？", ["메뉴판 가격과 메뉴 (S)", "분위기, 인테리어, 컨셉 (N)"] if st.session_state.lang == "ko" else ["Menu prices and items (S)", "Atmosphere, interior, concept (N)"] if st.session_state.lang == "en" else ["菜单价格和菜品 (S)", "氛围、装修、概念 (N)"], key="q5") == ("메뉴판 가격과 메뉴 (S)" if st.session_state.lang == "ko" else "Menu prices and items (S)" if st.session_state.lang == "en" else "菜单价格和菜品 (S)"): s_n += 1
 
-        q6_options = ["지금 상황과 사실 위주로 들어줌 (S)", "가능성과 미래 방향으로 생각함 (N)"] if st.session_state.lang == "ko" else ["Listen to current facts (S)", "Think about possibilities and future (N)"] if st.session_state.lang == "en" else ["听当前事实 (S)", "想可能性和未来 (N)"]
-        if st.radio("6. 친구가 고민 상담하면?" if st.session_state.lang == "ko" else "6. When friend shares worries?" if st.session_state.lang == "en" else "6. 朋友倾诉烦恼时？", q6_options, key="q6") == q6_options[0]: s_n += 1
+        if st.radio("6. 친구가 고민 상담하면?" if st.session_state.lang == "ko" else "6. When friend shares worries?" if st.session_state.lang == "en" else "6. 朋友倾诉烦恼时？", ["지금 상황과 사실 위주로 들어줌 (S)", "가능성과 미래 방향으로 생각함 (N)"] if st.session_state.lang == "ko" else ["Listen to current facts (S)", "Think about possibilities and future (N)"] if st.session_state.lang == "en" else ["听当前事实 (S)", "想可能性和未来 (N)"], key="q6") == ("지금 상황과 사실 위주로 들어줌 (S)" if st.session_state.lang == "ko" else "Listen to current facts (S)" if st.session_state.lang == "en" else "听当前事实 (S)"): s_n += 1
 
-        q7_options = ["스토리와 디테일에 집중 (S)", "상징과 숨은 의미 찾는 재미 (N)"] if st.session_state.lang == "ko" else ["Focus on story and details (S)", "Enjoy finding symbols and hidden meanings (N)"] if st.session_state.lang == "en" else ["关注故事和细节 (S)", "享受寻找象征和隐藏含义 (N)"]
-        if st.radio("7. 책이나 영화 볼 때?" if st.session_state.lang == "ko" else "7. When reading book or watching movie?" if st.session_state.lang == "en" else "7. 看书或电影时？", q7_options, key="q7") == q7_options[0]: s_n += 1
+        if st.radio("7. 책이나 영화 볼 때?" if st.session_state.lang == "ko" else "7. When reading book or watching movie?" if st.session_state.lang == "en" else "7. 看书或电影时？", ["스토리와 디테일에 집중 (S)", "상징과 숨은 의미 찾는 재미 (N)"] if st.session_state.lang == "ko" else ["Focus on story and details (S)", "Enjoy finding symbols and hidden meanings (N)"] if st.session_state.lang == "en" else ["关注故事和细节 (S)", "享受寻找象征和隐藏含义 (N)"], key="q7") == ("스토리와 디테일에 집중 (S)" if st.session_state.lang == "ko" else "Focus on story and details (S)" if st.session_state.lang == "en" else "关注故事和细节 (S)"): s_n += 1
 
-        q8_options = ["필요한 거 보고 바로 사 (S)", "이거 사면 나중에 뭐랑 입히지? 상상함 (N)"] if st.session_state.lang == "ko" else ["Buy what I need right away (S)", "Imagine what to wear it with later (N)"] if st.session_state.lang == "en" else ["看到需要的马上买 (S)", "想象以后怎么搭配 (N)"]
-        if st.radio("8. 쇼핑할 때?" if st.session_state.lang == "ko" else "8. When shopping?" if st.session_state.lang == "en" else "8. 购物时？", q8_options, key="q8") == q8_options[0]: s_n += 1
+        if st.radio("8. 쇼핑할 때?" if st.session_state.lang == "ko" else "8. When shopping?" if st.session_state.lang == "en" else "8. 购物时？", ["필요한 거 보고 바로 사 (S)", "이거 사면 나중에 뭐랑 입히지? 상상함 (N)"] if st.session_state.lang == "ko" else ["Buy what I need right away (S)", "Imagine what to wear it with later (N)"] if st.session_state.lang == "en" else ["看到需要的马上买 (S)", "想象以后怎么搭配 (N)"], key="q8") == ("필요한 거 보고 바로 사 (S)" if st.session_state.lang == "ko" else "Buy what I need right away (S)" if st.session_state.lang == "en" else "看到需要的马上买 (S)"): s_n += 1
 
         st.subheader(t["decision"])
-        q9_options = ["늦었으면 늦었다고 솔직히 말함 (T)", "기분 상할까 봐 부드럽게 말함 (F)"] if st.session_state.lang == "ko" else ["Say honestly they're late (T)", "Say gently to not hurt feelings (F)"] if st.session_state.lang == "en" else ["直接说迟到了 (T)", "温柔地说怕伤感情 (F)"]
-        if st.radio("9. 친구가 늦어서 화날 때?" if st.session_state.lang == "ko" else "9. When friend is late and you're angry?" if st.session_state.lang == "en" else "9. 朋友迟到生气时？", q9_options, key="q9") == q9_options[0]: t_f += 1
+        if st.radio("9. 친구가 늦어서 화날 때?" if st.session_state.lang == "ko" else "9. When friend is late and you're angry?" if st.session_state.lang == "en" else "9. 朋友迟到生气时？", ["늦었으면 늦었다고 솔직히 말함 (T)", "기분 상할까 봐 부드럽게 말함 (F)"] if st.session_state.lang == "ko" else ["Say honestly they're late (T)", "Say gently to not hurt feelings (F)"] if st.session_state.lang == "en" else ["直接说迟到了 (T)", "温柔地说怕伤感情 (F)"], key="q9") == ("늦었으면 늦었다고 솔직히 말함 (T)" if st.session_state.lang == "ko" else "Say honestly they're late (T)" if st.session_state.lang == "en" else "直接说迟到了 (T)"): t_f += 1
 
-        q10_options = ["논리적으로 누가 맞는지 따짐 (T)", "다른 사람 기분 상하지 않게 조율 (F)"] if st.session_state.lang == "ko" else ["Argue logically who's right (T)", "Mediate to not hurt feelings (F)"] if st.session_state.lang == "en" else ["逻辑上争谁对 (T)", "调解不伤感情 (F)"]
-        if st.radio("10. 팀 프로젝트에서 의견 충돌 시?" if st.session_state.lang == "ko" else "10. In team project when opinions clash?" if st.session_state.lang == "en" else "10. 团队项目意见冲突时？", q10_options, key="q10") == q10_options[0]: t_f += 1
+        if st.radio("10. 팀 프로젝트에서 의견 충돌 시?" if st.session_state.lang == "ko" else "10. In team project when opinions clash?" if st.session_state.lang == "en" else "10. 团队项目意见冲突时？", ["논리적으로 누가 맞는지 따짐 (T)", "다른 사람 기분 상하지 않게 조율 (F)"] if st.session_state.lang == "ko" else ["Argue logically who's right (T)", "Mediate to not hurt feelings (F)"] if st.session_state.lang == "en" else ["逻辑上争谁对 (T)", "调解不伤感情 (F)"], key="q10") == ("논리적으로 누가 맞는지 따짐 (T)" if st.session_state.lang == "ko" else "Argue logically who's right (T)" if st.session_state.lang == "en" else "逻辑上争谁对 (T)"): t_f += 1
 
-        q11_options = ["문제 해결 방법 조언해줌 (T)", "일단 공감하고 들어줌 (F)"] if st.session_state.lang == "ko" else ["Give advice on solving problem (T)", "First empathize and listen (F)"] if st.session_state.lang == "en" else ["给出解决问题建议 (T)", "先共情倾听 (F)"]
-        if st.radio("11. 누가 울면서 상담하면?" if st.session_state.lang == "ko" else "11. When someone cries while consulting?" if st.session_state.lang == "en" else "11. 有人哭着倾诉时？", q11_options, key="q11") == q11_options[1]: t_f += 1  # F 선택 시 +1
+        if st.radio("11. 누가 울면서 상담하면?" if st.session_state.lang == "ko" else "11. When someone cries while consulting?" if st.session_state.lang == "en" else "11. 有人哭着倾诉时？", ["문제 해결 방법 조언해줌 (T)", "일단 공감하고 들어줌 (F)"] if st.session_state.lang == "ko" else ["Give advice on solving problem (T)", "First empathize and listen (F)"] if st.session_state.lang == "en" else ["给出解决问题建议 (T)", "先共情倾听 (F)"], key="q11") == ("일단 공감하고 들어줌 (F)" if st.session_state.lang == "ko" else "First empathize and listen (F)" if st.session_state.lang == "en" else "先共情倾听 (F)"): t_f += 1
 
-        q12_options = ["바로 지적함 (T)", "상처 줄까 봐 넘김 (F)"] if st.session_state.lang == "ko" else ["Point out immediately (T)", "Let it go to not hurt (F)"] if st.session_state.lang == "en" else ["马上指出 (T)", "怕伤人就忽略 (F)"]
-        if st.radio("12. 거짓말 탐지 시?" if st.session_state.lang == "ko" else "12. When detecting a lie?" if st.session_state.lang == "en" else "12. 发现谎言时？", q12_options, key="q12") == q12_options[0]: t_f += 1
+        if st.radio("12. 거짓말 탐지 시?" if st.session_state.lang == "ko" else "12. When detecting a lie?" if st.session_state.lang == "en" else "12. 发现谎言时？", ["바로 지적함 (T)", "상처 줄까 봐 넘김 (F)"] if st.session_state.lang == "ko" else ["Point out immediately (T)", "Let it go to not hurt (F)"] if st.session_state.lang == "en" else ["马上指出 (T)", "怕伤人就忽略 (F)"], key="q12") == ("바로 지적함 (T)" if st.session_state.lang == "ko" else "Point out immediately (T)" if st.session_state.lang == "en" else "马上指出 (T)"): t_f += 1
 
         st.subheader(t["life"])
-        q13_options = ["일정 꽉꽉 짜서 효율적으로 (J)", "그때그때 기분 따라 즉흥적으로 (P)"] if st.session_state.lang == "ko" else ["Plan schedule tightly for efficiency (J)", "Go with the flow spontaneously (P)"] if st.session_state.lang == "en" else ["计划满满高效 (J)", "随心情即兴 (P)"]
-        if st.radio("13. 여행 갈 때?" if st.session_state.lang == "ko" else "13. When planning a trip?" if st.session_state.lang == "en" else "13. 旅行时？", q13_options, key="q13") == q13_options[0]: j_p += 1
+        if st.radio("13. 여행 갈 때?" if st.session_state.lang == "ko" else "13. When planning a trip?" if st.session_state.lang == "en" else "13. 旅行时？", ["일정 꽉꽉 짜서 효율적으로 (J)", "그때그때 기분 따라 즉흥적으로 (P)"] if st.session_state.lang == "ko" else ["Plan schedule tightly for efficiency (J)", "Go with the flow spontaneously (P)"] if st.session_state.lang == "en" else ["计划满满高效 (J)", "随心情即兴 (P)"], key="q13") == ("일정 꽉꽉 짜서 효율적으로 (J)" if st.session_state.lang == "ko" else "Plan schedule tightly for efficiency (J)" if st.session_state.lang == "en" else "计划满满高效 (J)"): j_p += 1
 
-        q14_options = ["미리미리 끝냄 (J)", "마감 직전에 몰아서 함 (P)"] if st.session_state.lang == "ko" else ["Finish early in advance (J)", "Do it all at deadline (P)"] if st.session_state.lang == "en" else ["提前完成 (J)", "截止前突击 (P)"]
-        if st.radio("14. 숙제나 과제 마감 앞두고?" if st.session_state.lang == "ko" else "14. Before assignment deadline?" if st.session_state.lang == "en" else "14. 作业截止前？", q14_options, key="q14") == q14_options[0]: j_p += 1
+        if st.radio("14. 숙제나 과제 마감 앞두고?" if st.session_state.lang == "ko" else "14. Before assignment deadline?" if st.session_state.lang == "en" else "14. 作业截止前？", ["미리미리 끝냄 (J)", "마감 직전에 몰아서 함 (P)"] if st.session_state.lang == "ko" else ["Finish early in advance (J)", "Do it all at deadline (P)"] if st.session_state.lang == "en" else ["提前完成 (J)", "截止前突击 (P)"], key="q14") == ("미리미리 끝냄 (J)" if st.session_state.lang == "ko" else "Finish early in advance (J)" if st.session_state.lang == "en" else "提前完成 (J)"): j_p += 1
 
-        q15_options = ["정해진 기준으로 깔끔히 (J)", "대충 써도 괜찮아 (P)"] if st.session_state.lang == "ko" else ["Organize neatly by standard (J)", "It's okay if messy (P)"] if st.session_state.lang == "en" else ["按标准整洁 (J)", "乱点也没关系 (P)"]
-        if st.radio("15. 방 정리할 때?" if st.session_state.lang == "ko" else "15. When cleaning room?" if st.session_state.lang == "en" else "15. 整理房间时？", q15_options, key="q15") == q15_options[0]: j_p += 1
+        if st.radio("15. 방 정리할 때?" if st.session_state.lang == "ko" else "15. When cleaning room?" if st.session_state.lang == "en" else "15. 整理房间时？", ["정해진 기준으로 깔끔히 (J)", "대충 써도 괜찮아 (P)"] if st.session_state.lang == "ko" else ["Organize neatly by standard (J)", "It's okay if messy (P)"] if st.session_state.lang == "en" else ["按标准整洁 (J)", "乱点也没关系 (P)"], key="q15") == ("정해진 기준으로 깔끔히 (J)" if st.session_state.lang == "ko" else "Organize neatly by standard (J)" if st.session_state.lang == "en" else "按标准整洁 (J)"): j_p += 1
 
-        q16_options = ["빨리 결정하고 넘김 (J)", "옵션 더 알아보고 싶어 (P)"] if st.session_state.lang == "ko" else ["Decide quickly and move on (J)", "Want to explore more options (P)"] if st.session_state.lang == "en" else ["快速决定 (J)", "想多看选项 (P)"]
-        if st.radio("16. 선택해야 할 때?" if st.session_state.lang == "ko" else "16. When needing to choose?" if st.session_state.lang == "en" else "16. 需要选择时？", q16_options, key="q16") == q16_options[0]: j_p += 1
+        if st.radio("16. 선택해야 할 때?" if st.session_state.lang == "ko" else "16. When needing to choose?" if st.session_state.lang == "en" else "16. 需要选择时？", ["빨리 결정하고 넘김 (J)", "옵션 더 알아보고 싶어 (P)"] if st.session_state.lang == "ko" else ["Decide quickly and move on (J)", "Want to explore more options (P)"] if st.session_state.lang == "en" else ["快速决定 (J)", "想多看选项 (P)"], key="q16") == ("빨리 결정하고 넘김 (J)" if st.session_state.lang == "ko" else "Decide quickly and move on (J)" if st.session_state.lang == "en" else "快速决定 (J)"): j_p += 1
 
         if st.button(t["result_btn"], use_container_width=True):
             ei = "E" if e_i >= 3 else "I"
@@ -333,8 +317,89 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 카드 (이전 최적화 유지)
+# 결과 카드
 if st.session_state.result_shown:
-    # (결과 카드 코드 그대로 – 이전 버전과 동일)
+    mbti = st.session_state.mbti
+    zodiac = get_zodiac(st.session_state.year)
+    if zodiac:
+        score = 90
+        saju = get_saju(st.session_state.year, st.session_state.month, st.session_state.day)
+        today = get_daily_fortune(zodiac, 0)
+        tomorrow = get_daily_fortune(zodiac, 1)
+        zodiac_emoji = Z[zodiac].split(' ',1)[0]
+        zodiac_desc = Z[zodiac].split(' ',1)[1] if ' ' in Z[zodiac] else ""
+        mbti_emoji = M[mbti].split(' ',1)[0]
+        mbti_desc = M[mbti].split(' ',1)[1] if ' ' in M[mbti] else ""
+        name_text = f"{st.session_state.name}{t['your_fortune']}" if st.session_state.name else t["title"]
 
+        st.markdown(f"""
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+        <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
+                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:10px 10px;
+                     box-sizing:border-box; display:flex; flex-direction:column; color:white; text-align:center;
+                     font-family:'Noto Sans KR', sans-serif;">
+          <div style="position:absolute; top:10px; right:10px; font-size:0.85em; font-weight:bold; color:#ffd700; text-shadow: 1px 1px 3px rgba(0,0,0,0.6); background:rgba(255,255,255,0.2); padding:8px 10px; border-radius:15px; max-width:150px; line-height:1.3;">
+            💧 <b>정수기 렌탈 대박!</b><br>
+            제휴카드면 <b>월 0원부터</b>!<br>
+            설치 당일 <b>최대 50만원</b><br>지원 + 사은품 듬뿍 ✨
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+            <h1 style="font-size:1.8em; margin:5px 0; font-family:'Playfair Display', serif; text-shadow: 2px 2px 10px rgba(0,0,0,0.3);">{name_text}</h1>
+            <h2 style="font-size:1.8em; margin:10px 0;">
+              <span style="font-size:1.5em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:1.5em;">{mbti_emoji}</span> {mbti}
+            </h2>
+            <h3 style="font-size:1.5em; margin:10px 0; color:#fff; text-shadow: 1px 1px 5px rgba(0,0,0,0.5);">{t['combo']}</h3>
+            <h1 style="font-size:4.0em; margin:15px 0; color:#ffd700; text-shadow: 3px 3px 15px rgba(0,0,0,0.6);">{score}점</h1>
+          </div>
+          <div style="background:rgba(255,255,255,0.25); border-radius:25px; padding:12px; margin:0 5px; backdrop-filter: blur(10px);">
+            <p style="font-size:0.95em; margin:6px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
+            <p style="font-size:0.95em; margin:6px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
+            <p style="font-size:0.95em; margin:6px 0;"><b>{t['saju_title']}</b>: {saju}</p>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.5); margin:8px 0;">
+            <p style="font-size:1.0em; margin:6px 0;"><b>{t['today_title']}</b>: {today}</p>
+            <p style="font-size:1.0em; margin:6px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.5); margin:8px 0;">
+            <p style="font-size:1.0em; margin:6px 0; color:#ffd700;"><b>2026 전체 운세</b>: 성장과 재물이 함께하는 최고의 해! 대박 기운 가득 ✨</p>
+            <p style="font-size:1.0em; margin:6px 0;"><b>조합 한 마디</b>: {zodiac}의 노력과 {mbti}의 따뜻함으로 모두를 이끄는 리더가 될 거예요!</p>
+            <p style="font-size:1.0em; margin:6px 0;"><b>럭키 컬러</b>: 골드 💛 | <b>럭키 아이템</b>: 황금 액세서리 or 노란 지갑</p>
+            <p style="font-size:0.9em; margin:6px 0; font-style:italic;">"90점: 작은 행동 하나가 큰 행운으로 돌아올 해! 자신을 믿고 도전하세요 🚀"</p>
+            <p style="font-size:0.9em; margin:6px 0;">💡 <b>팁</b>: 이번 달 새로운 사람 만나는 기회 많아요. 적극적으로 나서보세요!</p>
+          </div>
+          <p style="font-size:0.7em; opacity:0.8; margin:10px 0;">{app_url}</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.balloons()
+        st.snow()
+
+        share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
+        share_component = f"""
+        <div style="text-align:center; margin:15px 0;">
+            <button style="background:white; color:#6a11cb; padding:10px 40px; border:none; border-radius:30px; font-size:1.1em; font-weight:bold;" onclick="shareResult()">
+              {t["share_btn"]}
+            </button>
+        </div>
+        <script>
+        function shareResult() {{
+            if (navigator.share) {{
+                navigator.share({{
+                    title: '내 2026년 운세 결과',
+                    text: `{share_text}`,
+                    url: '{app_url}'
+                }});
+            }} else {{
+                navigator.clipboard.writeText(`{share_text}`).then(() => {{
+                    alert('운세 결과가 복사되었습니다! 카톡, 라인, X 등에 붙여넣기 해서 공유해주세요 😊');
+                }});
+            }}
+        }}
+        </script>
+        """
+        st_html(share_component, height=100)
+
+    if st.button(t["reset"], use_container_width=True):
+        st.session_state.clear()
+        st.rerun()
+
+# footer (항상 표시)
 st.caption(t["footer"])
