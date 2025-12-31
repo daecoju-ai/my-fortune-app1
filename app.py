@@ -308,41 +308,44 @@ if st.session_state.result_shown:
         st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
         <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
-                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:15px;
+                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:10px;
                      box-sizing:border-box; color:white; text-align:center; overflow:hidden;
-                     font-family:'Noto Sans KR', sans-serif; font-size:0.85em;">
-          <h1 style="font-size:3.5em; margin:20px 0; text-shadow: 2px 2px 10px #0000004d;">{score}점</h1>
-          <h2 style="font-size:1.4em; margin:10px 0;">
-            <span style="font-size:1.6em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:1.6em;">{mbti_emoji}</span> {mbti}
+                     font-family:'Noto Sans KR', sans-serif; font-size:0.8em; line-height:1.2;">
+          <h1 style="font-size:3.8em; margin:15px 0; text-shadow: 2px 2px 10px #0000004d;">{score}점</h1>
+          <h2 style="font-size:1.3em; margin:5px 0;">
+            <span style="font-size:1.5em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:1.5em;">{mbti_emoji}</span> {mbti}
           </h2>
-          <h3 style="font-size:1.3em; margin:10px 0;">{t['combo']}</h3>
+          <h3 style="font-size:1.2em; margin:5px 0;">{t['combo']}</h3>
 
-          <div style="background:#ffffff40; border-radius:20px; padding:12px; margin:15px 10px; backdrop-filter: blur(5px);">
-            💧 <b>정수기 렌탈 대박!</b><br>
-            제휴카드면 <b>월 0원부터</b>!<br>
-            설치 당일 <b>최대 50만원 지원</b> + 사은품 듬뿍 ✨
-          </div>
-
-          <div style="background:#ffffff40; border-radius:20px; padding:12px; margin:15px 10px; backdrop-filter: blur(10px); line-height:1.4;">
+          <div style="background:#ffffff40; border-radius:15px; padding:8px; margin:10px 10px; backdrop-filter: blur(10px); line-height:1.3;">
             <b>{t['zodiac_title']}</b>: {zodiac_desc}<br>
             <b>{t['mbti_title']}</b>: {mbti_desc}<br>
-            <b>{t['saju_title']}</b>: {saju}<br><br>
+            <b>{t['saju_title']}</b>: {saju}<br>
             <b>{t['today_title']}</b>: {today}<br>
-            <b>{t['tomorrow_title']}</b>: {tomorrow}<br><br>
-            <b>2026 전체 운세</b>: 성장과 재물이 함께하는 최고의 해! 대박 ✨<br>
+            <b>{t['tomorrow_title']}</b>: {tomorrow}<br>
+            <b>2026 전체 운세</b>: 성장과 재물이 함께하는 최고의 해!<br>
             <b>조합 한 마디</b>: {zodiac}의 노력과 {mbti}의 따뜻함으로 리더가 될 거예요!<br>
             <b>럭키 컬러</b>: 골드 💛 | <b>럭키 아이템</b>: 황금 액세서리<br>
             <b>팁</b>: 새로운 사람 만나는 기회 많아요. 적극적으로!
           </div>
 
-          <p style="font-size:0.7em; opacity:0.8; margin:10px 0;">{app_url}</p>
+          <!-- 광고 맨 아래로 이동 + 링크 추가 -->
+          <div style="background:#ffffff40; border-radius:15px; padding:8px; margin:10px 10px; backdrop-filter: blur(5px);">
+            💧 <b>정수기 렌탈 대박!</b><br>
+            제휴카드면 <b>월 0원부터</b>!<br>
+            설치 당일 <b>최대 50만원 지원</b> + 사은품 듬뿍 ✨<br>
+            <a href="https://www.다나눔렌탈.com" target="_blank" style="color:#ffd700; text-decoration:underline;">🔗 다나눔렌탈.com 바로가기</a>
+          </div>
+
+          <p style="font-size:0.6em; opacity:0.8; margin:5px 0;">{app_url}</p>
         </div>
         """, unsafe_allow_html=True)
 
+        # 공유 버튼 (광고 아래)
         share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
-        <div style="text-align:center; margin:10px 0;">
-            <button style="background:white; color:#6a11cb; padding:10px 40px; border:none; border-radius:30px; font-size:1em; font-weight:bold;" onclick="shareResult()">
+        <div style="text-align:center; margin:5px 0;">
+            <button style="background:white; color:#6a11cb; padding:8px 35px; border:none; border-radius:30px; font-size:0.9em; font-weight:bold;" onclick="shareResult()">
               {t["share_btn"]}
             </button>
         </div>
@@ -356,7 +359,7 @@ if st.session_state.result_shown:
         }}
         </script>
         """
-        st_html(share_component, height=80)
+        st_html(share_component, height=70)
 
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
