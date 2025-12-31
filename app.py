@@ -8,7 +8,7 @@ translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 + 오늘/내일 운세 🌟",
         "caption": "완전 무료 😄",
-        "ad_title": "💳정수기 렌탈 궁금할 때?",
+        "ad_title": "💳 렌탈 궁금할 때?",
         "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 페이백</b>!",
         "ad_btn": "🔗 보러가기",
         "birth": "### 생년월일 입력",
@@ -33,6 +33,11 @@ translations = {
         "combo": "최고 조합!",
         "your_fortune": "님의 2026년 운세",
         "footer": "재미로만 봐주세요 😊",
+        "overall_fortune_text": "성장과 재물이 함께하는 최고의 해! 대박 ✨",
+        "combo_comment_text": "의 노력과 {}의 따뜻함으로 리더가 될 거예요!",
+        "lucky_color_text": "골드 💛",
+        "lucky_item_text": "황금 액세서리",
+        "tip_text": "새로운 사람 만나는 기회 많아요. 적극적으로!",
         "zodiacs": {
             "쥐띠": "🐭 활발한 에너지로 새로운 기회 잡아! 돈운 대박, 투자 주의하며 도전하세요 💰",
             "소띠": "🐮 꾸준한 노력의 결실! 안정된 재물운, 가족과 함께하는 행복한 해 🏡",
@@ -94,6 +99,11 @@ translations = {
         "combo": "Best Combo!",
         "your_fortune": "'s 2026 Fortune",
         "footer": "For fun only 😊",
+        "overall_fortune_text": "Growth and wealth together – the best year! Big luck ✨",
+        "combo_comment_text": "With {}'s effort and {}'s warmth, you'll become a leader!",
+        "lucky_color_text": "Gold 💛",
+        "lucky_item_text": "Golden accessories",
+        "tip_text": "Many chances to meet new people. Be proactive!",
         "zodiacs": {
             "Rat": "🐭 Grab new opportunities with energy! Great money luck 💰",
             "Ox": "🐮 Steady effort pays off! Stable wealth and happy family 🏡",
@@ -304,6 +314,9 @@ if st.session_state.result_shown:
         mbti_desc = M[mbti].split(' ',1)[1] if ' ' in M[mbti] else ""
         name_text = f"{st.session_state.name}{t['your_fortune']}" if st.session_state.name else t["title"]
 
+        # 동적 텍스트 처리 (띠 이름과 MBTI 번역)
+        combo_comment = t["combo_comment_text"].format(zodiac, mbti)
+
         st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
         <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
@@ -321,14 +334,14 @@ if st.session_state.result_shown:
             <b>{t['saju_title']}</b>: {saju}<br><br>
             <b>{t['today_title']}</b>: {today}<br>
             <b>{t['tomorrow_title']}</b>: {tomorrow}<br><br>
-            <b>2026 전체 운세</b>: 성장과 재물이 함께하는 최고의 해! 대박 ✨<br>
-            <b>조합 한 마디</b>: {zodiac}의 노력과 {mbti}의 따뜻함으로 리더가 될 거예요!<br>
-            <b>럭키 컬러</b>: 골드 💛 | <b>럭키 아이템</b>: 황금 액세서리<br>
-            <b>팁</b>: 새로운 사람 만나는 기회 많아요. 적극적으로!
+            <b>2026 전체 운세</b>: {t['overall_fortune_text']}<br>
+            <b>조합 한 마디</b>: {combo_comment}<br>
+            <b>럭키 컬러</b>: {t['lucky_color_text']} | <b>럭키 아이템</b>: {t['lucky_item_text']}<br>
+            <b>팁</b>: {t['tip_text']}
           </div>
 
           <div style="background:#ffffff40; border-radius:15px; padding:8px; margin:8px 8px; backdrop-filter: blur(5px); font-size:0.85em;">
-            <small style="color:#ffd700; opacity:0.8;">광고</small><br>
+            <small style="color:#ff4444; font-weight:bold;">광고</small><br>
             💧 <b>정수기 렌탈 대박!</b><br>
             제휴카드면 <b>월 0원부터</b>!<br>
             설치 당일 <b>최대 50만원 지원</b> + 사은품 듬뿍 ✨<br>
