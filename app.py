@@ -290,7 +290,22 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-st.markdown(f"""
+# 결과 화면
+if st.session_state.result_shown:
+    mbti = st.session_state.mbti
+    zodiac = get_zodiac(st.session_state.year)
+    if zodiac:
+        score = 90
+        saju = get_saju(st.session_state.year, st.session_state.month, st.session_state.day)
+        today = get_daily_fortune(zodiac, 0)
+        tomorrow = get_daily_fortune(zodiac, 1)
+        zodiac_emoji = Z[zodiac].split(' ',1)[0]
+        zodiac_desc = Z[zodiac].split(' ',1)[1] if ' ' in Z[zodiac] else ""
+        mbti_emoji = M[mbti].split(' ',1)[0]
+        mbti_desc = M[mbti].split(' ',1)[1] if ' ' in M[mbti] else ""
+        name_text = f"{st.session_state.name}{t['your_fortune']}" if st.session_state.name else t["title"]
+
+        st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
         <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
                      width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:10px;
@@ -313,7 +328,7 @@ st.markdown(f"""
             <b>팁</b>: 새로운 사람 만나는 기회 많아요. 적극적으로!
           </div>
 
-          <!-- 광고 (표기 + 파란색 링크) -->
+          <!-- 광고 -->
           <div style="background:#ffffff40; border-radius:15px; padding:8px; margin:10px 10px; backdrop-filter: blur(5px); font-size:0.9em;">
             <small style="color:#ffd700; opacity:0.8;">광고</small><br>
             💧 <b>정수기 렌탈 대박!</b><br>
@@ -326,7 +341,7 @@ st.markdown(f"""
         </div>
         """, unsafe_allow_html=True)
 
-        # 공유 버튼
+        # 공유 텍스트와 버튼 (들여쓰기 정확히 if zodiac 안으로!)
         share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
         <div style="text-align:center; margin:5px 0;">
@@ -345,3 +360,11 @@ st.markdown(f"""
         </script>
         """
         st_html(share_component, height=70)
+
+    # reset 버튼 (if zodiac 바깥으로)
+    if st.button(t["reset"], use_container_width=True):
+        st.session_state.clear()
+        st.rerun()
+
+# footer (완전 바깥)
+st.caption(t["footer"])
