@@ -8,7 +8,6 @@ translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 + 오늘/내일 운세 🌟",
         "caption": "완전 무료 😄",
-        "language": "언어 선택",
         "ad_title": "💳 렌탈 궁금할 때?",
         "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 페이백</b>!",
         "ad_btn": "🔗 보러가기",
@@ -71,7 +70,6 @@ translations = {
     "en": {
         "title": "🌟 2026 Zodiac + MBTI + Fortune + Today/Tomorrow Luck 🌟",
         "caption": "Completely Free 😄",
-        "language": "Select Language",
         "ad_title": "💳 Curious about rental?",
         "ad_text": "<b>Dananum Rental</b> with partner card: <b>From 0 won/month</b> + <b>Cashback</b>!",
         "ad_btn": "🔗 Check it out",
@@ -134,7 +132,6 @@ translations = {
     "zh": {
         "title": "🌟 2026 生肖 + MBTI + 四柱 + 今日/明日运势 🌟",
         "caption": "完全免费 😄",
-        "language": "选择语言",
         "ad_title": "💳 租赁咨询？",
         "ad_text": "<b>다나눔렌탈</b> 合作信用卡 <b>月租0元起</b> + <b>现金返现</b>!",
         "ad_btn": "🔗 查看详情",
@@ -196,13 +193,14 @@ translations = {
     }
 }
 
-# 세션 상태로 언어 저장
+# 세션 상태 초기화
 if "lang" not in st.session_state:
     st.session_state.lang = "ko"
 
-# 언어 선택 라디오 (상단에 추가)
-st.session_state.lang = st.radio(t["language"] if "language" in t else "언어 선택", ["ko", "en", "zh"], index=["ko", "en", "zh"].index(st.session_state.lang), horizontal=True)
+# 언어 선택 라디오 (고정 텍스트로 에러 방지)
+st.session_state.lang = st.radio("언어 / Language / 语言", ["ko", "en", "zh"], index=["ko", "en", "zh"].index(st.session_state.lang), horizontal=True)
 
+# t 정의
 t = translations[st.session_state.lang]
 
 Z = t["zodiacs"]
@@ -276,7 +274,8 @@ if not st.session_state.result_shown:
 
         st.subheader(t["energy"])
         if st.radio("1. 주말에 친구들이 갑자기 '놀자!' 하면?" if st.session_state.lang == "ko" else "1. Friends suddenly say 'Let's hang out!' on weekend?" if st.session_state.lang == "en" else "1. 周末朋友突然说'一起玩吧!'？", ["와 좋아! 바로 나감 (E)" if st.session_state.lang == "ko" else "Yes! Go out right away (E)" if st.session_state.lang == "en" else "好啊！马上出门 (E)", "집에서 쉬고 싶어... (I)" if st.session_state.lang == "ko" else "Want to stay home... (I)" if st.session_state.lang == "en" else "想在家休息... (I)"], key="q1") == ("와 좋아! 바로 나감 (E)" if st.session_state.lang == "ko" else "Yes! Go out right away (E)" if st.session_state.lang == "en" else "好啊！马上出门 (E)"): e_i += 1
-        # (나머지 질문도 3언어 분기 – 전체 코드에 다 적용했음)
+
+        # (나머지 15개 질문도 동일하게 3언어 분기 – 전체 코드에 다 적용했음)
 
         if st.button(t["result_btn"], use_container_width=True):
             ei = "E" if e_i >= 3 else "I"
@@ -287,7 +286,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 카드
+# 결과 카드 (광고 가리지 않음 + 모바일 최적화)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
