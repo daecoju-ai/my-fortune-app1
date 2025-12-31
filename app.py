@@ -38,18 +38,10 @@ translations = {
         "your_fortune": "님의 2026년 운세",
         "footer": "재미로만 봐주세요 😊",
         "zodiacs": {
-            "쥐띠": "🐭 활발한 에너지로 새로운 기회 잡아! 돈운 대박, 투자 주의하며 도전하세요 💰",
-            "소띠": "🐮 꾸준한 노력의 결실! 안정된 재물운, 가족과 함께하는 행복한 해 🏡",
-            "호랑이띠": "🐯 도전과 성공의 해! 큰 프로젝트 성공, 리더십 발휘 대박 🚀",
-            "토끼띠": "🐰 안정과 사랑운 최고! 연애/결혼 운 좋음, 마음 편안한 한 해 ❤️",
-            "용띠": "🐲 운기 상승! 리더십으로 주변 끌어당김, 승진/사업 성공 가능성 높음 👑",
-            "뱀띠": "🐍 직감과 실속의 해! 예상치 못한 재물운, 조용히 기회 잡으세요 🐍",
-            "말띠": "🐴 새 도전과 돈 기회! 이동/여행 운 좋음, 적극적으로 나서보세요 ✈️",
-            "양띠": "🐑 편안함과 결혼 운! 가정운 최고, 따뜻한 관계 쌓이는 해 🏠",
-            "원숭이띠": "🐵 변화와 재능 발휘! 창의력으로 성공, 새로운 분야 도전 좋음 🎨",
-            "닭띠": "🐔 노력의 결실 맺는 해! 인정받고 승진 가능, 꾸준함이 관건 🏆",
-            "개띠": "🐶 친구와 돈운 상승! 귀인 도움 많음, 네트워킹 적극적으로 🤝",
-            "돼지띠": "🐷 여유와 최고 돈운! 재물 대박, 즐기면서 보내는 최고의 해 🐷"
+            "쥐띠": "🐭 활발·성장, 돈↑", "소띠": "🐮 노력 결실", "호랑이띠": "🐯 도전 성공, 돈 대박",
+            "토끼띠": "🐰 안정·사랑 운", "용띠": "🐲 운↑ 리더십", "뱀띠": "🐍 실속·직감",
+            "말띠": "🐴 새 도전·돈 기회", "양띠": "🐑 편안+결혼 운", "원숭이띠": "🐵 변화·재능",
+            "닭띠": "🐔 노력 결과", "개띠": "🐶 친구·돈↑", "돼지띠": "🐷 여유·돈 최고"
         },
         "mbtis": {
             "INTJ": "🧠 냉철 전략가", "INTP": "💡 아이디어 천재", "ENTJ": "👑 보스", "ENTP": "⚡ 토론왕",
@@ -175,7 +167,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 카드 (인스타 감성 디자인 + 결과 내용 더 상세하게 + 공유 버튼 st.components.v1.html 방식)
+# 결과 카드 (모바일 최적화 + 내용 상세 추가 + 공유 버튼 st.components.v1.html)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -193,46 +185,46 @@ if st.session_state.result_shown:
         st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
         <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
-                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:20px 15px;
+                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:10px 10px;
                      box-sizing:border-box; display:flex; flex-direction:column; color:white; text-align:center;
                      font-family:'Noto Sans KR', sans-serif;">
-          <div style="position:absolute; top:15px; right:15px; font-size:0.8em; opacity:0.8; font-weight:bold;">
+          <div style="position:absolute; top:10px; right:10px; font-size:0.7em; opacity:0.8; font-weight:bold;">
             {t["water_purifier"]}
           </div>
           <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-            <h1 style="font-size:2.0em; margin:10px 0; font-family:'Playfair Display', serif; text-shadow: 2px 2px 10px rgba(0,0,0,0.3);">{name_text}</h1>
-            <h2 style="font-size:2.0em; margin:20px 0;">
+            <h1 style="font-size:1.8em; margin:5px 0; font-family:'Playfair Display', serif; text-shadow: 2px 2px 10px rgba(0,0,0,0.3);">{name_text}</h1>
+            <h2 style="font-size:1.8em; margin:10px 0;">
               <span style="font-size:1.5em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:1.5em;">{mbti_emoji}</span> {mbti}
             </h2>
-            <h3 style="font-size:1.7em; margin:20px 0; color:#fff; text-shadow: 1px 1px 5px rgba(0,0,0,0.5);">{t['combo']}</h3>
-            <h1 style="font-size:4.5em; margin:30px 0; color:#ffd700; text-shadow: 3px 3px 15px rgba(0,0,0,0.6);">{score}점</h1>
+            <h3 style="font-size:1.5em; margin:10px 0; color:#fff; text-shadow: 1px 1px 5px rgba(0,0,0,0.5);">{t['combo']}</h3>
+            <h1 style="font-size:4.0em; margin:15px 0; color:#ffd700; text-shadow: 3px 3px 15px rgba(0,0,0,0.6);">{score}점</h1>
           </div>
-          <div style="background:rgba(255,255,255,0.25); border-radius:25px; padding:15px; margin:0 10px; backdrop-filter: blur(10px);">
-            <p style="font-size:1.05em; margin:8px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
-            <p style="font-size:1.05em; margin:8px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
-            <p style="font-size:1.05em; margin:8px 0;"><b>{t['saju_title']}</b>: {saju}</p>
-            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.5); margin:12px 0;">
-            <p style="font-size:1.15em; margin:8px 0;"><b>{t['today_title']}</b>: {today}</p>
-            <p style="font-size:1.15em; margin:8px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
-            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.5); margin:12px 0;">
-            <p style="font-size:1.1em; margin:8px 0; color:#ffd700;"><b>2026 전체 운세</b>: 성장과 재물이 함께하는 최고의 해! 대박 기운 가득 ✨</p>
-            <p style="font-size:1.1em; margin:8px 0;"><b>조합 한 마디</b>: {zodiac}의 노력과 {mbti}의 따뜻함으로 모두를 이끄는 리더가 될 거예요!</p>
-            <p style="font-size:1.1em; margin:8px 0;"><b>럭키 컬러</b>: 골드 💛 | <b>럭키 아이템</b>: 황금 액세서리 or 노란 지갑</p>
-            <p style="font-size:1.0em; margin:8px 0; font-style:italic;">"90점: 작은 행동 하나가 큰 행운으로 돌아올 해! 자신을 믿고 도전하세요 🚀"</p>
-            <p style="font-size:1.0em; margin:8px 0;">💡 <b>팁</b>: 이번 달 새로운 사람 만나는 기회 많아요. 적극적으로 나서보세요!</p>
+          <div style="background:rgba(255,255,255,0.25); border-radius:25px; padding:12px; margin:0 5px; backdrop-filter: blur(10px);">
+            <p style="font-size:0.95em; margin:6px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
+            <p style="font-size:0.95em; margin:6px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
+            <p style="font-size:0.95em; margin:6px 0;"><b>{t['saju_title']}</b>: {saju}</p>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.5); margin:8px 0;">
+            <p style="font-size:1.0em; margin:6px 0;"><b>{t['today_title']}</b>: {today}</p>
+            <p style="font-size:1.0em; margin:6px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.5); margin:8px 0;">
+            <p style="font-size:1.0em; margin:6px 0; color:#ffd700;"><b>2026 전체 운세</b>: 성장과 재물이 함께하는 최고의 해! 대박 기운 가득 ✨</p>
+            <p style="font-size:1.0em; margin:6px 0;"><b>조합 한 마디</b>: {zodiac}의 노력과 {mbti}의 따뜻함으로 모두를 이끄는 리더가 될 거예요!</p>
+            <p style="font-size:1.0em; margin:6px 0;"><b>럭키 컬러</b>: 골드 💛 | <b>럭키 아이템</b>: 황금 액세서리 or 노란 지갑</p>
+            <p style="font-size:0.9em; margin:6px 0; font-style:italic;">"90점: 작은 행동 하나가 큰 행운으로 돌아올 해! 자신을 믿고 도전하세요 🚀"</p>
+            <p style="font-size:0.9em; margin:6px 0;">💡 <b>팁</b>: 이번 달 새로운 사람 만나는 기회 많아요. 적극적으로 나서보세요!</p>
           </div>
-          <p style="font-size:0.8em; opacity:0.8; margin:15px 0;">{app_url}</p>
+          <p style="font-size:0.7em; opacity:0.8; margin:10px 0;">{app_url}</p>
         </div>
         """, unsafe_allow_html=True)
 
         st.balloons()
         st.snow()
 
-        # 공유 버튼 (st.components.v1.html 방식)
+        # 공유 버튼 (st.components.v1.html 방식 - 너가 원하는 스타일)
         share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
-        <div style="text-align:center; margin:20px 0;">
-            <button style="background:white; color:#6a11cb; padding:12px 50px; border:none; border-radius:30px; font-size:1.2em; font-weight:bold;" onclick="shareResult()">
+        <div style="text-align:center; margin:15px 0;">
+            <button style="background:white; color:#6a11cb; padding:10px 40px; border:none; border-radius:30px; font-size:1.1em; font-weight:bold;" onclick="shareResult()">
               {t["share_btn"]}
             </button>
         </div>
