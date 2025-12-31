@@ -443,46 +443,64 @@ if st.session_state.result_shown:
         mbti_desc = M[mbti].split(' ',1)[1] if ' ' in M[mbti] else ""
         name_text = f"{st.session_state.name}{t['your_fortune']}" if st.session_state.name else t["title"]
 
-        st.markdown(f"""
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-        <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
-                     width:100vw; min-height:100vh; margin:-80px -20px 0 -20px; padding:20px 15px 120px 15px;
-                     box-sizing:border-box; color:white; text-align:center; overflow-y:auto;
-                     font-family:'Noto Sans KR', sans-serif;">
-          <div style="display:flex; flex-direction:column; justify-content:flex-start;">
-            <h1 style="font-size:2.0em; margin:10px 0; font-family:'Playfair Display', serif; text-shadow: 2px 2px 10px rgba(0,0,0,0.3);">{name_text}</h1>
-            <h2 style="font-size:2.0em; margin:20px 0;">
-              <span style="font-size:1.5em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:1.5em;">{mbti_emoji}</span> {mbti}
-            </h2>
-            <h3 style="font-size:1.7em; margin:30px 0; color:#fff; text-shadow: 1px 1px 5px rgba(0,0,0,0.5);">{t['combo']}</h3>
-            <h1 style="font-size:4.5em; margin:30px 0; color:#ffd700; text-shadow: 3px 3px 15px rgba(0,0,0,0.6);">{score}점</h1>
+st.markdown("""
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
+             width:100vw; min-height:100vh; margin:-80px -20px 0 -20px; padding:20px 15px 120px 15px;
+             box-sizing:border-box; color:white; text-align:center; overflow-y:auto;
+             font-family:'Noto Sans KR', sans-serif;">
+  <div style="display:flex; flex-direction:column; justify-content:flex-start;">
+    <h1 style="font-size:2.0em; margin:10px 0; font-family:'Playfair Display', serif; text-shadow: 2px 2px 10px rgba(0,0,0,0.3);">{name_text}</h1>
+    <h2 style="font-size:2.0em; margin:20px 0;">
+      <span style="font-size:1.5em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:1.5em;">{mbti_emoji}</span> {mbti}
+    </h2>
+    <h3 style="font-size:1.7em; margin:30px 0; color:#fff; text-shadow: 1px 1px 5px rgba(0,0,0,0.5);">{combo}</h3>
+    <h1 style="font-size:4.5em; margin:30px 0; color:#ffd700; text-shadow: 3px 3px 15px rgba(0,0,0,0.6);">{score}점</h1>
 
-            <!-- 광고 박스: 최고 조합 아래 -->
-            <div style="font-size:0.9em; font-weight:bold; color:#ffd700; text-shadow: 1px 1px 3px rgba(0,0,0,0.6); background:rgba(255,255,255,0.25); padding:12px 15px; border-radius:20px; margin:20px 40px; line-height:1.4; backdrop-filter: blur(5px);">
-              💧 <b>정수기 렌탈 대박!</b><br>
-              제휴카드면 <b>월 0원부터</b>!<br>
-              설치 당일 <b>최대 50만원 지원</b> + 사은품 듬뿍 ✨
-            </div>
+    <div style="font-size:0.9em; font-weight:bold; color:#ffd700; text-shadow: 1px 1px 3px rgba(0,0,0,0.6); background:rgba(255,255,255,0.25); padding:12px 15px; border-radius:20px; margin:20px 40px; line-height:1.4; backdrop-filter: blur(5px);">
+      💧 <b>정수기 렌탈 대박!</b><br>
+      제휴카드면 <b>월 0원부터</b>!<br>
+      설치 당일 <b>최대 50만원 지원</b> + 사은품 듬뿍 ✨
+    </div>
 
-            <div style="background:rgba(255,255,255,0.25); border-radius:25px; padding:20px; margin:20px 10px; backdrop-filter: blur(10px);">
-              <p style="font-size:1.1em; margin:10px 0;"><b>{t['zodiac_title']}</b>: {zodiac_desc}</p>
-              <p style="font-size:1.1em; margin:10px 0;"><b>{t['mbti_title']}</b>: {mbti_desc}</p>
-              <p style="font-size:1.1em; margin:10px 0;"><b>{t['saju_title']}</b>: {saju}</p>
-              <hr style="border:none; border-top:1px solid rgba(255,255,255,0.5); margin:15px 0;">
-              <p style="font-size:1.2em; margin:10px 0;"><b>{t['today_title']}</b>: {today}</p>
-              <p style="font-size:1.2em; margin:10px 0;"><b>{t['tomorrow_title']}</b>: {tomorrow}</p>
-              <hr style="border:none; border-top:1px solid rgba(255,255,255,0.5); margin:15px 0;">
-              <p style="font-size:1.2em; margin:10px 0; color:#ffd700;"><b>2026 전체 운세</b>: 성장과 재물이 함께하는 최고의 해! 대박 기운 가득 ✨</p>
-              <p style="font-size:1.1em; margin:10px 0;"><b>조합 한 마디</b>: {zodiac}의 노력과 {mbti}의 따뜻함으로 모두를 이끄는 리더가 될 거예요!</p>
-              <p style="font-size:1.1em; margin:10px 0;"><b>럭키 컬러</b>: 골드 💛 | <b>럭키 아이템</b>: 황금 액세서리 or 노란 지갑</p>
-              <p style="font-size:1.0em; margin:10px 0; font-style:italic;">"90점: 작은 행동 하나가 큰 행운으로 돌아올 해! 자신을 믿고 도전하세요 🚀"</p>
-              <p style="font-size:1.0em; margin:10px 0;">💡 <b>팁</b>: 이번 달 새로운 사람 만나는 기회 많아요. 적극적으로 나서보세요!</p>
-            </div>
+    <div style="background:rgba(255,255,255,0.25); border-radius:25px; padding:20px; margin:20px 10px; backdrop-filter: blur(10px);">
+      <p style="font-size:1.1em; margin:10px 0;"><b>{zodiac_title}</b>: {zodiac_desc}</p>
+      <p style="font-size:1.1em; margin:10px 0;"><b>{mbti_title}</b>: {mbti_desc}</p>
+      <p style="font-size:1.1em; margin:10px 0;"><b>{saju_title}</b>: {saju}</p>
+      <hr style="border:none; border-top:1px solid rgba(255,255,255,0.5); margin:15px 0;">
+      <p style="font-size:1.2em; margin:10px 0;"><b>{today_title}</b>: {today}</p>
+      <p style="font-size:1.2em; margin:10px 0;"><b>{tomorrow_title}</b>: {tomorrow}</p>
+      <hr style="border:none; border-top:1px solid rgba(255,255,255,0.5); margin:15px 0;">
+      <p style="font-size:1.2em; margin:10px 0; color:#ffd700;"><b>2026 전체 운세</b>: 성장과 재물이 함께하는 최고의 해! 대박 기운 가득 ✨</p>
+      <p style="font-size:1.1em; margin:10px 0;"><b>조합 한 마디</b>: {zodiac}의 노력과 {mbti}의 따뜻함으로 모두를 이끄는 리더가 될 거예요!</p>
+      <p style="font-size:1.1em; margin:10px 0;"><b>럭키 컬러</b>: 골드 💛 | <b>럭키 아이템</b>: 황금 액세서리 or 노란 지갑</p>
+      <p style="font-size:1.0em; margin:10px 0; font-style:italic;">"90점: 작은 행동 하나가 큰 행운으로 돌아올 해! 자신을 믿고 도전하세요 🚀"</p>
+      <p style="font-size:1.0em; margin:10px 0;">💡 <b>팁</b>: 이번 달 새로운 사람 만나는 기회 많아요. 적극적으로 나서보세요!</p>
+    </div>
 
-            <p style="font-size:0.8em; opacity:0.8; margin:20px 0;">{app_url}</p>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)  
+    <p style="font-size:0.8em; opacity:0.8; margin:20px 0;">{app_url}</p>
+  </div>
+</div>
+""".format(
+    name_text=name_text,
+    zodiac_emoji=zodiac_emoji,
+    zodiac=zodiac,
+    mbti_emoji=mbti_emoji,
+    mbti=mbti,
+    combo=t['combo'],
+    score=score,
+    zodiac_title=t['zodiac_title'],
+    zodiac_desc=zodiac_desc,
+    mbti_title=t['mbti_title'],
+    mbti_desc=mbti_desc,
+    saju_title=t['saju_title'],
+    saju=saju,
+    today_title=t['today_title'],
+    today=today,
+    tomorrow_title=t['tomorrow_title'],
+    tomorrow=tomorrow,
+    app_url=app_url
+), unsafe_allow_html=True)  
         st.balloons()
         st.snow()
 
