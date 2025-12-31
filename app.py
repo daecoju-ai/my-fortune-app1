@@ -290,7 +290,22 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-st.markdown(f"""
+# 결과 화면
+if st.session_state.result_shown:
+    mbti = st.session_state.mbti
+    zodiac = get_zodiac(st.session_state.year)
+    if zodiac:
+        score = 90
+        saju = get_saju(st.session_state.year, st.session_state.month, st.session_state.day)
+        today = get_daily_fortune(zodiac, 0)
+        tomorrow = get_daily_fortune(zodiac, 1)
+        zodiac_emoji = Z[zodiac].split(' ',1)[0]
+        zodiac_desc = Z[zodiac].split(' ',1)[1] if ' ' in Z[zodiac] else ""
+        mbti_emoji = M[mbti].split(' ',1)[0]
+        mbti_desc = M[mbti].split(' ',1)[1] if ' ' in M[mbti] else ""
+        name_text = f"{st.session_state.name}{t['your_fortune']}" if st.session_state.name else t["title"]
+
+        st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
         <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
                      width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:15px;
@@ -324,11 +339,6 @@ st.markdown(f"""
         </div>
         """, unsafe_allow_html=True)
 
-        # 효과 제거 (한 화면에 맞추기 위해)
-        # st.balloons()
-        # st.snow()
-
-        # 공유 버튼 (작게)
         share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
         <div style="text-align:center; margin:10px 0;">
