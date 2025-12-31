@@ -308,15 +308,15 @@ if st.session_state.result_shown:
         st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
         <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
-                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:10px;
+                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:8px;
                      box-sizing:border-box; color:white; text-align:center; overflow:hidden;
-                     font-family:'Noto Sans KR', sans-serif; font-size:0.9em; line-height:1.3;">
-          <h2 style="font-size:1.5em; margin:10px 0;">
-            <span style="font-size:1.7em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:1.7em;">{mbti_emoji}</span> {mbti}
+                     font-family:'Noto Sans KR', sans-serif; font-size:0.85em; line-height:1.2;">
+          <h2 style="font-size:1.2em; margin:8px 0;">
+            <span style="font-size:1.4em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:1.4em;">{mbti_emoji}</span> {mbti}
           </h2>
-          <h3 style="font-size:1.0em; margin:5px 0; opacity:0.9;">{t['combo']}</h3>
+          <h3 style="font-size:0.9em; margin:4px 0; opacity:0.9;">{t['combo']}</h3>
 
-          <div style="background:#ffffff40; border-radius:20px; padding:12px; margin:15px 10px; backdrop-filter: blur(10px); line-height:1.5; font-size:1.05em;">
+          <div style="background:#ffffff40; border-radius:18px; padding:10px; margin:10px 8px; backdrop-filter: blur(10px); line-height:1.4; font-size:1.0em;">
             <b>{t['zodiac_title']}</b>: {zodiac_desc}<br>
             <b>{t['mbti_title']}</b>: {mbti_desc}<br>
             <b>{t['saju_title']}</b>: {saju}<br><br>
@@ -329,7 +329,7 @@ if st.session_state.result_shown:
           </div>
 
           <!-- 광고 -->
-          <div style="background:#ffffff40; border-radius:15px; padding:8px; margin:10px 10px; backdrop-filter: blur(5px); font-size:0.9em;">
+          <div style="background:#ffffff40; border-radius:15px; padding:8px; margin:8px 8px; backdrop-filter: blur(5px); font-size:0.85em;">
             <small style="color:#ffd700; opacity:0.8;">광고</small><br>
             💧 <b>정수기 렌탈 대박!</b><br>
             제휴카드면 <b>월 0원부터</b>!<br>
@@ -337,15 +337,15 @@ if st.session_state.result_shown:
             <a href="https://www.다나눔렌탈.com" target="_blank" style="color:#00bfff; text-decoration:underline;">🔗 다나눔렌탈.com 바로가기</a>
           </div>
 
-          <p style="font-size:0.6em; opacity:0.8; margin:5px 0;">{app_url}</p>
+          <p style="font-size:0.6em; opacity:0.8; margin:4px 0;">{app_url}</p>
         </div>
         """, unsafe_allow_html=True)
 
-        # 공유 텍스트와 버튼 (들여쓰기 정확히 if zodiac 안으로!)
+        # 공유 버튼
         share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
-        <div style="text-align:center; margin:5px 0;">
-            <button style="background:white; color:#6a11cb; padding:8px 35px; border:none; border-radius:30px; font-size:0.9em; font-weight:bold;" onclick="shareResult()">
+        <div style="text-align:center; margin:4px 0;">
+            <button style="background:white; color:#6a11cb; padding:7px 30px; border:none; border-radius:30px; font-size:0.85em; font-weight:bold;" onclick="shareResult()">
               {t["share_btn"]}
             </button>
         </div>
@@ -359,12 +359,4 @@ if st.session_state.result_shown:
         }}
         </script>
         """
-        st_html(share_component, height=70)
-
-    # reset 버튼 (if zodiac 바깥으로)
-    if st.button(t["reset"], use_container_width=True):
-        st.session_state.clear()
-        st.rerun()
-
-# footer (완전 바깥)
-st.caption(t["footer"])
+        st_html(share_component, height=60)
