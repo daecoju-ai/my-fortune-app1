@@ -482,8 +482,7 @@ if st.session_state.result_shown:
             <p style="font-size:0.8em; opacity:0.8; margin:20px 0;">{app_url}</p>
           </div>
         </div>
-        """, unsafe_allow_html=True)
-
+        """, unsafe_allow_html=True)  
         st.balloons()
         st.snow()
 
