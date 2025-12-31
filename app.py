@@ -8,7 +8,7 @@ translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 + 오늘/내일 운세 🌟",
         "caption": "완전 무료 😄",
-        "ad_title": "💳 렌탈 궁금할 때?",
+        "ad_title": "💳정수기 렌탈 궁금할 때?",
         "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 페이백</b>!",
         "ad_btn": "🔗 보러가기",
         "birth": "### 생년월일 입력",
@@ -295,7 +295,6 @@ if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
     if zodiac:
-        score = 90
         saju = get_saju(st.session_state.year, st.session_state.month, st.session_state.day)
         today = get_daily_fortune(zodiac, 0)
         tomorrow = get_daily_fortune(zodiac, 1)
@@ -328,7 +327,6 @@ if st.session_state.result_shown:
             <b>팁</b>: 새로운 사람 만나는 기회 많아요. 적극적으로!
           </div>
 
-          <!-- 광고 -->
           <div style="background:#ffffff40; border-radius:15px; padding:8px; margin:8px 8px; backdrop-filter: blur(5px); font-size:0.85em;">
             <small style="color:#ffd700; opacity:0.8;">광고</small><br>
             💧 <b>정수기 렌탈 대박!</b><br>
@@ -341,7 +339,6 @@ if st.session_state.result_shown:
         </div>
         """, unsafe_allow_html=True)
 
-        # 공유 버튼
         share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
         <div style="text-align:center; margin:4px 0;">
@@ -360,3 +357,9 @@ if st.session_state.result_shown:
         </script>
         """
         st_html(share_component, height=60)
+
+    if st.button(t["reset"], use_container_width=True):
+        st.session_state.clear()
+        st.rerun()
+
+st.caption(t["footer"])
