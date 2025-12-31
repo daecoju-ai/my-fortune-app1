@@ -38,10 +38,18 @@ translations = {
         "your_fortune": "님의 2026년 운세",
         "footer": "재미로만 봐주세요 😊",
         "zodiacs": {
-            "쥐띠": "🐭 활발·성장, 돈↑", "소띠": "🐮 노력 결실", "호랑이띠": "🐯 도전 성공, 돈 대박",
-            "토끼띠": "🐰 안정·사랑 운", "용띠": "🐲 운↑ 리더십", "뱀띠": "🐍 실속·직감",
-            "말띠": "🐴 새 도전·돈 기회", "양띠": "🐑 편안+결혼 운", "원숭이띠": "🐵 변화·재능",
-            "닭띠": "🐔 노력 결과", "개띠": "🐶 친구·돈↑", "돼지띠": "🐷 여유·돈 최고"
+            "쥐띠": "🐭 활발한 에너지로 새로운 기회 잡아! 돈운 대박, 투자 주의하며 도전하세요 💰",
+            "소띠": "🐮 꾸준한 노력의 결실! 안정된 재물운, 가족과 함께하는 행복한 해 🏡",
+            "호랑이띠": "🐯 도전과 성공의 해! 큰 프로젝트 성공, 리더십 발휘 대박 🚀",
+            "토끼띠": "🐰 안정과 사랑운 최고! 연애/결혼 운 좋음, 마음 편안한 한 해 ❤️",
+            "용띠": "🐲 운기 상승! 리더십으로 주변 끌어당김, 승진/사업 성공 가능성 높음 👑",
+            "뱀띠": "🐍 직감과 실속의 해! 예상치 못한 재물운, 조용히 기회 잡으세요 🐍",
+            "말띠": "🐴 새 도전과 돈 기회! 이동/여행 운 좋음, 적극적으로 나서보세요 ✈️",
+            "양띠": "🐑 편안함과 결혼 운! 가정운 최고, 따뜻한 관계 쌓이는 해 🏠",
+            "원숭이띠": "🐵 변화와 재능 발휘! 창의력으로 성공, 새로운 분야 도전 좋음 🎨",
+            "닭띠": "🐔 노력의 결실 맺는 해! 인정받고 승진 가능, 꾸준함이 관건 🏆",
+            "개띠": "🐶 친구와 돈운 상승! 귀인 도움 많음, 네트워킹 적극적으로 🤝",
+            "돼지띠": "🐷 여유와 최고 돈운! 재물 대박, 즐기면서 보내는 최고의 해 🐷"
         },
         "mbtis": {
             "INTJ": "🧠 냉철 전략가", "INTP": "💡 아이디어 천재", "ENTJ": "👑 보스", "ENTP": "⚡ 토론왕",
@@ -167,7 +175,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 카드 (모바일 최적화 + 내용 상세 추가 + 공유 버튼 st.components.v1.html)
+# 결과 카드 (광고 문구 더 매력적으로 + 모바일 최적화)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -188,8 +196,11 @@ if st.session_state.result_shown:
                      width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:10px 10px;
                      box-sizing:border-box; display:flex; flex-direction:column; color:white; text-align:center;
                      font-family:'Noto Sans KR', sans-serif;">
-          <div style="position:absolute; top:10px; right:10px; font-size:0.7em; opacity:0.8; font-weight:bold;">
-            {t["water_purifier"]}
+          <div style="position:absolute; top:10px; right:10px; font-size:1.0em; font-weight:bold; color:#ffd700; text-shadow: 1px 1px 3px rgba(0,0,0,0.6); background:rgba(255,255,255,0.25); padding:10px 14px; border-radius:20px; backdrop-filter: blur(5px);">
+            💧 <b>정수기 렌탈 대박!</b><br>
+            <span style="font-size:0.95em;">제휴카드면 <b>월 0원부터</b> 가능!</span><br>
+            <span style="font-size:0.95em; color:#fff44f;">설치 당일 <b>최대 50만원 지원</b><br>+ 사은품 듬뿍 ✨</span><br>
+            <span style="font-size:0.85em; color:#ffeb3b;">지금 문의 GO!</span>
           </div>
           <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
             <h1 style="font-size:1.8em; margin:5px 0; font-family:'Playfair Display', serif; text-shadow: 2px 2px 10px rgba(0,0,0,0.3);">{name_text}</h1>
@@ -220,7 +231,7 @@ if st.session_state.result_shown:
         st.balloons()
         st.snow()
 
-        # 공유 버튼 (st.components.v1.html 방식 - 너가 원하는 스타일)
+        # 공유 버튼 (st.components.v1.html 방식)
         share_text = f"{name_text}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{score}점!\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
         <div style="text-align:center; margin:15px 0;">
