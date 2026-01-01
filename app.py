@@ -1,33 +1,30 @@
-아래는 영어 완벽 지원 + 모든 기능(공유 복사, 다시하기, 타로, 가운데 정렬 등) 포함된 최종 통합 코드예요!
-이걸 그대로 하나의 app.py 파일로 저장하고 실행하거나 Streamlit에 배포하면 됩니다.
-생략 없이 전체 코드로 드려요. 복사해서 바로 사용하세요! 🚀
-Pythonimport streamlit as st
+import streamlit as st
 from datetime import datetime, timedelta
 import random
 
 # 다국어 사전 (한국어 + 영어 완벽 지원)
 translations = {
     "ko": {
-        "title": "🌟 2026 띠 + MBTI + 사주 + 오늘/내일 운세 🌟",
-        "caption": "완전 무료 😄",
-        "ad_title": "💳 정수기렌탈 궁금할 때?",
+        "title": "2026 띠 + MBTI + 사주 + 오늘/내일 운세",
+        "caption": "완전 무료",
+        "ad_title": "정수기렌탈 궁금할 때?",
         "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>설치당일 최대 현금50만원 페이백</b>!",
-        "ad_btn": "🔗 보러가기",
+        "ad_btn": "보러가기",
         "birth": "### 생년월일 입력",
         "name_placeholder": "이름 입력 (결과에 표시돼요)",
         "mbti_mode": "MBTI 어떻게 할까?",
         "direct": "직접 입력",
         "test": "상세 테스트 (16문제)",
-        "test_start": "상세 테스트 시작! 하나씩 답해주세요 😊",
+        "test_start": "상세 테스트 시작! 하나씩 답해주세요",
         "energy": "에너지 방향",
         "info": "정보 수집",
         "decision": "결정 방식",
         "life": "생활 방식",
         "result_btn": "결과 보기!",
-        "fortune_btn": "🔮 2026년 운세 보기!",
+        "fortune_btn": "2026년 운세 보기!",
         "reset": "처음부터 다시 하기",
         "share_btn": "친구에게 결과 공유",
-        "tarot_btn": "🔮 오늘의 타로 카드 뽑기",
+        "tarot_btn": "오늘의 타로 카드 뽑기",
         "tarot_title": "오늘의 타로 카드",
         "zodiac_title": "띠 운세",
         "mbti_title": "MBTI 특징",
@@ -42,11 +39,11 @@ translations = {
         "lucky_item_title": "럭키 아이템",
         "tip_title": "팁",
         "overall_fortunes": [
-            "성장과 재물이 함께하는 최고의 해! 대박 기운 가득 ✨",
-            "안정과 행복이 넘치는 한 해! 가족과 함께하는 기쁨 🏡",
-            "도전과 성공의 해! 큰 성과를 이룰 거예요 🚀",
-            "사랑과 인연이 피어나는 로맨틱한 해 ❤️",
-            "변화와 새로운 시작! 창의력이 빛나는 한 해 🎨"
+            "성장과 재물이 함께하는 최고의 해! 대박 기운 가득",
+            "안정과 행복이 넘치는 한 해! 가족과 함께하는 기쁨",
+            "도전과 성공의 해! 큰 성과를 이룰 거예요",
+            "사랑과 인연이 피어나는 로맨틱한 해",
+            "변화와 새로운 시작! 창의력이 빛나는 한 해"
         ],
         "combo_comments": [
             "{}의 노력과 {}의 따뜻함으로 모두를 이끄는 리더가 될 거예요!",
@@ -55,70 +52,70 @@ translations = {
             "{}의 안정감과 {}의 열정으로 대박 성공!",
             "{}의 유연함과 {}의 결단력으로 모든 일 해결!"
         ],
-        "lucky_colors": ["골드 💛", "레드 ❤️", "블루 💙", "그린 🌿", "퍼플 💜"],
+        "lucky_colors": ["골드", "레드", "블루", "그린", "퍼플"],
         "lucky_items": ["황금 액세서리", "빨간 지갑", "파란 목걸이", "초록 식물", "보라색 펜"],
         "tips": [
             "새로운 사람 만나는 기회 많아요. 적극적으로!",
-            "작은 투자에 집중하세요. 이득 볼 가능성 높음 💰",
-            "건강 관리에 신경 쓰세요. 규칙적인 운동 추천 🏃",
-            "가족/친구와 시간 보내세요. 행복 충전! 🏡",
-            "창의적인 취미를 시작해보세요. 재능 발휘될 거예요 🎨"
+            "작은 투자에 집중하세요. 이득 볼 가능성 높음",
+            "건강 관리에 신경 쓰세요. 규칙적인 운동 추천",
+            "가족/친구와 시간 보내세요. 행복 충전!",
+            "창의적인 취미를 시작해보세요. 재능 발휘될 거예요"
         ],
         "tarot_cards": {
-            "The Fool": "🃏 바보 - 새로운 시작, 모험, 순수한 믿음",
-            "The Magician": "🪄 마법사 - 창조력, 능력 발휘, 집중",
-            "The High Priestess": "🔮 여사제 - 직감, 신비, 내면의 목소리",
-            "The Empress": "👑 여제 - 풍요, 어머니의 사랑, 창작",
-            "The Emperor": "♚ 황제 - 안정, 권위, 구조",
-            "The Hierophant": "⛪ 교황 - 전통, 스승, 지도",
-            "The Lovers": "💕 연인 - 사랑, 조화, 선택",
-            "The Chariot": "🚀 전차 - 승리, 의지력, 방향",
-            "Strength": "💪 힘 - 용기, 인내, 부드러운 통제",
-            "The Hermit": "🏮 은둔자 - 내면 탐구, 지혜, 고독",
-            "Wheel of Fortune": "🎡 운명의 수레바퀴 - 변화, 운, 사이클",
-            "Justice": "⚖️ 정의 - 공정, 균형, 진실",
-            "The Hanged Man": "🙃 매달린 사람 - 희생, 새로운 관점, 기다림",
-            "Death": "💀 죽음 - 변화, 끝과 시작, 재생",
-            "Temperance": "👼 절제 - 균형, 조화, 인내",
-            "The Devil": "😈 악마 - 속박, 유혹, 물질주의",
-            "The Tower": "🗼 탑 - 갑작스러운 변화, 파괴와 재건",
-            "The Star": "⭐ 별 - 희망, 영감, 치유",
-            "The Moon": "🌙 달 - 불안, 환상, 직감",
-            "The Sun": "☀️ 태양 - 행복, 성공, 긍정 에너지",
-            "Judgement": "📯 심판 - 부활, 깨달음, 용서",
-            "The World": "🌍 세계 - 완성, 성취, 전체성"
+            "The Fool": "바보 - 새로운 시작, 모험, 순수한 믿음",
+            "The Magician": "마법사 - 창조력, 능력 발휘, 집중",
+            "The High Priestess": "여사제 - 직감, 신비, 내면의 목소리",
+            "The Empress": "여제 - 풍요, 어머니의 사랑, 창작",
+            "The Emperor": "황제 - 안정, 권위, 구조",
+            "The Hierophant": "교황 - 전통, 스승, 지도",
+            "The Lovers": "연인 - 사랑, 조화, 선택",
+            "The Chariot": "전차 - 승리, 의지력, 방향",
+            "Strength": "힘 - 용기, 인내, 부드러운 통제",
+            "The Hermit": "은둔자 - 내면 탐구, 지혜, 고독",
+            "Wheel of Fortune": "운명의 수레바퀴 - 변화, 운, 사이클",
+            "Justice": "정의 - 공정, 균형, 진실",
+            "The Hanged Man": "매달린 사람 - 희생, 새로운 관점, 기다림",
+            "Death": "죽음 - 변화, 끝과 시작, 재생",
+            "Temperance": "절제 - 균형, 조화, 인내",
+            "The Devil": "악마 - 속박, 유혹, 물질주의",
+            "The Tower": "탑 - 갑작스러운 변화, 파괴와 재건",
+            "The Star": "별 - 희망, 영감, 치유",
+            "The Moon": "달 - 불안, 환상, 직감",
+            "The Sun": "태양 - 행복, 성공, 긍정 에너지",
+            "Judgement": "심판 - 부활, 깨달음, 용서",
+            "The World": "세계 - 완성, 성취, 전체성"
         },
         "zodiacs": {
-            "쥐띠": "🐭 안정 속 새로운 기회! 민첩한 판단으로 성공 잡아요 💰",
-            "소띠": "🐮 꾸준함의 결실! 안정된 성장과 행복한 가족운 🏡",
-            "호랑이띠": "🐯 대박 띠! 도전과 성공, 리더십 발휘로 큰 성과 🚀",
-            "토끼띠": "🐰 삼재 주의! 신중함으로 변화 대처, 안정 추구 ❤️",
-            "용띠": "🐲 운기 상승! 리더십과 승진 기회 많음 👑",
-            "뱀띠": "🐍 직감과 실속! 예상치 못한 재물운 🤑",
-            "말띠": "🐴 본띠 해! 추진력 강하지만 균형이 핵심 ✈️",
-            "양띠": "🐑 대박 띠! 편안함과 최고 돈운, 가정 행복 🏠",
-            "원숭이띠": "🐵 변화와 재능 발휘! 창의력으로 성공 🎨",
-            "닭띠": "🐔 노력 결실! 인정과 승진 가능성 높음 🏆",
-            "개띠": "🐶 대박 띠! 귀인 도움과 네트워킹으로 상승 🤝",
-            "돼지띠": "🐷 여유와 재물 대박! 즐기는 최고의 해 🐷"
+            "쥐띠": "안정 속 새로운 기회! 민첩한 판단으로 성공 잡아요",
+            "소띠": "꾸준함의 결실! 안정된 성장과 행복한 가족운",
+            "호랑이띠": "대박 띠! 도전과 성공, 리더십 발휘로 큰 성과",
+            "토끼띠": "삼재 주의! 신중함으로 변화 대처, 안정 추구",
+            "용띠": "운기 상승! 리더십과 승진 기회 많음",
+            "뱀띠": "직감과 실속! 예상치 못한 재물운",
+            "말띠": "본띠 해! 추진력 강하지만 균형이 핵심",
+            "양띠": "대박 띠! 편안함과 최고 돈운, 가정 행복",
+            "원숭이띠": "변화와 재능 발휘! 창의력으로 성공",
+            "닭띠": "노력 결실! 인정과 승진 가능성 높음",
+            "개띠": "대박 띠! 귀인 도움과 네트워킹으로 상승",
+            "돼지띠": "여유와 재물 대박! 즐기는 최고의 해"
         },
         "mbtis": {
-            "INTJ": "🧠 냉철 전략가", "INTP": "💡 아이디어 천재", "ENTJ": "👑 보스", "ENTP": "⚡ 토론왕",
-            "INFJ": "🔮 마음 마스터", "INFP": "🎨 감성 예술가", "ENFJ": "🤗 모두 선생님", "ENFP": "🎉 인간 비타민",
-            "ISTJ": "📋 규칙 지킴이", "ISFJ": "🛡️ 세상 따뜻함", "ESTJ": "📢 리더", "ESFJ": "💕 분위기 메이커",
-            "ISTP": "🔧 고치는 장인", "ISFP": "🌸 감성 힐러", "ESTP": "🏄 모험왕", "ESFP": "🎭 파티 주인공"
+            "INTJ": "냉철 전략가", "INTP": "아이디어 천재", "ENTJ": "보스", "ENTP": "토론왕",
+            "INFJ": "마음 마스터", "INFP": "감성 예술가", "ENFJ": "모두 선생님", "ENFP": "인간 비타민",
+            "ISTJ": "규칙 지킴이", "ISFJ": "세상 따뜻함", "ESTJ": "리더", "ESFJ": "분위기 메이커",
+            "ISTP": "고치는 장인", "ISFP": "감성 힐러", "ESTP": "모험왕", "ESFP": "파티 주인공"
         },
         "saju_msgs": [
-            "목(木) 기운 강함 → 성장과 발전의 해! 🌱", "화(火) 기운 강함 → 열정 폭발! ❤️",
-            "토(土) 기운 강함 → 안정과 재물운 💰", "금(金) 기운 강함 → 결단력 좋음! 👔",
-            "수(水) 기운 강함 → 지혜와 흐름 🌊", "오행 균형 → 행복한 한 해 ✨",
-            "양기 강함 → 도전 성공 🚀", "음기 강함 → 내면 성찰 😌"
+            "목(木) 기운 강함 → 성장과 발전의 해!", "화(火) 기운 강함 → 열정 폭발!",
+            "토(土) 기운 강함 → 안정과 재물운", "금(金) 기운 강함 → 결단력 좋음!",
+            "수(水) 기운 강함 → 지혜와 흐름", "오행 균형 → 행복한 한 해",
+            "양기 강함 → 도전 성공", "음기 강함 → 내면 성찰"
         ],
         "daily_msgs": [
-            "재물운 좋음! 작은 투자도 이득 봐요 💰", "연애운 최고! 고백하거나 데이트 좋음 ❤️",
-            "건강 주의! 과로 피하고 쉬세요 😴", "전체운 대박! 좋은 일만 생길 거예요 🌟",
-            "인간관계 운 좋음! 귀인 만남 가능 🤝", "학업/일 운 최고! 집중력 최고 📚",
-            "여행운 좋음! 갑자기 떠나도 괜찮아요 ✈️", "기분 좋은 하루! 웃음이 가득할 거예요 😄"
+            "재물운 좋음! 작은 투자도 이득 봐요", "연애운 최고! 고백하거나 데이트 좋음",
+            "건강 주의! 과로 피하고 쉬세요", "전체운 대박! 좋은 일만 생길 거예요",
+            "인간관계 운 좋음! 귀인 만남 가능", "학업/일 운 최고! 집중력 최고",
+            "여행운 좋음! 갑자기 떠나도 괜찮아요", "기분 좋은 하루! 웃음이 가득할 거예요"
         ],
         "q_energy": ["주말에 친구들이 갑자기 '놀자!' 하면?", "모임에서 처음 본 사람들과 대화하는 거?", "하루 종일 사람 만난 후에?", "생각이 떠오르면?"],
         "q_info": ["새로운 카페 가면 뭐가 먼저 눈에 들어?", "친구가 고민 상담하면?", "책이나 영화 볼 때?", "쇼핑할 때?"],
@@ -134,26 +131,26 @@ translations = {
         "options_p": ["그때그때 기분 따라 즉흥적으로 (P)", "마감 직전에 몰아서 함 (P)", "대충 써도 괜찮아 (P)", "옵션 더 알아보고 싶어 (P)"]
     },
     "en": {
-        "title": "🌟 2026 Zodiac + MBTI + Fortune + Today/Tomorrow Luck 🌟",
-        "caption": "Completely Free 😄",
-        "ad_title": "💳 Curious about water purifier rental?",
+        "title": "2026 Zodiac + MBTI + Fortune + Today/Tomorrow Luck",
+        "caption": "Completely Free",
+        "ad_title": "Curious about water purifier rental?",
         "ad_text": "<b>Dananum Rental</b>: <b>From 0 won/month</b> with partner card + <b>up to 500,000 won cashback</b>!",
-        "ad_btn": "🔗 Check it out",
+        "ad_btn": "Check it out",
         "birth": "### Enter Birth Date",
         "name_placeholder": "Enter name (shown in result)",
         "mbti_mode": "How to do MBTI?",
         "direct": "Direct input",
         "test": "Detailed test (16 questions)",
-        "test_start": "Detailed test start! Please answer one by one 😊",
+        "test_start": "Detailed test start! Please answer one by one",
         "energy": "Energy Direction",
         "info": "Information Gathering",
         "decision": "Decision Making",
         "life": "Lifestyle",
         "result_btn": "View Result!",
-        "fortune_btn": "🔮 View 2026 Fortune!",
+        "fortune_btn": "View 2026 Fortune!",
         "reset": "Start Over",
         "share_btn": "Share Result with Friends",
-        "tarot_btn": "🔮 Draw Today's Tarot Card",
+        "tarot_btn": "Draw Today's Tarot Card",
         "tarot_title": "Today's Tarot Card",
         "zodiac_title": "Zodiac Fortune",
         "mbti_title": "MBTI Traits",
@@ -168,11 +165,11 @@ translations = {
         "lucky_item_title": "Lucky Item",
         "tip_title": "Tip",
         "overall_fortunes": [
-            "Growth and wealth together – the best year! Big luck ✨",
-            "A year full of stability and happiness! Family joy 🏡",
-            "Year of challenge and success! Great achievements 🚀",
-            "Romantic year with love blooming ❤️",
-            "Year of change and new beginnings! Creativity shines 🎨"
+            "Growth and wealth together - the best year! Big luck",
+            "A year full of stability and happiness! Family joy",
+            "Year of challenge and success! Great achievements",
+            "Romantic year with love blooming",
+            "Year of change and new beginnings! Creativity shines"
         ],
         "combo_comments": [
             "With {}'s effort and {}'s warmth, you'll become a leader!",
@@ -181,70 +178,70 @@ translations = {
             "{}'s stability and {}'s passion lead to big success!",
             "{}'s flexibility and {}'s decisiveness solve everything!"
         ],
-        "lucky_colors": ["Gold 💛", "Red ❤️", "Blue 💙", "Green 🌿", "Purple 💜"],
+        "lucky_colors": ["Gold", "Red", "Blue", "Green", "Purple"],
         "lucky_items": ["Golden accessories", "Red wallet", "Blue necklace", "Green plant", "Purple pen"],
         "tips": [
             "Many chances to meet new people. Be proactive!",
-            "Focus on small investments. High chance of profit 💰",
-            "Take care of health. Regular exercise recommended 🏃",
-            "Spend time with family/friends. Recharge happiness! 🏡",
-            "Start a creative hobby. Your talent will shine 🎨"
+            "Focus on small investments. High chance of profit",
+            "Take care of health. Regular exercise recommended",
+            "Spend time with family/friends. Recharge happiness!",
+            "Start a creative hobby. Your talent will shine"
         ],
         "tarot_cards": {
-            "The Fool": "🃏 The Fool - New beginnings, adventure, innocence",
-            "The Magician": "🪄 The Magician - Manifestation, skill, concentration",
-            "The High Priestess": "🔮 The High Priestess - Intuition, mystery, inner voice",
-            "The Empress": "👑 The Empress - Abundance, nurturing, creativity",
-            "The Emperor": "♚ The Emperor - Stability, authority, structure",
-            "The Hierophant": "⛪ The Hierophant - Tradition, guidance, conformity",
-            "The Lovers": "💕 The Lovers - Love, harmony, choices",
-            "The Chariot": "🚀 The Chariot - Victory, determination, direction",
-            "Strength": "💪 Strength - Courage, patience, gentle control",
-            "The Hermit": "🏮 The Hermit - Soul searching, wisdom, solitude",
-            "Wheel of Fortune": "🎡 Wheel of Fortune - Change, cycles, fate",
-            "Justice": "⚖️ Justice - Fairness, truth, balance",
-            "The Hanged Man": "🙃 The Hanged Man - Sacrifice, new perspective, waiting",
-            "Death": "💀 Death - Transformation, ending, rebirth",
-            "Temperance": "👼 Temperance - Balance, harmony, patience",
-            "The Devil": "😈 The Devil - Bondage, temptation, materialism",
-            "The Tower": "🗼 The Tower - Sudden change, upheaval, revelation",
-            "The Star": "⭐ The Star - Hope, inspiration, healing",
-            "The Moon": "🌙 The Moon - Illusion, intuition, uncertainty",
-            "The Sun": "☀️ The Sun - Joy, success, positivity",
-            "Judgement": "📯 Judgement - Rebirth, awakening, forgiveness",
-            "The World": "🌍 The World - Completion, fulfillment, wholeness"
+            "The Fool": "The Fool - New beginnings, adventure, innocence",
+            "The Magician": "The Magician - Manifestation, skill, concentration",
+            "The High Priestess": "The High Priestess - Intuition, mystery, inner voice",
+            "The Empress": "The Empress - Abundance, nurturing, creativity",
+            "The Emperor": "The Emperor - Stability, authority, structure",
+            "The Hierophant": "The Hierophant - Tradition, guidance, conformity",
+            "The Lovers": "The Lovers - Love, harmony, choices",
+            "The Chariot": "The Chariot - Victory, determination, direction",
+            "Strength": "Strength - Courage, patience, gentle control",
+            "The Hermit": "The Hermit - Soul searching, wisdom, solitude",
+            "Wheel of Fortune": "Wheel of Fortune - Change, cycles, fate",
+            "Justice": "Justice - Fairness, truth, balance",
+            "The Hanged Man": "The Hanged Man - Sacrifice, new perspective, waiting",
+            "Death": "Death - Transformation, ending, rebirth",
+            "Temperance": "Temperance - Balance, harmony, patience",
+            "The Devil": "The Devil - Bondage, temptation, materialism",
+            "The Tower": "The Tower - Sudden change, upheaval, revelation",
+            "The Star": "The Star - Hope, inspiration, healing",
+            "The Moon": "The Moon - Illusion, intuition, uncertainty",
+            "The Sun": "The Sun - Joy, success, positivity",
+            "Judgement": "Judgement - Rebirth, awakening, forgiveness",
+            "The World": "The World - Completion, fulfillment, wholeness"
         },
         "zodiacs": {
-            "Rat": "🐭 New opportunities in stability! Success with quick judgment 💰",
-            "Ox": "🐮 Fruits of perseverance! Stable growth and happy family 🏡",
-            "Tiger": "🐯 Big luck! Challenge and success with leadership 🚀",
-            "Rabbit": "🐰 Caution with changes! Seek stability ❤️",
-            "Dragon": "🐲 Rising fortune! Leadership and promotion 👑",
-            "Snake": "🐍 Intuition and gain! Unexpected wealth 🤑",
-            "Horse": "🐴 Year of the Horse! Strong drive but balance is key ✈️",
-            "Goat": "🐑 Big luck! Comfort and best money luck, happy home 🏠",
-            "Monkey": "🐵 Change and talent shine! Success with creativity 🎨",
-            "Rooster": "🐔 Effort rewarded! Recognition and promotion 🏆",
-            "Dog": "🐶 Big luck! Helpful people and networking rise 🤝",
-            "Pig": "🐷 Relaxation and wealth jackpot! Enjoy the best year 🐷"
+            "Rat": "New opportunities in stability! Success with quick judgment",
+            "Ox": "Fruits of perseverance! Stable growth and happy family",
+            "Tiger": "Big luck! Challenge and success with leadership",
+            "Rabbit": "Caution with changes! Seek stability",
+            "Dragon": "Rising fortune! Leadership and promotion",
+            "Snake": "Intuition and gain! Unexpected wealth",
+            "Horse": "Year of the Horse! Strong drive but balance is key",
+            "Goat": "Big luck! Comfort and best money luck, happy home",
+            "Monkey": "Change and talent shine! Success with creativity",
+            "Rooster": "Effort rewarded! Recognition and promotion",
+            "Dog": "Big luck! Helpful people and networking rise",
+            "Pig": "Relaxation and wealth jackpot! Enjoy the best year"
         },
         "mbtis": {
-            "INTJ": "🧠 Strategist", "INTP": "💡 Thinker", "ENTJ": "👑 Commander", "ENTP": "⚡ Debater",
-            "INFJ": "🔮 Advocate", "INFP": "🎨 Mediator", "ENFJ": "🤗 Protagonist", "ENFP": "🎉 Campaigner",
-            "ISTJ": "📋 Logistician", "ISFJ": "🛡️ Defender", "ESTJ": "📢 Executive", "ESFJ": "💕 Consul",
-            "ISTP": "🔧 Virtuoso", "ISFP": "🌸 Adventurer", "ESTP": "🏄 Entrepreneur", "ESFP": "🎭 Entertainer"
+            "INTJ": "Strategist", "INTP": "Thinker", "ENTJ": "Commander", "ENTP": "Debater",
+            "INFJ": "Advocate", "INFP": "Mediator", "ENFJ": "Protagonist", "ENFP": "Campaigner",
+            "ISTJ": "Logistician", "ISFJ": "Defender", "ESTJ": "Executive", "ESFJ": "Consul",
+            "ISTP": "Virtuoso", "ISFP": "Adventurer", "ESTP": "Entrepreneur", "ESFP": "Entertainer"
         },
         "saju_msgs": [
-            "Strong Wood → Growth year! 🌱", "Strong Fire → Passion explosion! ❤️",
-            "Strong Earth → Stability and wealth 💰", "Strong Metal → Strong determination! 👔",
-            "Strong Water → Wisdom and flow 🌊", "Balanced elements → Happy year ✨",
-            "Strong Yang → Challenge success 🚀", "Strong Yin → Inner reflection 😌"
+            "Strong Wood - Growth year!", "Strong Fire - Passion explosion!",
+            "Strong Earth - Stability and wealth", "Strong Metal - Strong determination!",
+            "Strong Water - Wisdom and flow", "Balanced elements - Happy year",
+            "Strong Yang - Challenge success", "Strong Yin - Inner reflection"
         ],
         "daily_msgs": [
-            "Good wealth luck! Small investments pay off 💰", "Best love luck! Great for dates or confessions ❤️",
-            "Health caution! Rest well 😴", "Overall big luck! Only good things ahead 🌟",
-            "Good relationships! Meet helpful people 🤝", "Best for study/work! High focus 📚",
-            "Good travel luck! Spontaneous trips OK ✈️", "Happy day full of laughter 😄"
+            "Good wealth luck! Small investments pay off", "Best love luck! Great for dates or confessions",
+            "Health caution! Rest well", "Overall big luck! Only good things ahead",
+            "Good relationships! Meet helpful people", "Best for study/work! High focus",
+            "Good travel luck! Spontaneous trips OK", "Happy day full of laughter"
         ],
         "q_energy": ["Friends suddenly say 'Let's hang out!' on weekend?", "Talking to strangers at a gathering?", "After meeting people all day?", "When a thought comes to mind?"],
         "q_info": ["What catches your eye first in a new cafe?", "When friend shares worries?", "When reading book or watching movie?", "When shopping?"],
@@ -280,14 +277,13 @@ if "month" not in st.session_state:
 if "day" not in st.session_state:
     st.session_state.day = 1
 
-# 언어 선택 (상단에 표시)
+# 언어 선택
 st.session_state.lang = st.radio("언어 / Language", ["ko", "en"], index=0 if st.session_state.lang == "ko" else 1, horizontal=True)
 t = translations[st.session_state.lang]
 Z = t["zodiacs"]
 M = t["mbtis"]
 
-# 배포 후 자신의 앱 URL로 변경하세요!
-app_url = "https://my-fortune.streamlit.app"
+app_url = "https://my-fortune.streamlit.app"  # 배포 후 자신의 URL로 변경
 
 def get_zodiac(y):
     if st.session_state.lang == "en":
@@ -385,9 +381,9 @@ if st.session_state.result_shown:
     saju = get_saju(st.session_state.year, st.session_state.month, st.session_state.day)
     today = get_daily_fortune(zodiac, 0)
     tomorrow = get_daily_fortune(zodiac, 1)
-    zodiac_emoji = Z[zodiac].split(' ', 1)[0]
+    zodiac_emoji = Z[zodiac].split(' ', 1)[0] if ' ' in Z[zodiac] else ""
     zodiac_desc = Z[zodiac].split(' ', 1)[1] if ' ' in Z[zodiac] else Z[zodiac]
-    mbti_emoji = M[mbti].split(' ', 1)[0]
+    mbti_emoji = M[mbti].split(' ', 1)[0] if ' ' in M[mbti] else ""
     mbti_desc = M[mbti].split(' ', 1)[1] if ' ' in M[mbti] else M[mbti]
     name_display = f"{st.session_state.name}{'님의' if st.session_state.lang == 'ko' else ''}" if st.session_state.name else ""
 
@@ -397,7 +393,6 @@ if st.session_state.result_shown:
     lucky_item = random.choice(t["lucky_items"])
     tip = random.choice(t["tips"])
 
-    # CSS 스타일 (가운데 정렬 완벽)
     st.markdown("""
     <style>
         html, body, [class*="css"] {font-family: 'Noto Sans KR', sans-serif;}
@@ -434,7 +429,7 @@ if st.session_state.result_shown:
 
     st.markdown('<div class="gradient-bg">', unsafe_allow_html=True)
 
-    st.markdown(f"<h1 class='title-text'>⭐ {name_display} 2026{'년' if st.session_state.lang == 'ko' else ''} Fortune ⭐</h1>", unsafe_allow_html=True)
+    st.markdown(f"<h1 class='title-text'>{name_display} 2026{'년' if st.session_state.lang == 'ko' else ''} Fortune</h1>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='font-size:2.8em; color:white; text-shadow:3px 3px 8px rgba(0,0,0,0.7);'>"
                 f"{zodiac_emoji} {zodiac} + {mbti_emoji} {mbti}</h2>", unsafe_allow_html=True)
     st.markdown(f"<h3 class='combo-text'>{t['combo']}</h3>", unsafe_allow_html=True)
@@ -458,12 +453,12 @@ if st.session_state.result_shown:
     st.markdown('<div class="ad-card">', unsafe_allow_html=True)
     st.markdown(f"""
     <small style="color:#e74c3c; font-weight:bold;">{'Ad' if st.session_state.lang == 'en' else '광고'}</small><br>
-    💧 <b style="font-size:1.3em;">{'Water Purifier Rental Deal!' if st.session_state.lang == 'en' else '정수기 렌탈 대박!'}</b><br>
-    {'Partner card: From 0 won/month!' if st.session_state.lang == 'en' else '제휴카드면 <b>월 0원부터</b>!'}<br>
-    {'Up to 500,000 won support on installation day + lots of gifts ✨' if st.session_state.lang == 'en' else '설치 당일 <b>최대 50만원 지원</b> + 사은품 듬뿍 ✨'}<br><br>
+    <b style="font-size:1.3em;">{'Water Purifier Rental Deal!' if st.session_state.lang == 'en' else '정수기 렌탈 대박!'}</b><br>
+    {'Partner card: From 0 won/month!' if st.session_state.lang == 'en' else '제휴카드면 월 0원부터!'}<br>
+    {'Up to 500,000 won support on installation day + lots of gifts' if st.session_state.lang == 'en' else '설치 당일 최대 50만원 지원 + 사은품 듬뿍'}<br><br>
     <a href="https://www.다나눔렌탈.com" target="_blank" 
        style="color:#3498db; text-decoration:underline; font-weight:bold; font-size:1.2em;">
-       🔗 {'DananumRental.com' if st.session_state.lang == 'en' else '다나눔렌탈.com 바로가기'}</a>
+       {'DananumRental.com' if st.session_state.lang == 'en' else '다나눔렌탈.com 바로가기'}</a>
     """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -478,8 +473,7 @@ if st.session_state.result_shown:
         </div>
         """, unsafe_allow_html=True)
 
-    # 공유 버튼 - 클립보드 복사
-    share_text = f"""🌟 {name_display} 2026{'년' if st.session_state.lang == 'ko' else ''} Fortune 🌟
+    share_text = f"""{name_display} 2026{'년' if st.session_state.lang == 'ko' else ''} Fortune
 
 {zodiac_emoji} {zodiac} + {mbti_emoji} {mbti}
 {t['combo']}!
@@ -493,21 +487,21 @@ if st.session_state.result_shown:
 {t['lucky_color_title']}: {lucky_color} | {t['lucky_item_title']}: {lucky_item}
 {t['tip_title']}: {tip}
 
-🔮 {'Check your fortune too' if st.session_state.lang == 'en' else '나도 운세 보러 가기'}: {app_url}"""
+{'Check your fortune too' if st.session_state.lang == 'en' else '나도 운세 보러 가기'}: {app_url}"""
 
     st.markdown(f"""
     <div style="text-align:center; margin:50px 0;">
         <button onclick="copyResult()" style="background:#8e44ad; color:white; padding:18px 80px; 
                  border:none; border-radius:50px; font-size:1.4em; font-weight:bold;
                  box-shadow: 0 8px 25px rgba(142,68,173,0.5); cursor:pointer;">
-          📋 {t["share_btn"]}
+          {t["share_btn"]}
         </button>
     </div>
 
     <script>
     function copyResult() {{
         navigator.clipboard.writeText(`{share_text.replace("`", "\\`")}`);
-        alert('{'Result copied! Paste it in chat to share 😊' if st.session_state.lang == 'en' else '결과가 복사됐어요!\\n카톡이나 메시지에 붙여넣기 해서 친구에게 공유해주세요 😊'}');
+        alert('{'Result copied! Paste it in chat to share' if st.session_state.lang == 'en' else '결과가 복사됐어요!\\n카톡이나 메시지에 붙여넣기 해서 친구에게 공유해주세요'}');
     }}
     </script>
     """, unsafe_allow_html=True)
