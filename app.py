@@ -3,12 +3,12 @@ from datetime import datetime, timedelta
 import random
 from streamlit.components.v1 import html as st_html
 
-# 다국어 사전 (한국어 + 영어)
+# 다국어 사전
 translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 + 오늘/내일 운세 🌟",
         "caption": "완전 무료 😄",
-        "ad_title": "💳 렌탈 궁금할 때?",
+        "ad_title": "💳정수기 렌탈 궁금할 때?",
         "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 페이백</b>!",
         "ad_btn": "🔗 보러가기",
         "birth": "### 생년월일 입력",
@@ -25,6 +25,8 @@ translations = {
         "fortune_btn": "🔮 2026년 운세 보기!",
         "reset": "처음부터 다시 하기",
         "share_btn": "친구에게 결과 공유",
+        "tarot_btn": "🔮 오늘의 타로 카드 뽑기",
+        "tarot_title": "오늘의 타로 카드",
         "zodiac_title": "띠 운세",
         "mbti_title": "MBTI 특징",
         "saju_title": "사주 한 마디",
@@ -61,6 +63,30 @@ translations = {
             "가족/친구와 시간 보내세요. 행복 충전! 🏡",
             "창의적인 취미를 시작해보세요. 재능 발휘될 거예요 🎨"
         ],
+        "tarot_cards": {
+            "The Fool": "🃏 바보 - 새로운 시작, 모험, 순수한 믿음",
+            "The Magician": "🪄 마법사 - 창조력, 능력 발휘, 집중",
+            "The High Priestess": "🔮 여사제 - 직감, 신비, 내면의 목소리",
+            "The Empress": "👑 여제 - 풍요, 어머니의 사랑, 창작",
+            "The Emperor": "♚ 황제 - 안정, 권위, 구조",
+            "The Hierophant": "⛪ 교황 - 전통, 스승, 지도",
+            "The Lovers": "💕 연인 - 사랑, 조화, 선택",
+            "The Chariot": "🚀 전차 - 승리, 의지력, 방향",
+            "Strength": "💪 힘 - 용기, 인내, 부드러운 통제",
+            "The Hermit": "🏮 은둔자 - 내면 탐구, 지혜, 고독",
+            "Wheel of Fortune": "🎡 운명의 수레바퀴 - 변화, 운, 사이클",
+            "Justice": "⚖️ 정의 - 공정, 균형, 진실",
+            "The Hanged Man": "🙃 매달린 사람 - 희생, 새로운 관점, 기다림",
+            "Death": "💀 죽음 - 변화, 끝과 시작, 재생",
+            "Temperance": "👼 절제 - 균형, 조화, 인내",
+            "The Devil": "😈 악마 - 속박, 유혹, 물질주의",
+            "The Tower": "🗼 탑 - 갑작스러운 변화, 파괴와 재건",
+            "The Star": "⭐ 별 - 희망, 영감, 치유",
+            "The Moon": "🌙 달 - 불안, 환상, 직감",
+            "The Sun": "☀️ 태양 - 행복, 성공, 긍정 에너지",
+            "Judgement": "📯 심판 - 부활, 깨달음, 용서",
+            "The World": "🌍 세계 - 완성, 성취, 전체성"
+        },
         "zodiacs": {
             "쥐띠": "🐭 안정 속 새로운 기회! 민첩한 판단으로 성공 잡아요 💰",
             "소띠": "🐮 꾸준함의 결실! 안정된 성장과 행복한 가족운 🏡",
@@ -92,7 +118,39 @@ translations = {
             "건강 주의! 과로 피하고 쉬세요 😴", "전체운 대박! 좋은 일만 생길 거예요 🌟",
             "인간관계 운 좋음! 귀인 만남 가능 🤝", "학업/일 운 최고! 집중력 최고 📚",
             "여행운 좋음! 갑자기 떠나도 괜찮아요 ✈️", "기분 좋은 하루! 웃음이 가득할 거예요 😄"
-        ]
+        ],
+        "q_energy": [
+            "주말에 친구들이 갑자기 '놀자!' 하면?",
+            "모임에서 처음 본 사람들과 대화하는 거?",
+            "하루 종일 사람 만난 후에?",
+            "생각이 떠오르면?"
+        ],
+        "q_info": [
+            "새로운 카페 가면 뭐가 먼저 눈에 들어?",
+            "친구가 고민 상담하면?",
+            "책이나 영화 볼 때?",
+            "쇼핑할 때?"
+        ],
+        "q_decision": [
+            "친구가 늦어서 화날 때?",
+            "팀 프로젝트에서 의견 충돌 시?",
+            "누가 울면서 상담하면?",
+            "거짓말 탐지 시?"
+        ],
+        "q_life": [
+            "여행 갈 때?",
+            "숙제나 과제 마감 앞두고?",
+            "방 정리할 때?",
+            "선택해야 할 때?"
+        ],
+        "options_e": ["와 좋아! 바로 나감 (E)", "재밌고 신나! (E)", "아직 에너지 넘쳐! (E)", "바로 말로 풀어냄 (E)"],
+        "options_i": ["집에서 쉬고 싶어... (I)", "조금 피곤하고 부담스러워 (I)", "완전 지쳐서 혼자 있고 싶어 (I)", "머릿속에서 먼저 정리함 (I)"],
+        "options_s": ["메뉴판 가격과 메뉴 (S)", "지금 상황과 사실 위주로 들어줌 (S)", "스토리와 디테일에 집중 (S)", "필요한 거 보고 바로 사 (S)"],
+        "options_n": ["분위기, 인테리어, 컨셉 (N)", "가능성과 미래 방향으로 생각함 (N)", "상징과 숨은 의미 찾는 재미 (N)", "이거 사면 나중에 뭐랑 입히지? 상상함 (N)"],
+        "options_t": ["늦었으면 늦었다고 솔직히 말함 (T)", "논리적으로 누가 맞는지 따짐 (T)", "문제 해결 방법 조언해줌 (T)", "바로 지적함 (T)"],
+        "options_f": ["기분 상할까 봐 부드럽게 말함 (F)", "다른 사람 기분 상하지 않게 조율 (F)", "일단 공감하고 들어줌 (F)", "상처 줄까 봐 넘김 (F)"],
+        "options_j": ["일정 꽉꽉 짜서 효율적으로 (J)", "미리미리 끝냄 (J)", "정해진 기준으로 깔끔히 (J)", "빨리 결정하고 넘김 (J)"],
+        "options_p": ["그때그때 기분 따라 즉흥적으로 (P)", "마감 직전에 몰아서 함 (P)", "대충 써도 괜찮아 (P)", "옵션 더 알아보고 싶어 (P)"]
     },
     "en": {
         "title": "🌟 2026 Zodiac + MBTI + Fortune + Today/Tomorrow Luck 🌟",
@@ -114,6 +172,8 @@ translations = {
         "fortune_btn": "🔮 View 2026 Fortune!",
         "reset": "Start Over",
         "share_btn": "Share Result with Friends",
+        "tarot_btn": "🔮 Draw Today's Tarot Card",
+        "tarot_title": "Today's Tarot Card",
         "zodiac_title": "Zodiac Fortune",
         "mbti_title": "MBTI Traits",
         "saju_title": "Fortune Comment",
@@ -150,6 +210,30 @@ translations = {
             "Spend time with family/friends. Recharge happiness! 🏡",
             "Start a creative hobby. Your talent will shine 🎨"
         ],
+        "tarot_cards": {
+            "The Fool": "🃏 The Fool - New beginnings, adventure, innocence",
+            "The Magician": "🪄 The Magician - Manifestation, skill, concentration",
+            "The High Priestess": "🔮 The High Priestess - Intuition, mystery, inner voice",
+            "The Empress": "👑 The Empress - Abundance, nurturing, creativity",
+            "The Emperor": "♚ The Emperor - Stability, authority, structure",
+            "The Hierophant": "⛪ The Hierophant - Tradition, guidance, conformity",
+            "The Lovers": "💕 The Lovers - Love, harmony, choices",
+            "The Chariot": "🚀 The Chariot - Victory, determination, direction",
+            "Strength": "💪 Strength - Courage, patience, gentle control",
+            "The Hermit": "🏮 The Hermit - Soul searching, wisdom, solitude",
+            "Wheel of Fortune": "🎡 Wheel of Fortune - Change, cycles, fate",
+            "Justice": "⚖️ Justice - Fairness, truth, balance",
+            "The Hanged Man": "🙃 The Hanged Man - Sacrifice, new perspective, waiting",
+            "Death": "💀 Death - Transformation, ending, rebirth",
+            "Temperance": "👼 Temperance - Balance, harmony, patience",
+            "The Devil": "😈 The Devil - Bondage, temptation, materialism",
+            "The Tower": "🗼 The Tower - Sudden change, upheaval, revelation",
+            "The Star": "⭐ The Star - Hope, inspiration, healing",
+            "The Moon": "🌙 The Moon - Illusion, intuition, uncertainty",
+            "The Sun": "☀️ The Sun - Joy, success, positivity",
+            "Judgement": "📯 Judgement - Rebirth, awakening, forgiveness",
+            "The World": "🌍 The World - Completion, fulfillment, wholeness"
+        },
         "zodiacs": {
             "Rat": "🐭 New opportunities in stability! Success with quick judgment 💰",
             "Ox": "🐮 Fruits of perseverance! Stable growth and happy family 🏡",
@@ -181,7 +265,39 @@ translations = {
             "Health caution 😴", "Overall big luck! 🌟",
             "Good relationships 🤝", "Best for study/work 📚",
             "Good travel luck ✈️", "Happy day full of laughter 😄"
-        ]
+        ],
+        "q_energy": [
+            "Friends suddenly say 'Let's hang out!' on weekend?",
+            "Talking to strangers at a gathering?",
+            "After meeting people all day?",
+            "When a thought comes to mind?"
+        ],
+        "q_info": [
+            "What catches your eye first in a new cafe?",
+            "When friend shares worries?",
+            "When reading book or watching movie?",
+            "When shopping?"
+        ],
+        "q_decision": [
+            "When friend is late and you're angry?",
+            "In team project when opinions clash?",
+            "When someone cries while consulting?",
+            "When detecting a lie?"
+        ],
+        "q_life": [
+            "When planning a trip?",
+            "Before assignment deadline?",
+            "When cleaning room?",
+            "When needing to choose?"
+        ],
+        "options_e": ["Yes! Go out right away (E)", "Fun and exciting! (E)", "Still full of energy! (E)", "Express thoughts out loud (E)"],
+        "options_i": ["Want to stay home... (I)", "A bit tiring and burdensome (I)", "Totally exhausted, want to be alone (I)", "Organize in head first (I)"],
+        "options_s": ["Menu prices and items (S)", "Listen to current facts (S)", "Focus on story and details (S)", "Buy what I need right away (S)"],
+        "options_n": ["Atmosphere, interior, concept (N)", "Think about possibilities and future (N)", "Enjoy finding symbols and hidden meanings (N)", "Imagine what to wear it with later (N)"],
+        "options_t": ["Say honestly they're late (T)", "Argue logically who's right (T)", "Give advice on solving problem (T)", "Point out immediately (T)"],
+        "options_f": ["Say gently to not hurt feelings (F)", "Mediate to not hurt feelings (F)", "First empathize and listen (F)", "Let it go to not hurt (F)"],
+        "options_j": ["Plan schedule tightly for efficiency (J)", "Finish early in advance (J)", "Organize neatly by standard (J)", "Decide quickly and move on (J)"],
+        "options_p": ["Go with the flow spontaneously (P)", "Do it all at deadline (P)", "It's okay if messy (P)", "Want to explore more options (P)"]
     }
 }
 
@@ -268,7 +384,37 @@ if not st.session_state.result_shown:
         st.markdown(f"<h3 style='text-align:center; color:#3498db;'>{t['test_start']}</h3>", unsafe_allow_html=True)
         e_i = s_n = t_f = j_p = 0
 
-        # 테스트 질문들 (생략 - 이전 코드와 동일)
+        st.subheader(t["energy"])
+        for i in range(4):
+            q = t["q_energy"][i]
+            opt1 = t["options_e"][i]
+            opt2 = t["options_i"][i]
+            if st.radio(q, [opt1, opt2], key=f"q{i+1}") == opt1:
+                e_i += 1
+
+        st.subheader(t["info"])
+        for i in range(4):
+            q = t["q_info"][i]
+            opt1 = t["options_s"][i]
+            opt2 = t["options_n"][i]
+            if st.radio(q, [opt1, opt2], key=f"q{i+5}") == opt1:
+                s_n += 1
+
+        st.subheader(t["decision"])
+        for i in range(4):
+            q = t["q_decision"][i]
+            opt1 = t["options_t"][i]
+            opt2 = t["options_f"][i]
+            if st.radio(q, [opt1, opt2], key=f"q{i+9}") == opt1:
+                t_f += 1
+
+        st.subheader(t["life"])
+        for i in range(4):
+            q = t["q_life"][i]
+            opt1 = t["options_j"][i]
+            opt2 = t["options_p"][i]
+            if st.radio(q, [opt1, opt2], key=f"q{i+13}") == opt1:
+                j_p += 1
 
         if st.button(t["result_btn"], use_container_width=True):
             ei = "E" if e_i >= 3 else "I"
@@ -337,6 +483,18 @@ if st.session_state.result_shown:
           </div>
         </div>
         """, unsafe_allow_html=True)
+
+        # 타로 카드 뽑기 버튼
+        if st.button(t["tarot_btn"], use_container_width=True):
+            tarot_card = random.choice(list(t["tarot_cards"].keys()))
+            tarot_meaning = t["tarot_cards"][tarot_card]
+            st.markdown(f"""
+            <div style="background:#ffffff40; border-radius:18px; padding:15px; margin:15px 10px; backdrop-filter: blur(10px); text-align:center; color:#000000;">
+              <h3 style="margin:5px 0;">{t['tarot_title']}</h3>
+              <h2 style="font-size:1.8em; margin:10px 0;">{tarot_card}</h2>
+              <p style="font-size:1.1em;">{tarot_meaning}</p>
+            </div>
+            """, unsafe_allow_html=True)
 
         share_text = f"{name_display}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
