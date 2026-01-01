@@ -1,9 +1,10 @@
 import streamlit as st
+import streamlit.components.v1 as components
 from datetime import datetime, timedelta
 import random
 
 # =========================
-# 1) 언어 목록 (ID 제거)
+# 1) 언어 목록 (id 제거)
 # =========================
 LANGS = [
     ("ko", "한국어"),
@@ -15,8 +16,7 @@ LANGS = [
 ]
 
 # =========================
-# 2) UI 텍스트 i18n
-#    - 필요한 것만 각 언어에 넣고, 부족하면 EN으로 fallback
+# 2) UI 텍스트 i18n (부족하면 EN fallback)
 # =========================
 I18N = {
     "ko": {
@@ -37,7 +37,7 @@ I18N = {
         "fortune_btn": "2026년 운세 보기!",
         "reset": "처음부터 다시하기",
         "share_btn": "친구에게 결과 공유하기",
-        "copied_alert": "결과가 복사됐어요!\n카톡/문자에 붙여넣기 해서 공유하세요.",
+        "share_hint": "모바일에서는 공유창(카톡/문자 등)이 뜹니다. PC에서는 복사로 동작할 수 있어요.",
         "tarot_btn": "오늘의 타로 카드 보기",
         "tarot_title": "오늘의 타로 카드",
         "zodiac_title": "띠 운세",
@@ -61,7 +61,7 @@ I18N = {
         "year": "년", "month": "월", "day": "일",
         "invalid_year": "생년은 1900~2030년 사이로 입력해주세요!",
         "mbti_select": "MBTI 선택",
-        "share_area_hint": "공유 버튼이 안 되면, 아래 텍스트를 길게 눌러 복사해서 보내세요.",
+        "copy_fallback": "공유가 안 되면 아래 텍스트를 복사해서 보내세요.",
     },
     "en": {
         "lang_label": "Language",
@@ -80,10 +80,10 @@ I18N = {
         "result_btn": "View Result!",
         "fortune_btn": "View 2026 Fortune!",
         "reset": "Start Over",
-        "share_btn": "Share result with friends",
-        "copied_alert": "Copied!\nPaste it in chat to share.",
-        "tarot_btn": "See Today's Tarot Card",
-        "tarot_title": "Today's Tarot Card",
+        "share_btn": "Share with friends",
+        "share_hint": "On mobile, the share sheet should open. On PC it may copy instead.",
+        "tarot_btn": "See Today's Tarot",
+        "tarot_title": "Today's Tarot",
         "zodiac_title": "Zodiac Fortune",
         "mbti_title": "MBTI Traits",
         "saju_title": "Fortune Comment",
@@ -100,7 +100,7 @@ I18N = {
         "year": "Year", "month": "Month", "day": "Day",
         "invalid_year": "Please enter a birth year between 1900 and 2030!",
         "mbti_select": "Select MBTI",
-        "share_area_hint": "If the share button doesn't work, copy the text below and send it.",
+        "copy_fallback": "If share doesn't work, copy the text below and send it.",
     },
     "ja": {
         "lang_label": "言語 / Language",
@@ -120,7 +120,7 @@ I18N = {
         "fortune_btn": "2026年の運勢を見る！",
         "reset": "最初から",
         "share_btn": "友達に結果を共有",
-        "copied_alert": "コピーしました！\nチャットに貼り付けて共有してください。",
+        "share_hint": "モバイルでは共有画面が開きます。PCはコピーになる場合があります。",
         "tarot_btn": "今日のタロットを見る",
         "tarot_title": "今日のタロット",
         "today_title": "今日の運勢",
@@ -128,7 +128,7 @@ I18N = {
         "year": "年", "month": "月", "day": "日",
         "invalid_year": "1900〜2030の間で入力してください。",
         "mbti_select": "MBTI を選択",
-        "share_area_hint": "ボタンが動かない場合は、下のテキストをコピーして送ってください。",
+        "copy_fallback": "共有できない場合は、下のテキストをコピーして送ってください。",
     },
     "zh": {
         "lang_label": "语言 / Language",
@@ -148,7 +148,7 @@ I18N = {
         "fortune_btn": "查看2026运势！",
         "reset": "重新开始",
         "share_btn": "分享给朋友",
-        "copied_alert": "已复制！\n粘贴到聊天中分享。",
+        "share_hint": "手机会弹出分享面板；电脑可能改为复制。",
         "tarot_btn": "抽取今日塔罗",
         "tarot_title": "今日塔罗",
         "today_title": "今天运势",
@@ -156,13 +156,13 @@ I18N = {
         "year": "年", "month": "月", "day": "日",
         "invalid_year": "请输入1900到2030之间的年份。",
         "mbti_select": "选择 MBTI",
-        "share_area_hint": "若按钮无反应，请复制下方文本发送。",
+        "copy_fallback": "若分享无反应，请复制下方文本发送。",
     },
     "ru": {
         "lang_label": "Язык / Language",
         "title": "2026 Зодиак + MBTI + Удача (Сегодня/Завтра)",
-        "caption": "Полностью бесплатно",
-        "name_placeholder": "Имя (будет в результате)",
+        "caption": "Бесплатно",
+        "name_placeholder": "Имя (в результате)",
         "birth_title": "### Дата рождения",
         "mbti_mode": "Как выбрать MBTI?",
         "direct": "Выбрать вручную",
@@ -176,7 +176,7 @@ I18N = {
         "fortune_btn": "Показать удачу 2026!",
         "reset": "Сначала",
         "share_btn": "Поделиться с друзьями",
-        "copied_alert": "Скопировано!\nВставьте в чат и отправьте.",
+        "share_hint": "На телефоне откроется панель «Поделиться». На ПК может копировать.",
         "tarot_btn": "Таро на сегодня",
         "tarot_title": "Таро на сегодня",
         "today_title": "Удача сегодня",
@@ -184,7 +184,7 @@ I18N = {
         "year": "Год", "month": "Месяц", "day": "День",
         "invalid_year": "Введите год рождения от 1900 до 2030.",
         "mbti_select": "Выберите MBTI",
-        "share_area_hint": "Если кнопка не работает, скопируйте текст ниже и отправьте.",
+        "copy_fallback": "Если не работает, скопируйте текст ниже и отправьте.",
     },
     "hi": {
         "lang_label": "भाषा / Language",
@@ -203,8 +203,8 @@ I18N = {
         "result_btn": "परिणाम देखें!",
         "fortune_btn": "2026 भाग्य देखें!",
         "reset": "फिर से शुरू",
-        "share_btn": "दोस्तों के साथ साझा करें",
-        "copied_alert": "कॉपी हो गया!\nचैट में पेस्ट करके साझा करें।",
+        "share_btn": "दोस्तों को साझा करें",
+        "share_hint": "मोबाइल पर शेयर स्क्रीन खुलेगी; PC पर कॉपी हो सकता है।",
         "tarot_btn": "आज का टैरो",
         "tarot_title": "आज का टैरो",
         "today_title": "आज का भाग्य",
@@ -212,7 +212,7 @@ I18N = {
         "year": "वर्ष", "month": "महीना", "day": "दिन",
         "invalid_year": "कृपया 1900 से 2030 के बीच वर्ष दर्ज करें।",
         "mbti_select": "MBTI चुनें",
-        "share_area_hint": "यदि बटन काम न करे तो नीचे का टेक्स्ट कॉपी करके भेजें।",
+        "copy_fallback": "यदि शेयर न चले, नीचे का टेक्स्ट कॉपी करके भेजें।",
     },
 }
 
@@ -221,7 +221,7 @@ def T(lang: str, key: str) -> str:
 
 
 # =========================
-# 3) 데이터 (HTML 태그 절대 없음: 모두 Plain text)
+# 3) 데이터 (HTML 태그 없음: plain text)
 # =========================
 ZODIAC_LIST = {
     "ko": ["쥐띠", "소띠", "호랑이띠", "토끼띠", "용띠", "뱀띠", "말띠", "양띠", "원숭이띠", "닭띠", "개띠", "돼지띠"],
@@ -291,7 +291,7 @@ MBTI_DESC = {
     "ru": {
         "INTJ": "Стратег", "INTP": "Логик", "ENTJ": "Командир", "ENTP": "Полемист",
         "INFJ": "Защитник", "INFP": "Посредник", "ENFJ": "Протагонист", "ENFP": "Активист",
-        "ISTJ": "Логист", "ISFJ": "Защитник (опора)", "ESTJ": "Администратор", "ESFJ": "Консул",
+        "ISTJ": "Логист", "ISFJ": "Опора", "ESTJ": "Администратор", "ESFJ": "Консул",
         "ISTP": "Виртуоз", "ISFP": "Авантюрист", "ESTP": "Предприниматель", "ESFP": "Артист",
     },
     "hi": {
@@ -382,14 +382,8 @@ COMBO_COMMENTS = {
     ],
 }
 
-LUCKY_COLORS = {
-    "ko": ["골드", "레드", "블루", "그린", "퍼플"],
-    "en": ["Gold", "Red", "Blue", "Green", "Purple"],
-}
-LUCKY_ITEMS = {
-    "ko": ["황금 액세서리", "빨간 지갑", "파란 목걸이", "초록 식물", "보라색 펜"],
-    "en": ["Golden accessory", "Red wallet", "Blue necklace", "Green plant", "Purple pen"],
-}
+LUCKY_COLORS = {"ko": ["골드", "레드", "블루", "그린", "퍼플"], "en": ["Gold", "Red", "Blue", "Green", "Purple"]}
+LUCKY_ITEMS = {"ko": ["황금 액세서리", "빨간 지갑", "파란 목걸이", "초록 식물", "보라색 펜"], "en": ["Golden accessory", "Red wallet", "Blue necklace", "Green plant", "Purple pen"]}
 TIPS = {
     "ko": [
         "새로운 사람 만나는 기회가 많아요. 적극적으로!",
@@ -408,17 +402,18 @@ TIPS = {
 }
 
 TAROT = {
-    "The Fool": {"ko": "바보 - 새로운 시작, 모험", "en": "New beginnings, adventure", "ja": "愚者 - 新しい始まり", "zh": "愚者 - 新的开始", "ru": "Шут - новое начало", "hi": "द फ़ूल - नई शुरुआत"},
-    "The Magician": {"ko": "마법사 - 창조력, 집중", "en": "Manifestation, focus", "ja": "魔術師 - 創造と集中", "zh": "魔术师 - 创造与专注", "ru": "Маг - проявление", "hi": "मैजिशियन - फोकस"},
-    "The High Priestess": {"ko": "여사제 - 직감, 내면의 목소리", "en": "Intuition, inner voice", "ja": "女教皇 - 直感", "zh": "女祭司 - 直觉", "ru": "Жрица - интуиция", "hi": "हाई प्रीस्टेस - अंतर्ज्ञान"},
-    "The Empress": {"ko": "여제 - 풍요, 창작", "en": "Abundance, creativity", "ja": "女帝 - 豊かさ", "zh": "皇后 - 丰盛", "ru": "Императрица - изобилие", "hi": "एम्प्रेस - समृद्धि"},
-    "The Emperor": {"ko": "황제 - 안정, 구조", "en": "Stability, structure", "ja": "皇帝 - 安定", "zh": "皇帝 - 稳定", "ru": "Император - структура", "hi": "एम्परर - स्थिरता"},
-    "The Sun": {"ko": "태양 - 행복, 성공", "en": "Joy, success", "ja": "太陽 - 幸福", "zh": "太阳 - 成功", "ru": "Солнце - успех", "hi": "सन - सफलता"},
-    "The World": {"ko": "세계 - 완성, 성취", "en": "Completion, fulfillment", "ja": "世界 - 完成", "zh": "世界 - 圆满", "ru": "Мир - завершение", "hi": "वर्ल्ड - पूर्णता"},
+    "The Fool": {"ko": "바보 - 새로운 시작, 모험", "en": "New beginnings, adventure"},
+    "The Magician": {"ko": "마법사 - 창조력, 집중", "en": "Manifestation, focus"},
+    "The High Priestess": {"ko": "여사제 - 직감, 내면의 목소리", "en": "Intuition, inner voice"},
+    "The Empress": {"ko": "여제 - 풍요, 창작", "en": "Abundance, creativity"},
+    "The Emperor": {"ko": "황제 - 안정, 구조", "en": "Stability, structure"},
+    "The Sun": {"ko": "태양 - 행복, 성공", "en": "Joy, success"},
+    "The World": {"ko": "세계 - 완성, 성취", "en": "Completion, fulfillment"},
 }
 
 # =========================
-# 4) MBTI 상세 테스트 16문항: 언어별 질문/선택지 제공
+# 4) MBTI 상세 16문항 (여기서는 ko/en만 충분히 유지)
+#    (필요하면 ja/zh/ru/hi도 추가로 확장 가능)
 # =========================
 Q16 = {
     "ko": {
@@ -449,69 +444,13 @@ Q16 = {
         "options_j": ["Plan tightly (J)", "Finish early (J)", "Neat & structured (J)", "Decide quickly (J)"],
         "options_p": ["Go with the flow (P)", "Do it at the end (P)", "Messy is okay (P)", "Want more options (P)"],
     },
-    "ja": {
-        "q_energy": ["週末に友達が急に「遊ぼう！」と言ったら？", "集まりで初対面の人と話すのは？", "一日中人と会った後は？", "思いついたことがあると？"],
-        "q_info": ["新しいカフェで最初に目に入るのは？", "友達が悩み相談をしたら？", "本や映画を見るときは？", "買い物をするときは？"],
-        "q_decision": ["友達が遅れてイラっとしたら？", "チームで意見が衝突したら？", "誰かが泣きながら相談したら？", "嘘に気づいた時は？"],
-        "q_life": ["旅行の計画は？", "締切前の課題は？", "部屋の片付けは？", "選択を迫られたら？"],
-        "options_e": ["よし！すぐ出かける (E)", "話すの楽しい (E)", "まだ元気 (E)", "声に出して整理 (E)"],
-        "options_i": ["家で休みたい (I)", "少し疲れる (I)", "一人になりたい (I)", "頭の中で整理 (I)"],
-        "options_s": ["メニューと価格 (S)", "事実を聞く (S)", "細部に注目 (S)", "必要なものを買う (S)"],
-        "options_n": ["雰囲気・コンセプト (N)", "可能性を考える (N)", "象徴や意味 (N)", "後でどう使うか想像 (N)"],
-        "options_t": ["率直に言う (T)", "論理で判断 (T)", "解決策を提案 (T)", "すぐ指摘 (T)"],
-        "options_f": ["優しく言う (F)", "気持ちを調整 (F)", "共感して聞く (F)", "流す (F)"],
-        "options_j": ["計画を立てる (J)", "早めに終える (J)", "きっちり整理 (J)", "早く決める (J)"],
-        "options_p": ["気分で即興 (P)", "締切前に一気に (P)", "ざっくりでOK (P)", "他の選択肢も見る (P)"],
-    },
-    "zh": {
-        "q_energy": ["周末朋友突然说“出来玩！”你会？", "聚会和陌生人聊天？", "一天见了很多人之后？", "想到什么事情时？"],
-        "q_info": ["进一家新咖啡店你最先注意？", "朋友来倾诉烦恼时？", "看书/电影时？", "购物时？"],
-        "q_decision": ["朋友迟到让你生气时？", "团队意见冲突时？", "有人哭着来找你时？", "发现对方说谎时？"],
-        "q_life": ["旅行怎么安排？", "作业/项目临近截止？", "整理房间？", "必须做选择时？"],
-        "options_e": ["太好了！立刻出门 (E)", "聊天很有趣 (E)", "还能继续社交 (E)", "直接说出来 (E)"],
-        "options_i": ["想在家休息 (I)", "有点累 (I)", "想一个人待着 (I)", "先在脑中整理 (I)"],
-        "options_s": ["菜单/价格 (S)", "听事实细节 (S)", "关注剧情细节 (S)", "买需要的东西 (S)"],
-        "options_n": ["氛围/概念 (N)", "想未来可能性 (N)", "找象征意义 (N)", "想搭配和用途 (N)"],
-        "options_t": ["直接指出 (T)", "讲逻辑谁对谁错 (T)", "给解决方案 (T)", "当场拆穿 (T)"],
-        "options_f": ["语气委婉 (F)", "照顾感受 (F)", "先共情 (F)", "先放一放 (F)"],
-        "options_j": ["安排得很计划 (J)", "提前完成 (J)", "按标准整理 (J)", "快速决定 (J)"],
-        "options_p": ["随性即兴 (P)", "临近截止再做 (P)", "差不多就行 (P)", "想再看看选项 (P)"],
-    },
-    "ru": {
-        "q_energy": ["Друзья внезапно зовут гулять в выходные — ты?", "Разговор с незнакомыми на встрече?", "После целого дня общения ты?", "Когда появляется новая мысль?"],
-        "q_info": ["В новом кафе что замечаешь первым?", "Друг делится проблемой — ты?", "Когда смотришь фильм/читаешь книгу?", "Во время шопинга?"],
-        "q_decision": ["Друг опоздал и ты злишься — ты?", "Спор в команде — ты?", "Кто-то плачет и просит совета — ты?", "Когда ловишь на лжи?"],
-        "q_life": ["Как планируешь поездку?", "Перед дедлайном?", "Когда убираешь комнату?", "Когда нужно выбрать?"],
-        "options_e": ["Класс! Иду сразу (E)", "Общение бодрит (E)", "Я ещё полон сил (E)", "Озвучиваю вслух (E)"],
-        "options_i": ["Лучше дома (I)", "Немного утомляет (I)", "Хочу побыть один (I)", "Сначала в голове (I)"],
-        "options_s": ["Меню и цены (S)", "Слушаю факты (S)", "Люблю детали (S)", "Покупаю нужное (S)"],
-        "options_n": ["Атмосфера/идея (N)", "Думаю о будущем (N)", "Ищу символы (N)", "Представляю варианты (N)"],
-        "options_t": ["Говорю прямо (T)", "Рассуждаю логично (T)", "Предлагаю решения (T)", "Сразу указываю (T)"],
-        "options_f": ["Мягко говорю (F)", "Учитываю чувства (F)", "Сначала сочувствие (F)", "Не обостряю (F)"],
-        "options_j": ["Планирую чётко (J)", "Делаю заранее (J)", "Люблю порядок (J)", "Быстро решаю (J)"],
-        "options_p": ["Импровизирую (P)", "Делаю в последний момент (P)", "Норм и так (P)", "Хочу больше вариантов (P)"],
-    },
-    "hi": {
-        "q_energy": ["वीकेंड पर दोस्त अचानक कहें ‘चलो बाहर!’ तो?", "मिलन में अजनबियों से बात करना?", "पूरा दिन लोगों से मिलने के बाद?", "जब कोई विचार आए तो?"],
-        "q_info": ["नए कैफे में सबसे पहले क्या दिखता है?", "दोस्त परेशानी बताए तो?", "फिल्म/किताब देखते समय?", "खरीदारी करते समय?"],
-        "q_decision": ["दोस्त देर से आए और गुस्सा हो तो?", "टीम में मतभेद हो तो?", "कोई रोते हुए सलाह मांगे तो?", "झूठ पकड़ो तो?"],
-        "q_life": ["यात्रा की योजना?", "डेडलाइन के पहले?", "कमरा साफ़ करते समय?", "जब चुनना हो?"],
-        "options_e": ["हाँ! तुरंत निकलता/निकलती हूँ (E)", "बातचीत मज़ेदार (E)", "अब भी ऊर्जा है (E)", "ऊंची आवाज़ में सोचता/सोचती हूँ (E)"],
-        "options_i": ["घर पर रहना (I)", "थोड़ा थकाने वाला (I)", "अकेले रहना (I)", "पहले दिमाग में (I)"],
-        "options_s": ["मेन्यू/कीमत (S)", "तथ्य सुनना (S)", "डिटेल पर ध्यान (S)", "ज़रूरत की चीज़ लेना (S)"],
-        "options_n": ["वाइब/कॉन्सेप्ट (N)", "भविष्य की संभावना (N)", "छिपे अर्थ (N)", "आगे का उपयोग सोचता/सोचती हूँ (N)"],
-        "options_t": ["सीधा कहना (T)", "तर्क से तय करना (T)", "समाधान देना (T)", "तुरंत बताना (T)"],
-        "options_f": ["नरमी से कहना (F)", "भावनाएँ देखना (F)", "पहले सहानुभूति (F)", "बात टाल देना (F)"],
-        "options_j": ["योजना बनाकर (J)", "पहले ही पूरा (J)", "साफ़-सुथरा (J)", "जल्दी निर्णय (J)"],
-        "options_p": ["तुरंत/इम्प्रोवाइज (P)", "आख़िर में एकदम (P)", "चल जाएगा (P)", "और विकल्प देखना (P)"],
-    },
 }
 
-def pick_lang_list(dct, lang):
+def pick_lang(dct, lang):
     return dct.get(lang) or dct.get("en")
 
 # =========================
-# 5) Streamlit 기본 설정 + 세션
+# 5) 설정 + 세션
 # =========================
 st.set_page_config(page_title="2026 Fortune", layout="centered")
 
@@ -533,7 +472,7 @@ if "day" not in st.session_state:
 APP_URL = "https://my-fortune.streamlit.app"
 
 # =========================
-# 6) CSS (모바일 + 라디오 가림 해결)
+# 6) CSS (라디오 가림 + 모바일)
 # =========================
 st.markdown("""
 <style>
@@ -557,7 +496,7 @@ html, body, [class*="css"]{
 """, unsafe_allow_html=True)
 
 # =========================
-# 7) 유틸 함수
+# 7) 유틸
 # =========================
 def get_zodiac_index(year: int) -> int:
     return (year - 4) % 12
@@ -566,11 +505,11 @@ def get_zodiac_name(lang: str, idx: int) -> str:
     return ZODIAC_LIST.get(lang, ZODIAC_LIST["en"])[idx]
 
 def saju_message(lang: str, y: int, m: int, d: int) -> str:
-    msgs = pick_lang_list(SAJU_MSG, lang)
+    msgs = pick_lang(SAJU_MSG, lang)
     return msgs[(y + m + d) % len(msgs)]
 
 def daily_fortune(lang: str, zodiac_idx: int, offset_days: int) -> str:
-    msgs = pick_lang_list(DAILY_MSG, lang)
+    msgs = pick_lang(DAILY_MSG, lang)
     base = datetime.now() + timedelta(days=offset_days)
     seed = int(base.strftime("%Y%m%d")) * 100 + zodiac_idx
     random.seed(seed)
@@ -640,8 +579,64 @@ def render_dananum_ad_ko_only(lang: str):
     </div>
     """, unsafe_allow_html=True)
 
+def share_button_component(button_label: str, share_text: str, share_url: str, hint_text: str):
+    # navigator.share(텍스트+URL) → 모바일 공유 시트(카톡/문자/기타 앱)
+    # 미지원이면 클립보드 복사로 대체
+    safe_text = share_text.replace("\\", "\\\\").replace("`", "\\`")
+    safe_url = share_url.replace("\\", "\\\\").replace("`", "\\`")
+    safe_hint = hint_text.replace("\\", "\\\\").replace("`", "\\`")
+
+    components.html(
+        f"""
+        <div style="text-align:center; margin: 10px 0 14px 0;">
+            <button id="shareBtn" style="
+                background:#6f42c1; color:white; padding:16px 22px;
+                border:none; border-radius:999px; font-size:1.05em; font-weight:900;
+                box-shadow: 0 10px 24px rgba(111,66,193,0.25); cursor:pointer;
+                width: min(520px, 92%);
+            ">{button_label}</button>
+            <div style="margin-top:10px; font-size:0.92em; color:#666;">{safe_hint}</div>
+        </div>
+
+        <script>
+        (function() {{
+            const btn = document.getElementById("shareBtn");
+            const text = `{safe_text}`;
+            const url  = `{safe_url}`;
+
+            btn.addEventListener("click", async () => {{
+                try {{
+                    if (navigator.share) {{
+                        await navigator.share({{
+                            text: text,
+                            url: url
+                        }});
+                        return;
+                    }}
+                }} catch (e) {{
+                    // user cancelled or error
+                }}
+
+                // fallback: clipboard copy
+                try {{
+                    if (navigator.clipboard && navigator.clipboard.writeText) {{
+                        await navigator.clipboard.writeText(text + "\\n" + url);
+                        alert("Copied! Paste it to share.");
+                    }} else {{
+                        alert("Share not supported on this browser. Copy text manually below.");
+                    }}
+                }} catch (e) {{
+                    alert("Share not supported. Copy text manually below.");
+                }}
+            }});
+        }})();
+        </script>
+        """,
+        height=110,
+    )
+
 # =========================
-# 8) 언어 선택 (전체 복원)
+# 8) 언어 선택
 # =========================
 lang_codes = [c for c, _ in LANGS]
 lang_labels = [f"{name} ({code})" for code, name in LANGS]
@@ -669,10 +664,7 @@ if not st.session_state.result_shown:
         unsafe_allow_html=True
     )
 
-    # 한국어에서만 다나눔렌탈 광고
     render_dananum_ad_ko_only(lang)
-
-    # 애드센스 자리(승인 전)
     render_ad_placeholder(lang)
 
     st.session_state.name = st.text_input(T(lang, "name_placeholder"), value=st.session_state.name)
@@ -752,16 +744,15 @@ if st.session_state.result_shown:
     today = daily_fortune(lang, zodiac_idx, 0)
     tomorrow = daily_fortune(lang, zodiac_idx, 1)
 
-    overall = random.choice(pick_lang_list(OVERALL_2026, lang))
-    combo = random.choice(pick_lang_list(COMBO_COMMENTS, lang)).format(zodiac_name, mbti_desc)
-    lucky_color = random.choice(pick_lang_list(LUCKY_COLORS, lang))
-    lucky_item = random.choice(pick_lang_list(LUCKY_ITEMS, lang))
-    tip = random.choice(pick_lang_list(TIPS, lang))
+    overall = random.choice(pick_lang(OVERALL_2026, lang))
+    combo = random.choice(pick_lang(COMBO_COMMENTS, lang)).format(zodiac_name, mbti_desc)
+    lucky_color = random.choice(pick_lang(LUCKY_COLORS, lang))
+    lucky_item = random.choice(pick_lang(LUCKY_ITEMS, lang))
+    tip = random.choice(pick_lang(TIPS, lang))
 
     name_display = st.session_state.name.strip()
     name_line = f"{name_display} " if name_display else ""
 
-    # 헤더
     st.markdown(f"""
     <div style="
         margin: 10px 6px 10px 6px;
@@ -783,10 +774,8 @@ if st.session_state.result_shown:
     </div>
     """, unsafe_allow_html=True)
 
-    # 광고 자리
     render_ad_placeholder(lang)
 
-    # 결과 카드
     st.markdown(f"""
     <div style="
         margin: 12px 6px 12px 6px;
@@ -812,10 +801,8 @@ if st.session_state.result_shown:
     </div>
     """, unsafe_allow_html=True)
 
-    # 한국어에서만 다나눔렌탈 광고
     render_dananum_ad_ko_only(lang)
 
-    # 타로
     with st.expander(T(lang, "tarot_btn"), expanded=False):
         card = random.choice(list(TAROT.keys()))
         meaning = TAROT[card].get(lang) or TAROT[card].get("en")
@@ -840,7 +827,7 @@ if st.session_state.result_shown:
         </div>
         """, unsafe_allow_html=True)
 
-    # 공유 텍스트 (순수 텍스트)
+    # 공유용 텍스트(순수 텍스트)
     share_text = (
         f"{name_line}2026\n"
         f"{zodiac_name} · {mbti}\n"
@@ -850,47 +837,19 @@ if st.session_state.result_shown:
         f"{T(lang,'overall_title')}: {overall}\n"
         f"{T(lang,'combo_title')}: {combo}\n"
         f"{T(lang,'lucky_color_title')}: {lucky_color} / {T(lang,'lucky_item_title')}: {lucky_item}\n"
-        f"{T(lang,'tip_title')}: {tip}\n\n"
-        f"{APP_URL}"
+        f"{T(lang,'tip_title')}: {tip}\n"
     )
 
-    # ✅ 너가 원했던 "예전 방식"으로 공유 버튼 복원: (클립보드 복사 + alert)
-    # 일부 환경에서 clipboard API가 막히면 아래 텍스트 영역 복사 안내로 대체 가능
-    safe_js_text = share_text.replace("\\", "\\\\").replace("`", "\\`")
-    safe_alert = T(lang, "copied_alert").replace("\\", "\\\\").replace("`", "\\`")
+    # ✅ 핵심: 모바일 공유시트 열기 (navigator.share)
+    share_button_component(
+        button_label=T(lang, "share_btn"),
+        share_text=share_text,
+        share_url=APP_URL,
+        hint_text=T(lang, "share_hint"),
+    )
 
-    st.markdown(f"""
-    <div style="text-align:center; margin: 18px 0 10px 0;">
-        <button onclick="copyResult()" style="
-            background:#6f42c1; color:white; padding:16px 22px;
-            border:none; border-radius:999px; font-size:1.05em; font-weight:900;
-            box-shadow: 0 10px 24px rgba(111,66,193,0.25); cursor:pointer;
-            width: min(520px, 92%);
-        ">
-          {T(lang, "share_btn")}
-        </button>
-    </div>
-
-    <script>
-    function copyResult() {{
-        const text = `{safe_js_text}`;
-        if (navigator.clipboard && navigator.clipboard.writeText) {{
-            navigator.clipboard.writeText(text).then(function() {{
-                alert(`{safe_alert}`);
-            }}).catch(function() {{
-                alert("Copy failed. Please copy the text area below.");
-            }});
-        }} else {{
-            alert("Copy not supported. Please copy the text area below.");
-        }}
-    }}
-    </script>
-    """, unsafe_allow_html=True)
-
-    # ✅ 버튼이 브라우저 보안 때문에 막힐 수 있으니, 항상 '수동 복사' 백업도 제공
-    st.caption(T(lang, "share_area_hint"))
-    st.text_area("Share Text", share_text, height=200)
-
+    st.caption(T(lang, "copy_fallback"))
+    st.text_area("Share Text", share_text + "\n" + APP_URL, height=200)
     st.caption(APP_URL)
 
     if st.button(T(lang, "reset"), use_container_width=True):
