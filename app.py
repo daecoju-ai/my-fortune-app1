@@ -166,7 +166,7 @@ def make_share_image(title_lines, body_lines, footer_text=APP_URL):
     bg = Image.new("RGB", (W, H), (239, 233, 255))
     draw = ImageDraw.Draw(bg)
 
-    font_path = "NotoSansKR-Regular.ttf"  # ✅ 레포에 이 파일명으로 업로드
+    font_path = "NotoSansKR-Regular.ttf"  # ✅ 레포 루트(app.py 옆)에 업로드
 
     font_title = load_font(font_path, 64)
     font_sub   = load_font(font_path, 44)
@@ -227,8 +227,6 @@ if "mbti" not in st.session_state:
     st.session_state.mbti = "ENFJ"
 if "share_png" not in st.session_state:
     st.session_state.share_png = None
-if "show_share" not in st.session_state:
-    st.session_state.show_share = False
 
 # =========================
 # 모바일 최적화 + 상단 잘림 해결 CSS
@@ -341,7 +339,6 @@ if not st.session_state.result_shown:
 
         if st.button("2026년 운세 보기!", use_container_width=True):
             st.session_state.result_shown = True
-            st.session_state.show_share = False
             st.session_state.share_png = None
             st.rerun()
 
@@ -404,7 +401,6 @@ if not st.session_state.result_shown:
             st.session_state.mbti = mbti
 
             st.session_state.result_shown = True
-            st.session_state.show_share = False
             st.session_state.share_png = None
             st.rerun()
 
@@ -494,7 +490,9 @@ if st.session_state.result_shown:
             unsafe_allow_html=True
         )
 
-    # ===== 공유 (PNG 생성 + 공유창 열기) =====
+    # =========================
+    # 공유: 버튼 1번 = 공유 시트(갤러리 공유 화면) 바로 열기
+    # =========================
     title_lines = [
         "⭐ 2026년 운세 ⭐",
         f"🔮 {who}{zodiac_emoji} {zodiac}  {mbti_emoji} {mbti}",
@@ -514,39 +512,18 @@ if st.session_state.result_shown:
         f"✅ 팁: {tip}",
     ]
 
-    if st.button("친구에게 결과 공유", use_container_width=True, key="share_btn"):
+    # ✅ 버튼 이름 변경: "친구에게 공유하기"
+    if st.button("친구에게 공유하기", use_container_width=True, key="share_open"):
         png_bytes = make_share_image(title_lines, body_lines, footer_text=APP_URL)
         st.session_state.share_png = png_bytes
-        st.session_state.show_share = True
-        st.toast("공유용 이미지를 만들었어요! 아래에서 카톡 공유를 열어보세요 🙂")
 
-    if st.session_state.show_share and st.session_state.share_png:
+    # ✅ 버튼을 누른 후: 공유 시트 자동 오픈
+    if st.session_state.get("share_png"):
         png_bytes = st.session_state.share_png
-
-        st.image(png_bytes, caption="공유 이미지 미리보기", use_container_width=True)
-
-        st.download_button(
-            "이미지 저장하기(PNG)",
-            data=png_bytes,
-            file_name="2026_fortune.png",
-            mime="image/png",
-            use_container_width=True
-        )
-        st.caption("공유창이 안 열리면: 위 버튼으로 저장 → 카톡에서 사진 첨부로 보내면 돼요.")
-
         b64 = base64.b64encode(png_bytes).decode("utf-8")
+
+        # 공유 시트 자동 실행 (지원되는 모바일 브라우저에서)
         components.html(f"""
-        <div style="text-align:center; margin-top: 10px;">
-          <button id="shareBtn" style="
-            background:#7c3aed;color:white;border:none;border-radius:999px;
-            padding:14px 18px;font-size:16px;font-weight:900;width:100%;
-            box-shadow:0 10px 26px rgba(124,58,237,0.35);cursor:pointer;">
-            카톡으로 공유하기(공유창 열기)
-          </button>
-          <p style="font-size:12px;color:#666;margin-top:8px;">
-            * 휴대폰 Chrome/삼성인터넷 등에서 공유창이 열립니다. 카카오톡을 선택해 보내세요.
-          </p>
-        </div>
         <script>
           async function b64toBlob(b64Data, contentType='', sliceSize=512) {{
             const byteCharacters = atob(b64Data);
@@ -563,8 +540,7 @@ if st.session_state.result_shown:
             return new Blob(byteArrays, {{type: contentType}});
           }}
 
-          const btn = document.getElementById('shareBtn');
-          btn.addEventListener('click', async () => {{
+          (async () => {{
             try {{
               const blob = await b64toBlob("{b64}", "image/png");
               const file = new File([blob], "2026_fortune.png", {{ type: "image/png" }});
@@ -576,19 +552,28 @@ if st.session_state.result_shown:
                   files: [file]
                 }});
               }} else {{
-                alert("이 브라우저는 이미지 '직접 공유'를 지원하지 않아요. 위의 '이미지 저장하기'로 저장 후 카톡에서 보내주세요.");
+                alert("이 브라우저는 '공유'를 지원하지 않아요. 아래 '이미지 저장하기'로 저장 후 공유해주세요.");
               }}
             }} catch (e) {{
-              alert("공유가 실패했어요. 위의 '이미지 저장하기'로 저장 후 카톡에서 보내주세요.");
+              alert("공유를 열지 못했어요. 아래 '이미지 저장하기'로 저장 후 공유해주세요.");
             }}
-          }});
+          }})();
         </script>
-        """, height=170)
+        """, height=0)
+
+        # 보험(공유 미지원 브라우저 대비): 저장 버튼 제공
+        st.download_button(
+            "이미지 저장하기(PNG)",
+            data=png_bytes,
+            file_name="2026_fortune.png",
+            mime="image/png",
+            use_container_width=True
+        )
+        st.caption("공유창이 안 뜨면: 저장 → 갤러리에서 공유 버튼(카톡 선택)으로 보내면 돼요.")
 
     st.markdown(f"<div style='text-align:center; color:#6b6b6b; font-size:12px; margin-top:10px;'>{APP_URL}</div>", unsafe_allow_html=True)
 
     if st.button("처음부터 다시하기", use_container_width=True, key="reset_btn"):
         st.session_state.result_shown = False
-        st.session_state.show_share = False
         st.session_state.share_png = None
         st.rerun()
