@@ -8,7 +8,7 @@ translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 + 오늘/내일 운세 🌟",
         "caption": "완전 무료 😄",
-        "ad_title": "💳 렌탈 궁금할 때?",
+        "ad_title": "💳정수기 렌탈 궁금할 때?",
         "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 페이백</b>!",
         "ad_btn": "🔗 보러가기",
         "birth": "### 생년월일 입력",
@@ -33,29 +33,42 @@ translations = {
         "combo": "최고 조합!",
         "your_fortune": "님의 2026년 운세",
         "footer": "재미로만 봐주세요 😊",
-        "overall_fortune": "2026 전체 운세",
-        "overall_text": "성장과 재물이 함께하는 최고의 해! 대박 ✨",
-        "combo_comment": "조합 한 마디",
-        "combo_text": "{}의 노력과 {}의 따뜻함으로 리더가 될 거예요!",
-        "lucky_color": "럭키 컬러",
-        "lucky_color_val": "골드 💛",
-        "lucky_item": "럭키 아이템",
-        "lucky_item_val": "황금 액세서리",
-        "tip": "팁",
-        "tip_text": "새로운 사람 만나는 기회 많아요. 적극적으로!",
+        "overall_fortunes": [
+            "성장과 재물이 함께하는 최고의 해! 대박 기운 가득 ✨",
+            "안정과 행복이 넘치는 한 해! 가족과 함께하는 기쁨 🏡",
+            "도전과 성공의 해! 큰 성과를 이룰 거예요 🚀",
+            "사랑과 인연이 피어나는 로맨틱한 해 ❤️",
+            "변화와 새로운 시작! 창의력이 빛나는 한 해 🎨"
+        ],
+        "combo_comments": [
+            "{}의 노력과 {}의 따뜻함으로 모두를 이끄는 리더가 될 거예요!",
+            "{}의 리더십과 {}의 창의력이 완벽한 시너지!",
+            "{}의 직감과 {}의 논리로 무적 조합!",
+            "{}의 안정감과 {}의 열정으로 대박 성공!",
+            "{}의 유연함과 {}의 결단력으로 모든 일 해결!"
+        ],
+        "lucky_colors": ["골드 💛", "레드 ❤️", "블루 💙", "그린 🌿", "퍼플 💜"],
+        "lucky_items": ["황금 액세서리", "빨간 지갑", "파란 목걸이", "초록 식물", "보라색 펜"],
+        "tips": [
+            "새로운 사람 만나는 기회 많아요. 적극적으로!",
+            "작은 투자에 집중하세요. 이득 볼 가능성 높음 💰",
+            "건강 관리에 신경 쓰세요. 규칙적인 운동 추천 🏃",
+            "가족/친구와 시간 보내세요. 행복 충전! 🏡",
+            "창의적인 취미를 시작해보세요. 재능 발휘될 거예요 🎨"
+        ],
         "zodiacs": {
-            "쥐띠": "🐭 활발한 에너지로 새로운 기회 잡아! 돈운 대박, 투자 주의하며 도전하세요 💰",
-            "소띠": "🐮 꾸준한 노력의 결실! 안정된 재물운, 가족과 함께하는 행복한 해 🏡",
-            "호랑이띠": "🐯 도전과 성공의 해! 큰 프로젝트 성공, 리더십 발휘 대박 🚀",
-            "토끼띠": "🐰 안정과 사랑운 최고! 연애/결혼 운 좋음, 마음 편안한 한 해 ❤️",
-            "용띠": "🐲 운기 상승! 리더십으로 주변 끌어당김, 승진/사업 성공 가능성 높음 👑",
-            "뱀띠": "🐍 직감과 실속의 해! 예상치 못한 재물운, 조용히 기회 잡으세요 🐍",
-            "말띠": "🐴 새 도전과 돈 기회! 이동/여행 운 좋음, 적극적으로 나서보세요 ✈️",
-            "양띠": "🐑 편안함과 결혼 운! 가정운 최고, 따뜻한 관계 쌓이는 해 🏠",
-            "원숭이띠": "🐵 변화와 재능 발휘! 창의력으로 성공, 새로운 분야 도전 좋음 🎨",
-            "닭띠": "🐔 노력의 결실 맺는 해! 인정받고 승진 가능, 꾸준함이 관건 🏆",
-            "개띠": "🐶 친구와 돈운 상승! 귀인 도움 많음, 네트워킹 적극적으로 🤝",
-            "돼지띠": "🐷 여유와 최고 돈운! 재물 대박, 즐기면서 보내는 최고의 해 🐷"
+            "쥐띠": "🐭 안정 속 새로운 기회! 민첩한 판단으로 성공 잡아요 💰",
+            "소띠": "🐮 꾸준함의 결실! 안정된 성장과 행복한 가족운 🏡",
+            "호랑이띠": "🐯 대박 띠! 도전과 성공, 리더십 발휘로 큰 성과 🚀",
+            "토끼띠": "🐰 삼재 주의! 신중함으로 변화 대처, 안정 추구 ❤️",
+            "용띠": "🐲 운기 상승! 리더십과 승진 기회 많음 👑",
+            "뱀띠": "🐍 직감과 실속! 예상치 못한 재물운 🤑",
+            "말띠": "🐴 본띠 해! 추진력 강하지만 균형이 핵심 ✈️",
+            "양띠": "🐑 대박 띠! 편안함과 최고 돈운, 가정 행복 🏠",
+            "원숭이띠": "🐵 변화와 재능 발휘! 창의력으로 성공 🎨",
+            "닭띠": "🐔 노력 결실! 인정과 승진 가능성 높음 🏆",
+            "개띠": "🐶 대박 띠! 귀인 도움과 네트워킹으로 상승 🤝",
+            "돼지띠": "🐷 여유와 재물 대박! 즐기는 최고의 해 🐷"
         },
         "mbtis": {
             "INTJ": "🧠 냉철 전략가", "INTP": "💡 아이디어 천재", "ENTJ": "👑 보스", "ENTP": "⚡ 토론왕",
@@ -104,29 +117,42 @@ translations = {
         "combo": "Best Combo!",
         "your_fortune": "'s 2026 Fortune",
         "footer": "For fun only 😊",
-        "overall_fortune": "2026 Overall Fortune",
-        "overall_text": "Growth and wealth together – the best year! Big luck ✨",
-        "combo_comment": "Combo Comment",
-        "combo_text": "With {}'s effort and {}'s warmth, you'll become a leader!",
-        "lucky_color": "Lucky Color",
-        "lucky_color_val": "Gold 💛",
-        "lucky_item": "Lucky Item",
-        "lucky_item_val": "Golden accessories",
-        "tip": "Tip",
-        "tip_text": "Many chances to meet new people. Be proactive!",
+        "overall_fortunes": [
+            "Growth and wealth together – the best year! Big luck ✨",
+            "A year full of stability and happiness! Family joy 🏡",
+            "Year of challenge and success! Great achievements 🚀",
+            "Romantic year with love blooming ❤️",
+            "Year of change and new beginnings! Creativity shines 🎨"
+        ],
+        "combo_comments": [
+            "With {}'s effort and {}'s warmth, you'll become a leader!",
+            "{}'s leadership and {}'s creativity make perfect synergy!",
+            "{}'s intuition and {}'s logic make an invincible combo!",
+            "{}'s stability and {}'s passion lead to big success!",
+            "{}'s flexibility and {}'s decisiveness solve everything!"
+        ],
+        "lucky_colors": ["Gold 💛", "Red ❤️", "Blue 💙", "Green 🌿", "Purple 💜"],
+        "lucky_items": ["Golden accessories", "Red wallet", "Blue necklace", "Green plant", "Purple pen"],
+        "tips": [
+            "Many chances to meet new people. Be proactive!",
+            "Focus on small investments. High chance of profit 💰",
+            "Take care of health. Regular exercise recommended 🏃",
+            "Spend time with family/friends. Recharge happiness! 🏡",
+            "Start a creative hobby. Your talent will shine 🎨"
+        ],
         "zodiacs": {
-            "Rat": "🐭 Grab new opportunities with energy! Great money luck 💰",
-            "Ox": "🐮 Steady effort pays off! Stable wealth and happy family 🏡",
-            "Tiger": "🐯 Challenge and success! Big project success 🚀",
-            "Rabbit": "🐰 Stability and love luck best! Great for romance ❤️",
-            "Dragon": "🐲 Rising fortune! Leadership shines 👑",
-            "Snake": "🐍 Intuition and gain! Unexpected wealth 🐍",
-            "Horse": "🐴 New challenges and money chances! Good for travel ✈️",
-            "Goat": "🐑 Comfort and marriage luck! Warm relationships 🏠",
-            "Monkey": "🐵 Change and talent shine! Creative success 🎨",
+            "Rat": "🐭 New opportunities in stability! Success with quick judgment 💰",
+            "Ox": "🐮 Fruits of perseverance! Stable growth and happy family 🏡",
+            "Tiger": "🐯 Big luck sign! Challenge and success with leadership 🚀",
+            "Rabbit": "🐰 Caution with change! Seek stability ❤️",
+            "Dragon": "🐲 Rising fortune! Leadership and promotion opportunities 👑",
+            "Snake": "🐍 Intuition and gain! Unexpected wealth 🤑",
+            "Horse": "🐴 Year of the Horse! Strong drive but balance is key ✈️",
+            "Goat": "🐑 Big luck sign! Comfort and best money luck, happy home 🏠",
+            "Monkey": "🐵 Change and talent shine! Success with creativity 🎨",
             "Rooster": "🐔 Effort rewarded! Recognition and promotion 🏆",
-            "Dog": "🐶 Friends and money rise! Helpful people 🤝",
-            "Pig": "🐷 Relaxation and best money luck! Wealth jackpot 🐷"
+            "Dog": "🐶 Big luck sign! Helpful people and networking rise 🤝",
+            "Pig": "🐷 Relaxation and wealth jackpot! Enjoy the best year 🐷"
         },
         "mbtis": {
             "INTJ": "🧠 Strategist", "INTP": "💡 Genius Thinker", "ENTJ": "👑 Commander", "ENTP": "⚡ Debater",
@@ -319,13 +345,17 @@ if st.session_state.result_shown:
         today = get_daily_fortune(zodiac, 0)
         tomorrow = get_daily_fortune(zodiac, 1)
         zodiac_emoji = Z[zodiac].split(' ',1)[0]
-        zodiac_desc = Z[zodiac].split(' ',1)[1] if ' ' in Z[zodiac] else ""
+        zodiac_desc = Z[zodiac].split(' ',1)[1] if ' ' in Z[zodiac] else Z[zodiac]
         mbti_emoji = M[mbti].split(' ',1)[0]
-        mbti_desc = M[mbti].split(' ',1)[1] if ' ' in M[mbti] else ""
+        mbti_desc = M[mbti].split(' ',1)[1] if ' ' in M[mbti] else M[mbti]
         name_text = f"{st.session_state.name}{t['your_fortune']}" if st.session_state.name else t["title"]
 
-        # 조합 한 마디 동적 생성
-        combo_comment = t["combo_text"].format(zodiac, mbti)
+        # 다양화 랜덤
+        overall = random.choice(t["overall_fortunes"])
+        combo_comment = random.choice(t["combo_comments"]).format(zodiac, mbti)
+        lucky_color = random.choice(t["lucky_colors"])
+        lucky_item = random.choice(t["lucky_items"])
+        tip = random.choice(t["tips"])
 
         st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
@@ -344,10 +374,10 @@ if st.session_state.result_shown:
             <b>{t['saju_title']}</b>: {saju}<br><br>
             <b>{t['today_title']}</b>: {today}<br>
             <b>{t['tomorrow_title']}</b>: {tomorrow}<br><br>
-            <b>{t['overall_fortune']}</b>: {t['overall_text']}<br>
-            <b>{t['combo_comment']}</b>: {combo_comment}<br>
-            <b>{t['lucky_color']}</b>: {t['lucky_color_val']} | <b>{t['lucky_item']}</b>: {t['lucky_item_val']}<br>
-            <b>{t['tip']}</b>: {t['tip_text']}
+            <b>2026 전체 운세</b>: {overall}<br>
+            <b>조합 한 마디</b>: {combo_comment}<br>
+            <b>럭키 컬러</b>: {lucky_color} | <b>럭키 아이템</b>: {lucky_item}<br>
+            <b>팁</b>: {tip}
           </div>
 
           <div style="background:#ffffff40; border-radius:15px; padding:8px; margin:8px 8px; backdrop-filter: blur(5px); font-size:0.85em;">
