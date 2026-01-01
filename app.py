@@ -1,12 +1,10 @@
 import streamlit as st
-import streamlit.components.v1 as components
 from datetime import datetime, timedelta
 import random
 
-# ============================================================
-# 1) 언어팩 (KO/EN + JP/ZH/RU/HI/ID 추가)
-#    - 부족한 번역은 자연스럽게 EN으로 fallback
-# ============================================================
+# =========================
+# 1) 언어 목록 (ID 제거)
+# =========================
 LANGS = [
     ("ko", "한국어"),
     ("en", "English"),
@@ -14,9 +12,12 @@ LANGS = [
     ("zh", "中文"),
     ("ru", "Русский"),
     ("hi", "हिन्दी"),
-    ("id", "Bahasa Indonesia"),
 ]
 
+# =========================
+# 2) UI 텍스트 i18n
+#    - 필요한 것만 각 언어에 넣고, 부족하면 EN으로 fallback
+# =========================
 I18N = {
     "ko": {
         "lang_label": "언어 / Language",
@@ -35,9 +36,8 @@ I18N = {
         "result_btn": "결과 보기!",
         "fortune_btn": "2026년 운세 보기!",
         "reset": "처음부터 다시하기",
-        "share_btn": "친구에게 결과 공유",
-        "share_hint": "버튼을 누르면 결과가 복사됩니다. 카톡/문자에 붙여넣기 하세요.",
-        "copied_alert": "복사 완료! 카톡/문자에 붙여넣기 해주세요.",
+        "share_btn": "친구에게 결과 공유하기",
+        "copied_alert": "결과가 복사됐어요!\n카톡/문자에 붙여넣기 해서 공유하세요.",
         "tarot_btn": "오늘의 타로 카드 보기",
         "tarot_title": "오늘의 타로 카드",
         "zodiac_title": "띠 운세",
@@ -58,11 +58,10 @@ I18N = {
         "dananum_btn": "다나눔렌탈.com 바로가기",
         "ad_slot_label": "AD",
         "ad_slot_sub": "(승인 후 이 위치에 광고가 표시됩니다)",
-        "year": "년",
-        "month": "월",
-        "day": "일",
+        "year": "년", "month": "월", "day": "일",
         "invalid_year": "생년은 1900~2030년 사이로 입력해주세요!",
         "mbti_select": "MBTI 선택",
+        "share_area_hint": "공유 버튼이 안 되면, 아래 텍스트를 길게 눌러 복사해서 보내세요.",
     },
     "en": {
         "lang_label": "Language",
@@ -81,9 +80,8 @@ I18N = {
         "result_btn": "View Result!",
         "fortune_btn": "View 2026 Fortune!",
         "reset": "Start Over",
-        "share_btn": "Share Result with Friends",
-        "share_hint": "Tap to copy. Paste into KakaoTalk / messenger.",
-        "copied_alert": "Copied! Paste it in chat to share.",
+        "share_btn": "Share result with friends",
+        "copied_alert": "Copied!\nPaste it in chat to share.",
         "tarot_btn": "See Today's Tarot Card",
         "tarot_title": "Today's Tarot Card",
         "zodiac_title": "Zodiac Fortune",
@@ -97,79 +95,96 @@ I18N = {
         "lucky_color_title": "Lucky Color",
         "lucky_item_title": "Lucky Item",
         "tip_title": "Tip",
-        "ad_badge": "Ad",
-        "dananum_title": "Water Purifier Rental Deal!",
-        "dananum_line1": "From 0 won/month with partner card!",
-        "dananum_line2": "Up to 500,000 won support + gifts",
-        "dananum_btn": "Go to dananumrental.com",
         "ad_slot_label": "AD",
         "ad_slot_sub": "(Ads will appear here after approval)",
-        "year": "Year",
-        "month": "Month",
-        "day": "Day",
+        "year": "Year", "month": "Month", "day": "Day",
         "invalid_year": "Please enter a birth year between 1900 and 2030!",
         "mbti_select": "Select MBTI",
+        "share_area_hint": "If the share button doesn't work, copy the text below and send it.",
     },
-    # 간단 번역(앱 UI용) - 부족분은 EN fallback 처리
     "ja": {
         "lang_label": "言語 / Language",
         "title": "2026 干支 + MBTI + 運勢（今日/明日）",
         "caption": "完全無料",
         "name_placeholder": "名前（結果に表示）",
         "birth_title": "### 生年月日",
-        "mbti_mode": "MBTIは？",
-        "direct": "直接入力",
+        "mbti_mode": "MBTI は？",
+        "direct": "直接選択",
         "test16": "詳細テスト（16問）",
+        "test_start": "詳細テスト開始！順番に答えてください",
+        "energy": "エネルギーの方向",
+        "info": "情報の集め方",
+        "decision": "意思決定",
+        "life": "生活スタイル",
         "result_btn": "結果を見る！",
         "fortune_btn": "2026年の運勢を見る！",
         "reset": "最初から",
-        "share_btn": "友達に共有",
-        "copied_alert": "コピーしました！メッセージに貼り付けて共有してください。",
-        "tarot_btn": "今日のタロット",
+        "share_btn": "友達に結果を共有",
+        "copied_alert": "コピーしました！\nチャットに貼り付けて共有してください。",
+        "tarot_btn": "今日のタロットを見る",
         "tarot_title": "今日のタロット",
-        "year": "年",
-        "month": "月",
-        "day": "日",
+        "today_title": "今日の運勢",
+        "tomorrow_title": "明日の運勢",
+        "year": "年", "month": "月", "day": "日",
+        "invalid_year": "1900〜2030の間で入力してください。",
+        "mbti_select": "MBTI を選択",
+        "share_area_hint": "ボタンが動かない場合は、下のテキストをコピーして送ってください。",
     },
     "zh": {
         "lang_label": "语言 / Language",
-        "title": "2026 生肖 + MBTI + 运势（今日/明日）",
+        "title": "2026 生肖 + MBTI + 运势（今天/明天）",
         "caption": "完全免费",
         "name_placeholder": "输入姓名（显示在结果中）",
         "birth_title": "### 输入生日",
         "mbti_mode": "MBTI 怎么做？",
         "direct": "直接选择",
         "test16": "详细测试（16题）",
+        "test_start": "开始详细测试！请依次回答",
+        "energy": "精力方向",
+        "info": "信息获取",
+        "decision": "决策方式",
+        "life": "生活方式",
         "result_btn": "查看结果！",
         "fortune_btn": "查看2026运势！",
         "reset": "重新开始",
         "share_btn": "分享给朋友",
-        "copied_alert": "已复制！粘贴到聊天里分享。",
-        "tarot_btn": "今日塔罗",
+        "copied_alert": "已复制！\n粘贴到聊天中分享。",
+        "tarot_btn": "抽取今日塔罗",
         "tarot_title": "今日塔罗",
-        "year": "年",
-        "month": "月",
-        "day": "日",
+        "today_title": "今天运势",
+        "tomorrow_title": "明天运势",
+        "year": "年", "month": "月", "day": "日",
+        "invalid_year": "请输入1900到2030之间的年份。",
+        "mbti_select": "选择 MBTI",
+        "share_area_hint": "若按钮无反应，请复制下方文本发送。",
     },
     "ru": {
         "lang_label": "Язык / Language",
         "title": "2026 Зодиак + MBTI + Удача (Сегодня/Завтра)",
         "caption": "Полностью бесплатно",
-        "name_placeholder": "Имя (покажем в результате)",
+        "name_placeholder": "Имя (будет в результате)",
         "birth_title": "### Дата рождения",
         "mbti_mode": "Как выбрать MBTI?",
         "direct": "Выбрать вручную",
         "test16": "Тест (16 вопросов)",
+        "test_start": "Начинаем тест! Ответьте по порядку",
+        "energy": "Направление энергии",
+        "info": "Сбор информации",
+        "decision": "Принятие решений",
+        "life": "Стиль жизни",
         "result_btn": "Показать результат!",
         "fortune_btn": "Показать удачу 2026!",
         "reset": "Сначала",
-        "share_btn": "Поделиться",
-        "copied_alert": "Скопировано! Вставьте в чат для отправки.",
+        "share_btn": "Поделиться с друзьями",
+        "copied_alert": "Скопировано!\nВставьте в чат и отправьте.",
         "tarot_btn": "Таро на сегодня",
         "tarot_title": "Таро на сегодня",
-        "year": "Год",
-        "month": "Месяц",
-        "day": "День",
+        "today_title": "Удача сегодня",
+        "tomorrow_title": "Удача завтра",
+        "year": "Год", "month": "Месяц", "day": "День",
+        "invalid_year": "Введите год рождения от 1900 до 2030.",
+        "mbti_select": "Выберите MBTI",
+        "share_area_hint": "Если кнопка не работает, скопируйте текст ниже и отправьте.",
     },
     "hi": {
         "lang_label": "भाषा / Language",
@@ -180,46 +195,34 @@ I18N = {
         "mbti_mode": "MBTI कैसे?",
         "direct": "सीधे चुनें",
         "test16": "टेस्ट (16 प्रश्न)",
+        "test_start": "टेस्ट शुरू! एक-एक करके जवाब दें",
+        "energy": "ऊर्जा दिशा",
+        "info": "जानकारी जुटाना",
+        "decision": "निर्णय तरीका",
+        "life": "जीवन शैली",
         "result_btn": "परिणाम देखें!",
         "fortune_btn": "2026 भाग्य देखें!",
         "reset": "फिर से शुरू",
-        "share_btn": "शेयर करें",
-        "copied_alert": "कॉपी हो गया! चैट में पेस्ट करें।",
+        "share_btn": "दोस्तों के साथ साझा करें",
+        "copied_alert": "कॉपी हो गया!\nचैट में पेस्ट करके साझा करें।",
         "tarot_btn": "आज का टैरो",
         "tarot_title": "आज का टैरो",
-        "year": "वर्ष",
-        "month": "महीना",
-        "day": "दिन",
-    },
-    "id": {
-        "lang_label": "Bahasa / Language",
-        "title": "2026 Zodiak + MBTI + Keberuntungan (Hari Ini/Besok)",
-        "caption": "Gratis 100%",
-        "name_placeholder": "Nama (ditampilkan di hasil)",
-        "birth_title": "### Tanggal Lahir",
-        "mbti_mode": "Bagaimana MBTI?",
-        "direct": "Pilih langsung",
-        "test16": "Tes (16 pertanyaan)",
-        "result_btn": "Lihat hasil!",
-        "fortune_btn": "Lihat keberuntungan 2026!",
-        "reset": "Ulang dari awal",
-        "share_btn": "Bagikan",
-        "copied_alert": "Tersalin! Tempel di chat untuk berbagi.",
-        "tarot_btn": "Tarot hari ini",
-        "tarot_title": "Tarot hari ini",
-        "year": "Tahun",
-        "month": "Bulan",
-        "day": "Hari",
+        "today_title": "आज का भाग्य",
+        "tomorrow_title": "कल का भाग्य",
+        "year": "वर्ष", "month": "महीना", "day": "दिन",
+        "invalid_year": "कृपया 1900 से 2030 के बीच वर्ष दर्ज करें।",
+        "mbti_select": "MBTI चुनें",
+        "share_area_hint": "यदि बटन काम न करे तो नीचे का टेक्स्ट कॉपी करके भेजें।",
     },
 }
 
 def T(lang: str, key: str) -> str:
-    # lang -> fallback en -> key 그대로
     return I18N.get(lang, {}).get(key) or I18N["en"].get(key) or key
 
-# ============================================================
-# 2) 데이터 (HTML 태그 절대 없음: 모두 Plain text)
-# ============================================================
+
+# =========================
+# 3) 데이터 (HTML 태그 절대 없음: 모두 Plain text)
+# =========================
 ZODIAC_LIST = {
     "ko": ["쥐띠", "소띠", "호랑이띠", "토끼띠", "용띠", "뱀띠", "말띠", "양띠", "원숭이띠", "닭띠", "개띠", "돼지띠"],
     "en": ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"],
@@ -227,7 +230,6 @@ ZODIAC_LIST = {
     "zh": ["鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊", "猴", "鸡", "狗", "猪"],
     "ru": ["Крыса", "Бык", "Тигр", "Кролик", "Дракон", "Змея", "Лошадь", "Коза", "Обезьяна", "Петух", "Собака", "Свинья"],
     "hi": ["चूहा", "बैल", "बाघ", "खरगोश", "ड्रैगन", "साँप", "घोड़ा", "बकरी", "बंदर", "मुर्गा", "कुत्ता", "सूअर"],
-    "id": ["Tikus", "Kerbau", "Macan", "Kelinci", "Naga", "Ular", "Kuda", "Kambing", "Monyet", "Ayam", "Anjing", "Babi"],
 }
 
 ZODIAC_DESC = {
@@ -250,7 +252,7 @@ ZODIAC_DESC = {
         "Perseverance pays off. Stable growth and family luck.",
         "Challenge and success. Leadership shines.",
         "Be cautious with changes. Choose stability.",
-        "Fortune rising. More recognition and promotion chances.",
+        "Fortune rising. Recognition and promotion chances.",
         "Intuition and gain. Unexpected money luck.",
         "Strong drive. Balance is the key.",
         "Comfort and money luck. Home happiness grows.",
@@ -273,7 +275,31 @@ MBTI_DESC = {
         "INFJ": "Advocate", "INFP": "Mediator", "ENFJ": "Protagonist", "ENFP": "Campaigner",
         "ISTJ": "Logistician", "ISFJ": "Defender", "ESTJ": "Executive", "ESFJ": "Consul",
         "ISTP": "Virtuoso", "ISFP": "Adventurer", "ESTP": "Entrepreneur", "ESFP": "Entertainer",
-    }
+    },
+    "ja": {
+        "INTJ": "戦略家", "INTP": "論理学者", "ENTJ": "指揮官", "ENTP": "討論者",
+        "INFJ": "提唱者", "INFP": "仲介者", "ENFJ": "主人公", "ENFP": "運動家",
+        "ISTJ": "管理者", "ISFJ": "擁護者", "ESTJ": "幹部", "ESFJ": "領事",
+        "ISTP": "巨匠", "ISFP": "冒険家", "ESTP": "起業家", "ESFP": "エンターテイナー",
+    },
+    "zh": {
+        "INTJ": "策划者", "INTP": "逻辑学家", "ENTJ": "指挥官", "ENTP": "辩论家",
+        "INFJ": "倡导者", "INFP": "调停者", "ENFJ": "主人公", "ENFP": "竞选者",
+        "ISTJ": "物流师", "ISFJ": "守护者", "ESTJ": "总经理", "ESFJ": "执政官",
+        "ISTP": "鉴赏家", "ISFP": "探险家", "ESTP": "企业家", "ESFP": "表演者",
+    },
+    "ru": {
+        "INTJ": "Стратег", "INTP": "Логик", "ENTJ": "Командир", "ENTP": "Полемист",
+        "INFJ": "Защитник", "INFP": "Посредник", "ENFJ": "Протагонист", "ENFP": "Активист",
+        "ISTJ": "Логист", "ISFJ": "Защитник (опора)", "ESTJ": "Администратор", "ESFJ": "Консул",
+        "ISTP": "Виртуоз", "ISFP": "Авантюрист", "ESTP": "Предприниматель", "ESFP": "Артист",
+    },
+    "hi": {
+        "INTJ": "रणनीतिक", "INTP": "तार्किक", "ENTJ": "कमांडर", "ENTP": "बहसकर्ता",
+        "INFJ": "समर्थक", "INFP": "मध्यस्थ", "ENFJ": "नायक", "ENFP": "अभियानकर्ता",
+        "ISTJ": "व्यवस्थापक", "ISFJ": "रक्षक", "ESTJ": "कार्यकारी", "ESFJ": "सलाहकार",
+        "ISTP": "कुशल", "ISFP": "साहसी", "ESTP": "उद्यमी", "ESFP": "मनोरंजक",
+    },
 }
 
 SAJU_MSG = {
@@ -382,24 +408,18 @@ TIPS = {
 }
 
 TAROT = {
-    "The Fool": {"ko": "바보 - 새로운 시작, 모험", "en": "New beginnings, adventure"},
-    "The Magician": {"ko": "마법사 - 창조력, 집중", "en": "Manifestation, focus"},
-    "The High Priestess": {"ko": "여사제 - 직감, 내면의 목소리", "en": "Intuition, inner voice"},
-    "The Empress": {"ko": "여제 - 풍요, 창작", "en": "Abundance, creativity"},
-    "The Emperor": {"ko": "황제 - 안정, 구조", "en": "Stability, structure"},
-    "The Lovers": {"ko": "연인 - 사랑, 선택", "en": "Love, choices"},
-    "The Chariot": {"ko": "전차 - 승리, 의지", "en": "Victory, willpower"},
-    "Strength": {"ko": "힘 - 용기, 인내", "en": "Courage, patience"},
-    "The Hermit": {"ko": "은둔자 - 성찰, 지혜", "en": "Wisdom, reflection"},
-    "Wheel of Fortune": {"ko": "운명의 수레바퀴 - 변화", "en": "Change, cycles"},
-    "Justice": {"ko": "정의 - 균형, 진실", "en": "Balance, truth"},
-    "Death": {"ko": "죽음 - 변환, 재생", "en": "Transformation, rebirth"},
-    "The Star": {"ko": "별 - 희망, 치유", "en": "Hope, healing"},
-    "The Sun": {"ko": "태양 - 행복, 성공", "en": "Joy, success"},
-    "The World": {"ko": "세계 - 완성, 성취", "en": "Completion, fulfillment"},
+    "The Fool": {"ko": "바보 - 새로운 시작, 모험", "en": "New beginnings, adventure", "ja": "愚者 - 新しい始まり", "zh": "愚者 - 新的开始", "ru": "Шут - новое начало", "hi": "द फ़ूल - नई शुरुआत"},
+    "The Magician": {"ko": "마법사 - 창조력, 집중", "en": "Manifestation, focus", "ja": "魔術師 - 創造と集中", "zh": "魔术师 - 创造与专注", "ru": "Маг - проявление", "hi": "मैजिशियन - फोकस"},
+    "The High Priestess": {"ko": "여사제 - 직감, 내면의 목소리", "en": "Intuition, inner voice", "ja": "女教皇 - 直感", "zh": "女祭司 - 直觉", "ru": "Жрица - интуиция", "hi": "हाई प्रीस्टेस - अंतर्ज्ञान"},
+    "The Empress": {"ko": "여제 - 풍요, 창작", "en": "Abundance, creativity", "ja": "女帝 - 豊かさ", "zh": "皇后 - 丰盛", "ru": "Императрица - изобилие", "hi": "एम्प्रेस - समृद्धि"},
+    "The Emperor": {"ko": "황제 - 안정, 구조", "en": "Stability, structure", "ja": "皇帝 - 安定", "zh": "皇帝 - 稳定", "ru": "Император - структура", "hi": "एम्परर - स्थिरता"},
+    "The Sun": {"ko": "태양 - 행복, 성공", "en": "Joy, success", "ja": "太陽 - 幸福", "zh": "太阳 - 成功", "ru": "Солнце - успех", "hi": "सन - सफलता"},
+    "The World": {"ko": "세계 - 완성, 성취", "en": "Completion, fulfillment", "ja": "世界 - 完成", "zh": "世界 - 圆满", "ru": "Мир - завершение", "hi": "वर्ल्ड - पूर्णता"},
 }
 
-# 16문항 테스트 (KO/EN 제공, 기타 언어는 EN fallback)
+# =========================
+# 4) MBTI 상세 테스트 16문항: 언어별 질문/선택지 제공
+# =========================
 Q16 = {
     "ko": {
         "q_energy": ["주말에 친구들이 갑자기 '놀자!' 하면?", "모임에서 처음 본 사람들과 대화하는 거?", "하루 종일 사람 만난 후에?", "생각이 떠오르면?"],
@@ -423,17 +443,76 @@ Q16 = {
         "options_e": ["Yes! Go out right away (E)", "Fun and exciting (E)", "Still full of energy (E)", "Say it out loud (E)"],
         "options_i": ["Stay home and rest (I)", "A bit tired (I)", "Need alone time (I)", "Organize in my head (I)"],
         "options_s": ["Menu/prices first (S)", "Listen to facts (S)", "Details and plot (S)", "Buy what I need (S)"],
-        "options_n": ["Vibe/concept (N)", "Think about possibilities (N)", "Symbols/hidden meanings (N)", "Imagine future styling (N)"],
-        "options_t": ["Be direct (T)", "Argue logically (T)", "Give solutions (T)", "Point it out (T)"],
+        "options_n": ["Vibe/concept (N)", "Possibilities/future (N)", "Symbols/hidden meaning (N)", "Imagine styling later (N)"],
+        "options_t": ["Be direct (T)", "Argue logically (T)", "Offer solutions (T)", "Point it out (T)"],
         "options_f": ["Say gently (F)", "Mediate feelings (F)", "Empathize first (F)", "Let it pass (F)"],
-        "options_j": ["Plan tightly (J)", "Finish early (J)", "Neat and structured (J)", "Decide quickly (J)"],
+        "options_j": ["Plan tightly (J)", "Finish early (J)", "Neat & structured (J)", "Decide quickly (J)"],
         "options_p": ["Go with the flow (P)", "Do it at the end (P)", "Messy is okay (P)", "Want more options (P)"],
-    }
+    },
+    "ja": {
+        "q_energy": ["週末に友達が急に「遊ぼう！」と言ったら？", "集まりで初対面の人と話すのは？", "一日中人と会った後は？", "思いついたことがあると？"],
+        "q_info": ["新しいカフェで最初に目に入るのは？", "友達が悩み相談をしたら？", "本や映画を見るときは？", "買い物をするときは？"],
+        "q_decision": ["友達が遅れてイラっとしたら？", "チームで意見が衝突したら？", "誰かが泣きながら相談したら？", "嘘に気づいた時は？"],
+        "q_life": ["旅行の計画は？", "締切前の課題は？", "部屋の片付けは？", "選択を迫られたら？"],
+        "options_e": ["よし！すぐ出かける (E)", "話すの楽しい (E)", "まだ元気 (E)", "声に出して整理 (E)"],
+        "options_i": ["家で休みたい (I)", "少し疲れる (I)", "一人になりたい (I)", "頭の中で整理 (I)"],
+        "options_s": ["メニューと価格 (S)", "事実を聞く (S)", "細部に注目 (S)", "必要なものを買う (S)"],
+        "options_n": ["雰囲気・コンセプト (N)", "可能性を考える (N)", "象徴や意味 (N)", "後でどう使うか想像 (N)"],
+        "options_t": ["率直に言う (T)", "論理で判断 (T)", "解決策を提案 (T)", "すぐ指摘 (T)"],
+        "options_f": ["優しく言う (F)", "気持ちを調整 (F)", "共感して聞く (F)", "流す (F)"],
+        "options_j": ["計画を立てる (J)", "早めに終える (J)", "きっちり整理 (J)", "早く決める (J)"],
+        "options_p": ["気分で即興 (P)", "締切前に一気に (P)", "ざっくりでOK (P)", "他の選択肢も見る (P)"],
+    },
+    "zh": {
+        "q_energy": ["周末朋友突然说“出来玩！”你会？", "聚会和陌生人聊天？", "一天见了很多人之后？", "想到什么事情时？"],
+        "q_info": ["进一家新咖啡店你最先注意？", "朋友来倾诉烦恼时？", "看书/电影时？", "购物时？"],
+        "q_decision": ["朋友迟到让你生气时？", "团队意见冲突时？", "有人哭着来找你时？", "发现对方说谎时？"],
+        "q_life": ["旅行怎么安排？", "作业/项目临近截止？", "整理房间？", "必须做选择时？"],
+        "options_e": ["太好了！立刻出门 (E)", "聊天很有趣 (E)", "还能继续社交 (E)", "直接说出来 (E)"],
+        "options_i": ["想在家休息 (I)", "有点累 (I)", "想一个人待着 (I)", "先在脑中整理 (I)"],
+        "options_s": ["菜单/价格 (S)", "听事实细节 (S)", "关注剧情细节 (S)", "买需要的东西 (S)"],
+        "options_n": ["氛围/概念 (N)", "想未来可能性 (N)", "找象征意义 (N)", "想搭配和用途 (N)"],
+        "options_t": ["直接指出 (T)", "讲逻辑谁对谁错 (T)", "给解决方案 (T)", "当场拆穿 (T)"],
+        "options_f": ["语气委婉 (F)", "照顾感受 (F)", "先共情 (F)", "先放一放 (F)"],
+        "options_j": ["安排得很计划 (J)", "提前完成 (J)", "按标准整理 (J)", "快速决定 (J)"],
+        "options_p": ["随性即兴 (P)", "临近截止再做 (P)", "差不多就行 (P)", "想再看看选项 (P)"],
+    },
+    "ru": {
+        "q_energy": ["Друзья внезапно зовут гулять в выходные — ты?", "Разговор с незнакомыми на встрече?", "После целого дня общения ты?", "Когда появляется новая мысль?"],
+        "q_info": ["В новом кафе что замечаешь первым?", "Друг делится проблемой — ты?", "Когда смотришь фильм/читаешь книгу?", "Во время шопинга?"],
+        "q_decision": ["Друг опоздал и ты злишься — ты?", "Спор в команде — ты?", "Кто-то плачет и просит совета — ты?", "Когда ловишь на лжи?"],
+        "q_life": ["Как планируешь поездку?", "Перед дедлайном?", "Когда убираешь комнату?", "Когда нужно выбрать?"],
+        "options_e": ["Класс! Иду сразу (E)", "Общение бодрит (E)", "Я ещё полон сил (E)", "Озвучиваю вслух (E)"],
+        "options_i": ["Лучше дома (I)", "Немного утомляет (I)", "Хочу побыть один (I)", "Сначала в голове (I)"],
+        "options_s": ["Меню и цены (S)", "Слушаю факты (S)", "Люблю детали (S)", "Покупаю нужное (S)"],
+        "options_n": ["Атмосфера/идея (N)", "Думаю о будущем (N)", "Ищу символы (N)", "Представляю варианты (N)"],
+        "options_t": ["Говорю прямо (T)", "Рассуждаю логично (T)", "Предлагаю решения (T)", "Сразу указываю (T)"],
+        "options_f": ["Мягко говорю (F)", "Учитываю чувства (F)", "Сначала сочувствие (F)", "Не обостряю (F)"],
+        "options_j": ["Планирую чётко (J)", "Делаю заранее (J)", "Люблю порядок (J)", "Быстро решаю (J)"],
+        "options_p": ["Импровизирую (P)", "Делаю в последний момент (P)", "Норм и так (P)", "Хочу больше вариантов (P)"],
+    },
+    "hi": {
+        "q_energy": ["वीकेंड पर दोस्त अचानक कहें ‘चलो बाहर!’ तो?", "मिलन में अजनबियों से बात करना?", "पूरा दिन लोगों से मिलने के बाद?", "जब कोई विचार आए तो?"],
+        "q_info": ["नए कैफे में सबसे पहले क्या दिखता है?", "दोस्त परेशानी बताए तो?", "फिल्म/किताब देखते समय?", "खरीदारी करते समय?"],
+        "q_decision": ["दोस्त देर से आए और गुस्सा हो तो?", "टीम में मतभेद हो तो?", "कोई रोते हुए सलाह मांगे तो?", "झूठ पकड़ो तो?"],
+        "q_life": ["यात्रा की योजना?", "डेडलाइन के पहले?", "कमरा साफ़ करते समय?", "जब चुनना हो?"],
+        "options_e": ["हाँ! तुरंत निकलता/निकलती हूँ (E)", "बातचीत मज़ेदार (E)", "अब भी ऊर्जा है (E)", "ऊंची आवाज़ में सोचता/सोचती हूँ (E)"],
+        "options_i": ["घर पर रहना (I)", "थोड़ा थकाने वाला (I)", "अकेले रहना (I)", "पहले दिमाग में (I)"],
+        "options_s": ["मेन्यू/कीमत (S)", "तथ्य सुनना (S)", "डिटेल पर ध्यान (S)", "ज़रूरत की चीज़ लेना (S)"],
+        "options_n": ["वाइब/कॉन्सेप्ट (N)", "भविष्य की संभावना (N)", "छिपे अर्थ (N)", "आगे का उपयोग सोचता/सोचती हूँ (N)"],
+        "options_t": ["सीधा कहना (T)", "तर्क से तय करना (T)", "समाधान देना (T)", "तुरंत बताना (T)"],
+        "options_f": ["नरमी से कहना (F)", "भावनाएँ देखना (F)", "पहले सहानुभूति (F)", "बात टाल देना (F)"],
+        "options_j": ["योजना बनाकर (J)", "पहले ही पूरा (J)", "साफ़-सुथरा (J)", "जल्दी निर्णय (J)"],
+        "options_p": ["तुरंत/इम्प्रोवाइज (P)", "आख़िर में एकदम (P)", "चल जाएगा (P)", "और विकल्प देखना (P)"],
+    },
 }
 
-# ============================================================
-# 3) 페이지 설정 + 세션 초기화
-# ============================================================
+def pick_lang_list(dct, lang):
+    return dct.get(lang) or dct.get("en")
+
+# =========================
+# 5) Streamlit 기본 설정 + 세션
+# =========================
 st.set_page_config(page_title="2026 Fortune", layout="centered")
 
 if "lang" not in st.session_state:
@@ -451,66 +530,44 @@ if "month" not in st.session_state:
 if "day" not in st.session_state:
     st.session_state.day = 1
 
-APP_URL = "https://my-fortune.streamlit.app"  # 너의 앱 주소로 유지/수정
+APP_URL = "https://my-fortune.streamlit.app"
 
-# ============================================================
-# 4) 모바일 UI CSS (라디오 가림/상단 여백 문제 해결)
-# ============================================================
+# =========================
+# 6) CSS (모바일 + 라디오 가림 해결)
+# =========================
 st.markdown("""
 <style>
-/* 상단 여백 확보: 모바일에서 헤더 겹침 방지 */
 .block-container{
     padding-top: 1.1rem !important;
-    padding-bottom: 2.2rem !important;
+    padding-bottom: 2.0rem !important;
 }
-
-/* 라디오 줄바꿈 허용 + 높이 확보 */
 div[data-baseweb="radio"] label{
     white-space: normal !important;
     line-height: 1.2 !important;
 }
-
-/* 기본 글꼴 */
 html, body, [class*="css"]{
     font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
 }
-
-/* 버튼 통일 */
 .stButton > button{
     border-radius: 18px !important;
     padding: 0.85rem 1rem !important;
     font-weight: 800 !important;
 }
-
-/* 입력 요소 라운드 */
-div[data-baseweb="input"] input,
-div[data-baseweb="select"] > div{
-    border-radius: 14px !important;
-}
-
-/* expander 제목 중앙 */
-.streamlit-expanderHeader{
-    font-weight: 800;
-}
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# 5) 유틸
-# ============================================================
+# =========================
+# 7) 유틸 함수
+# =========================
 def get_zodiac_index(year: int) -> int:
-    # 1900~2030 범위 밖이어도 인덱스는 계산되지만, 입력 검증으로 막음
     return (year - 4) % 12
 
 def get_zodiac_name(lang: str, idx: int) -> str:
     return ZODIAC_LIST.get(lang, ZODIAC_LIST["en"])[idx]
 
-def pick_lang_list(dct, lang):
-    return dct.get(lang) or dct.get("en")
-
-def saju_message(lang: str, year: int, month: int, day: int) -> str:
+def saju_message(lang: str, y: int, m: int, d: int) -> str:
     msgs = pick_lang_list(SAJU_MSG, lang)
-    return msgs[(year + month + day) % len(msgs)]
+    return msgs[(y + m + d) % len(msgs)]
 
 def daily_fortune(lang: str, zodiac_idx: int, offset_days: int) -> str:
     msgs = pick_lang_list(DAILY_MSG, lang)
@@ -545,9 +602,9 @@ def render_dananum_ad_ko_only(lang: str):
     <div style="
         margin: 16px 6px 10px 6px;
         padding: 16px 14px;
-        border: 1.8px solid rgba(231,76,60,0.35);
+        border: 2px solid rgba(231,76,60,0.35);
         border-radius: 18px;
-        background: rgba(255,255,255,0.72);
+        background: rgba(255,255,255,0.75);
         text-align: center;
         box-shadow: 0 8px 24px rgba(0,0,0,0.10);
     ">
@@ -583,41 +640,9 @@ def render_dananum_ad_ko_only(lang: str):
     </div>
     """, unsafe_allow_html=True)
 
-def share_block(lang: str, share_text: str, button_label: str):
-    # JS는 markdown보다 components.html이 훨씬 안정적
-    safe_text = share_text.replace("\\", "\\\\").replace("`", "\\`")
-    alert_msg = T(lang, "copied_alert").replace("\\", "\\\\").replace("`", "\\`")
-    html = f"""
-    <div style="text-align:center; margin: 18px 0 8px 0;">
-        <button id="copyBtn" style="
-            background:#6f42c1; color:white; padding:16px 22px;
-            border:none; border-radius:999px; font-size:1.05em; font-weight:900;
-            box-shadow: 0 10px 24px rgba(111,66,193,0.25); cursor:pointer;
-            width: min(520px, 92%);
-        ">{button_label}</button>
-        <div style="font-size:0.9em; color:#777; margin-top:10px;">
-            {T(lang, "share_hint")}
-        </div>
-    </div>
-    <script>
-      const textToCopy = `{safe_text}`;
-      const btn = document.getElementById("copyBtn");
-      btn.addEventListener("click", async () => {{
-        try {{
-          await navigator.clipboard.writeText(textToCopy);
-          alert(`{alert_msg}`);
-        }} catch (e) {{
-          // fallback: prompt
-          window.prompt("Copy this text:", textToCopy);
-        }}
-      }});
-    </script>
-    """
-    components.html(html, height=140)
-
-# ============================================================
-# 6) 언어 선택 (사라진 기능 복원: KO/EN + 5개 추가)
-# ============================================================
+# =========================
+# 8) 언어 선택 (전체 복원)
+# =========================
 lang_codes = [c for c, _ in LANGS]
 lang_labels = [f"{name} ({code})" for code, name in LANGS]
 default_idx = lang_codes.index(st.session_state.lang) if st.session_state.lang in lang_codes else 0
@@ -631,9 +656,9 @@ selected_label = st.radio(
 st.session_state.lang = lang_codes[lang_labels.index(selected_label)]
 lang = st.session_state.lang
 
-# ============================================================
-# 7) 입력 화면
-# ============================================================
+# =========================
+# 9) 입력 화면
+# =========================
 if not st.session_state.result_shown:
     st.markdown(
         f"<h1 style='text-align:center; color:#6f42c1; margin:10px 0 6px 0;'>{T(lang,'title')}</h1>",
@@ -644,10 +669,10 @@ if not st.session_state.result_shown:
         unsafe_allow_html=True
     )
 
-    # ✅ 한국어에서만 다나눔렌탈 광고
+    # 한국어에서만 다나눔렌탈 광고
     render_dananum_ad_ko_only(lang)
 
-    # ✅ 애드센스 자리(승인 전)
+    # 애드센스 자리(승인 전)
     render_ad_placeholder(lang)
 
     st.session_state.name = st.text_input(T(lang, "name_placeholder"), value=st.session_state.name)
@@ -666,14 +691,12 @@ if not st.session_state.result_shown:
             st.session_state.mbti = mbti_input
             st.session_state.result_shown = True
             st.rerun()
-
     else:
         st.markdown(
             f"<h3 style='text-align:center; color:#3498db; margin-top:10px;'>{T(lang,'test_start')}</h3>",
             unsafe_allow_html=True
         )
 
-        # 질문은 해당 언어가 없으면 EN fallback
         qpack = Q16.get(lang) or Q16["en"]
 
         e_i = s_n = t_f = j_p = 0
@@ -707,9 +730,9 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# ============================================================
-# 8) 결과 화면
-# ============================================================
+# =========================
+# 10) 결과 화면
+# =========================
 if st.session_state.result_shown:
     if not (1900 <= st.session_state.year <= 2030):
         st.error(T(lang, "invalid_year"))
@@ -720,10 +743,7 @@ if st.session_state.result_shown:
 
     zodiac_idx = get_zodiac_index(st.session_state.year)
     zodiac_name = get_zodiac_name(lang, zodiac_idx)
-
-    # 설명/데이터: 해당 언어 없으면 EN 사용
-    z_desc_list = pick_lang_list(ZODIAC_DESC, lang)
-    zodiac_desc = z_desc_list[zodiac_idx]
+    zodiac_desc = (ZODIAC_DESC.get(lang) or ZODIAC_DESC["en"])[zodiac_idx]
 
     mbti = st.session_state.mbti
     mbti_desc = (MBTI_DESC.get(lang) or MBTI_DESC["en"]).get(mbti, mbti)
@@ -741,7 +761,7 @@ if st.session_state.result_shown:
     name_display = st.session_state.name.strip()
     name_line = f"{name_display} " if name_display else ""
 
-    # 상단 헤더 카드
+    # 헤더
     st.markdown(f"""
     <div style="
         margin: 10px 6px 10px 6px;
@@ -766,7 +786,7 @@ if st.session_state.result_shown:
     # 광고 자리
     render_ad_placeholder(lang)
 
-    # 결과 카드 (HTML 태그 출력 문제 방지: 모두 plain text만 넣음)
+    # 결과 카드
     st.markdown(f"""
     <div style="
         margin: 12px 6px 12px 6px;
@@ -792,10 +812,10 @@ if st.session_state.result_shown:
     </div>
     """, unsafe_allow_html=True)
 
-    # ✅ 한국어에서만 다나눔렌탈 광고
+    # 한국어에서만 다나눔렌탈 광고
     render_dananum_ad_ko_only(lang)
 
-    # 타로 (expander)
+    # 타로
     with st.expander(T(lang, "tarot_btn"), expanded=False):
         card = random.choice(list(TAROT.keys()))
         meaning = TAROT[card].get(lang) or TAROT[card].get("en")
@@ -820,7 +840,7 @@ if st.session_state.result_shown:
         </div>
         """, unsafe_allow_html=True)
 
-    # 공유 텍스트 (이모지 최소화 + 순수 텍스트)
+    # 공유 텍스트 (순수 텍스트)
     share_text = (
         f"{name_line}2026\n"
         f"{zodiac_name} · {mbti}\n"
@@ -834,8 +854,42 @@ if st.session_state.result_shown:
         f"{APP_URL}"
     )
 
-    # ✅ 공유 버튼 (반응 없음 문제 해결: components.html 사용)
-    share_block(lang, share_text, T(lang, "share_btn"))
+    # ✅ 너가 원했던 "예전 방식"으로 공유 버튼 복원: (클립보드 복사 + alert)
+    # 일부 환경에서 clipboard API가 막히면 아래 텍스트 영역 복사 안내로 대체 가능
+    safe_js_text = share_text.replace("\\", "\\\\").replace("`", "\\`")
+    safe_alert = T(lang, "copied_alert").replace("\\", "\\\\").replace("`", "\\`")
+
+    st.markdown(f"""
+    <div style="text-align:center; margin: 18px 0 10px 0;">
+        <button onclick="copyResult()" style="
+            background:#6f42c1; color:white; padding:16px 22px;
+            border:none; border-radius:999px; font-size:1.05em; font-weight:900;
+            box-shadow: 0 10px 24px rgba(111,66,193,0.25); cursor:pointer;
+            width: min(520px, 92%);
+        ">
+          {T(lang, "share_btn")}
+        </button>
+    </div>
+
+    <script>
+    function copyResult() {{
+        const text = `{safe_js_text}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {{
+            navigator.clipboard.writeText(text).then(function() {{
+                alert(`{safe_alert}`);
+            }}).catch(function() {{
+                alert("Copy failed. Please copy the text area below.");
+            }});
+        }} else {{
+            alert("Copy not supported. Please copy the text area below.");
+        }}
+    }}
+    </script>
+    """, unsafe_allow_html=True)
+
+    # ✅ 버튼이 브라우저 보안 때문에 막힐 수 있으니, 항상 '수동 복사' 백업도 제공
+    st.caption(T(lang, "share_area_hint"))
+    st.text_area("Share Text", share_text, height=200)
 
     st.caption(APP_URL)
 
