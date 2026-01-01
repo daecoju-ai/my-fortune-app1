@@ -3,13 +3,13 @@ from datetime import datetime, timedelta
 import random
 from streamlit.components.v1 import html as st_html
 
-# 다국어 사전 (한국어 + 영어, 완전 전체)
+# 다국어 사전
 translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 + 오늘/내일 운세 🌟",
         "caption": "완전 무료 😄",
-        "ad_title": "💳정수기 렌탈 궁금할 때?",
-        "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 최대50만원 페이백</b>!",
+        "ad_title": "💳 렌탈 궁금할 때?",
+        "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 페이백</b>!",
         "ad_btn": "🔗 보러가기",
         "birth": "### 생년월일 입력",
         "name_placeholder": "이름 입력 (결과에 표시돼요)",
@@ -25,8 +25,6 @@ translations = {
         "fortune_btn": "🔮 2026년 운세 보기!",
         "reset": "처음부터 다시 하기",
         "share_btn": "친구에게 결과 공유",
-        "tarot_btn": "🔮 오늘의 타로 카드 뽑기",
-        "tarot_title": "오늘의 타로 카드",
         "zodiac_title": "띠 운세",
         "mbti_title": "MBTI 특징",
         "saju_title": "사주 한 마디",
@@ -63,30 +61,6 @@ translations = {
             "가족/친구와 시간 보내세요. 행복 충전! 🏡",
             "창의적인 취미를 시작해보세요. 재능 발휘될 거예요 🎨"
         ],
-        "tarot_cards": {
-            "The Fool": "🃏 바보 - 새로운 시작, 모험, 순수한 믿음",
-            "The Magician": "🪄 마법사 - 창조력, 능력 발휘, 집중",
-            "The High Priestess": "🔮 여사제 - 직감, 신비, 내면의 목소리",
-            "The Empress": "👑 여제 - 풍요, 어머니의 사랑, 창작",
-            "The Emperor": "♚ 황제 - 안정, 권위, 구조",
-            "The Hierophant": "⛪ 교황 - 전통, 스승, 지도",
-            "The Lovers": "💕 연인 - 사랑, 조화, 선택",
-            "The Chariot": "🚀 전차 - 승리, 의지력, 방향",
-            "Strength": "💪 힘 - 용기, 인내, 부드러운 통제",
-            "The Hermit": "🏮 은둔자 - 내면 탐구, 지혜, 고독",
-            "Wheel of Fortune": "🎡 운명의 수레바퀴 - 변화, 운, 사이클",
-            "Justice": "⚖️ 정의 - 공정, 균형, 진실",
-            "The Hanged Man": "🙃 매달린 사람 - 희생, 새로운 관점, 기다림",
-            "Death": "💀 죽음 - 변화, 끝과 시작, 재생",
-            "Temperance": "👼 절제 - 균형, 조화, 인내",
-            "The Devil": "😈 악마 - 속박, 유혹, 물질주의",
-            "The Tower": "🗼 탑 - 갑작스러운 변화, 파괴와 재건",
-            "The Star": "⭐ 별 - 희망, 영감, 치유",
-            "The Moon": "🌙 달 - 불안, 환상, 직감",
-            "The Sun": "☀️ 태양 - 행복, 성공, 긍정 에너지",
-            "Judgement": "📯 심판 - 부활, 깨달음, 용서",
-            "The World": "🌍 세계 - 완성, 성취, 전체성"
-        },
         "zodiacs": {
             "쥐띠": "🐭 안정 속 새로운 기회! 민첩한 판단으로 성공 잡아요 💰",
             "소띠": "🐮 꾸준함의 결실! 안정된 성장과 행복한 가족운 🏡",
@@ -172,8 +146,6 @@ translations = {
         "fortune_btn": "🔮 View 2026 Fortune!",
         "reset": "Start Over",
         "share_btn": "Share Result with Friends",
-        "tarot_btn": "🔮 Draw Today's Tarot Card",
-        "tarot_title": "Today's Tarot Card",
         "zodiac_title": "Zodiac Fortune",
         "mbti_title": "MBTI Traits",
         "saju_title": "Fortune Comment",
@@ -210,30 +182,6 @@ translations = {
             "Spend time with family/friends. Recharge happiness! 🏡",
             "Start a creative hobby. Your talent will shine 🎨"
         ],
-        "tarot_cards": {
-            "The Fool": "🃏 The Fool - New beginnings, adventure, innocence",
-            "The Magician": "🪄 The Magician - Manifestation, skill, concentration",
-            "The High Priestess": "🔮 The High Priestess - Intuition, mystery, inner voice",
-            "The Empress": "👑 The Empress - Abundance, nurturing, creativity",
-            "The Emperor": "♚ The Emperor - Stability, authority, structure",
-            "The Hierophant": "⛪ The Hierophant - Tradition, guidance, conformity",
-            "The Lovers": "💕 The Lovers - Love, harmony, choices",
-            "The Chariot": "🚀 The Chariot - Victory, determination, direction",
-            "Strength": "💪 Strength - Courage, patience, gentle control",
-            "The Hermit": "🏮 The Hermit - Soul searching, wisdom, solitude",
-            "Wheel of Fortune": "🎡 Wheel of Fortune - Change, cycles, fate",
-            "Justice": "⚖️ Justice - Fairness, truth, balance",
-            "The Hanged Man": "🙃 The Hanged Man - Sacrifice, new perspective, waiting",
-            "Death": "💀 Death - Transformation, ending, rebirth",
-            "Temperance": "👼 Temperance - Balance, harmony, patience",
-            "The Devil": "😈 The Devil - Bondage, temptation, materialism",
-            "The Tower": "🗼 The Tower - Sudden change, upheaval, revelation",
-            "The Star": "⭐ The Star - Hope, inspiration, healing",
-            "The Moon": "🌙 The Moon - Illusion, intuition, uncertainty",
-            "The Sun": "☀️ The Sun - Joy, success, positivity",
-            "Judgement": "📯 Judgement - Rebirth, awakening, forgiveness",
-            "The World": "🌍 The World - Completion, fulfillment, wholeness"
-        },
         "zodiacs": {
             "Rat": "🐭 New opportunities in stability! Success with quick judgment 💰",
             "Ox": "🐮 Fruits of perseverance! Stable growth and happy family 🏡",
@@ -387,32 +335,32 @@ if not st.session_state.result_shown:
         st.subheader(t["energy"])
         for i in range(4):
             q = t["q_energy"][i]
-            opt1 = t["options_e"][i]
-            opt2 = t["options_i"][i]
+            opt1 = t["options_e"][i] if st.session_state.lang == "ko" else t["options_e"][i]
+            opt2 = t["options_i"][i] if st.session_state.lang == "ko" else t["options_i"][i]
             if st.radio(q, [opt1, opt2], key=f"q{i+1}") == opt1:
                 e_i += 1
 
         st.subheader(t["info"])
         for i in range(4):
             q = t["q_info"][i]
-            opt1 = t["options_s"][i]
-            opt2 = t["options_n"][i]
+            opt1 = t["options_s"][i] if st.session_state.lang == "ko" else t["options_s"][i]
+            opt2 = t["options_n"][i] if st.session_state.lang == "ko" else t["options_n"][i]
             if st.radio(q, [opt1, opt2], key=f"q{i+5}") == opt1:
                 s_n += 1
 
         st.subheader(t["decision"])
         for i in range(4):
             q = t["q_decision"][i]
-            opt1 = t["options_t"][i]
-            opt2 = t["options_f"][i]
+            opt1 = t["options_t"][i] if st.session_state.lang == "ko" else t["options_t"][i]
+            opt2 = t["options_f"][i] if st.session_state.lang == "ko" else t["options_f"][i]
             if st.radio(q, [opt1, opt2], key=f"q{i+9}") == opt1:
                 t_f += 1
 
         st.subheader(t["life"])
         for i in range(4):
             q = t["q_life"][i]
-            opt1 = t["options_j"][i]
-            opt2 = t["options_p"][i]
+            opt1 = t["options_j"][i] if st.session_state.lang == "ko" else t["options_j"][i]
+            opt2 = t["options_p"][i] if st.session_state.lang == "ko" else t["options_p"][i]
             if st.radio(q, [opt1, opt2], key=f"q{i+13}") == opt1:
                 j_p += 1
 
@@ -484,21 +432,10 @@ if st.session_state.result_shown:
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button(t["tarot_btn"], use_container_width=True):
-            tarot_card = random.choice(list(t["tarot_cards"].keys()))
-            tarot_meaning = t["tarot_cards"][tarot_card]
-            st.markdown(f"""
-            <div style="background:#ffffff40; border-radius:18px; padding:15px; margin:15px 10px; backdrop-filter: blur(10px); text-align:center; color:#000000;">
-              <h3 style="margin:5px 0;">{t['tarot_title']}</h3>
-              <h2 style="font-size:1.8em; margin:10px 0;">{tarot_card}</h2>
-              <p style="font-size:1.1em;">{tarot_meaning}</p>
-            </div>
-            """, unsafe_allow_html=True)
-
         share_text = f"{name_display}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
-        <div style="text-align:center; margin:20px 0;">
-            <button style="background:white; color:#6a11cb; padding:10px 40px; border:none; border-radius:30px; font-size:1em; font-weight:bold;" onclick="shareResult()">
+        <div style="text-align:center; margin:4px 0;">
+            <button style="background:white; color:#6a11cb; padding:7px 30px; border:none; border-radius:30px; font-size:0.85em; font-weight:bold;" onclick="shareResult()">
               {t["share_btn"]}
             </button>
         </div>
@@ -512,7 +449,7 @@ if st.session_state.result_shown:
         }}
         </script>
         """
-        st_html(share_component, height=80)
+        st_html(share_component, height=60)
 
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
