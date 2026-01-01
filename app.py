@@ -446,6 +446,7 @@ if st.session_state.result_shown:
         lucky_item = random.choice(t["lucky_items"])
         tip = random.choice(t["tips"])
 
+        # 여기!!! unsafe_allow_html=True 반드시 포함
         st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
         <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
@@ -482,8 +483,9 @@ if st.session_state.result_shown:
             <p style="font-size:0.6em; opacity:0.8; margin:4px 0;">{app_url}</p>
           </div>
         </div>
-        """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)  # <--- 이게 핵심!!
 
+        # 타로 버튼
         if st.button(t["tarot_btn"], use_container_width=True):
             tarot_card = random.choice(list(t["tarot_cards"].keys()))
             tarot_meaning = t["tarot_cards"][tarot_card]
@@ -495,10 +497,11 @@ if st.session_state.result_shown:
             </div>
             """, unsafe_allow_html=True)
 
+        # 공유 버튼
         share_text = f"{name_display}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
-        <div style="text-align:center; margin:4px 0;">
-            <button style="background:white; color:#6a11cb; padding:7px 30px; border:none; border-radius:30px; font-size:0.85em; font-weight:bold;" onclick="shareResult()">
+        <div style="text-align:center; margin:20px 0;">
+            <button style="background:white; color:#6a11cb; padding:10px 40px; border:none; border-radius:30px; font-size:1em; font-weight:bold;" onclick="shareResult()">
               {t["share_btn"]}
             </button>
         </div>
@@ -512,7 +515,7 @@ if st.session_state.result_shown:
         }}
         </script>
         """
-        st_html(share_component, height=60)
+        st_html(share_component, height=80)
 
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
