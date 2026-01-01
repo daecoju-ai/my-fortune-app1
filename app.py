@@ -33,10 +33,15 @@ translations = {
         "combo": "최고 조합!",
         "your_fortune": "님의 2026년 운세",
         "footer": "재미로만 봐주세요 😊",
-        "overall_fortune_text": "성장과 재물이 함께하는 최고의 해! 대박 ✨",
-        "combo_comment_text": "의 노력과 {}의 따뜻함으로 리더가 될 거예요!",
-        "lucky_color_text": "골드 💛",
-        "lucky_item_text": "황금 액세서리",
+        "overall_fortune": "2026 전체 운세",
+        "overall_text": "성장과 재물이 함께하는 최고의 해! 대박 ✨",
+        "combo_comment": "조합 한 마디",
+        "combo_text": "{}의 노력과 {}의 따뜻함으로 리더가 될 거예요!",
+        "lucky_color": "럭키 컬러",
+        "lucky_color_val": "골드 💛",
+        "lucky_item": "럭키 아이템",
+        "lucky_item_val": "황금 액세서리",
+        "tip": "팁",
         "tip_text": "새로운 사람 만나는 기회 많아요. 적극적으로!",
         "zodiacs": {
             "쥐띠": "🐭 활발한 에너지로 새로운 기회 잡아! 돈운 대박, 투자 주의하며 도전하세요 💰",
@@ -99,10 +104,15 @@ translations = {
         "combo": "Best Combo!",
         "your_fortune": "'s 2026 Fortune",
         "footer": "For fun only 😊",
-        "overall_fortune_text": "Growth and wealth together – the best year! Big luck ✨",
-        "combo_comment_text": "With {}'s effort and {}'s warmth, you'll become a leader!",
-        "lucky_color_text": "Gold 💛",
-        "lucky_item_text": "Golden accessories",
+        "overall_fortune": "2026 Overall Fortune",
+        "overall_text": "Growth and wealth together – the best year! Big luck ✨",
+        "combo_comment": "Combo Comment",
+        "combo_text": "With {}'s effort and {}'s warmth, you'll become a leader!",
+        "lucky_color": "Lucky Color",
+        "lucky_color_val": "Gold 💛",
+        "lucky_item": "Lucky Item",
+        "lucky_item_val": "Golden accessories",
+        "tip": "Tip",
         "tip_text": "Many chances to meet new people. Be proactive!",
         "zodiacs": {
             "Rat": "🐭 Grab new opportunities with energy! Great money luck 💰",
@@ -314,8 +324,8 @@ if st.session_state.result_shown:
         mbti_desc = M[mbti].split(' ',1)[1] if ' ' in M[mbti] else ""
         name_text = f"{st.session_state.name}{t['your_fortune']}" if st.session_state.name else t["title"]
 
-        # 동적 텍스트 처리 (띠 이름과 MBTI 번역)
-        combo_comment = t["combo_comment_text"].format(zodiac, mbti)
+        # 조합 한 마디 동적 생성
+        combo_comment = t["combo_text"].format(zodiac, mbti)
 
         st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
@@ -334,10 +344,10 @@ if st.session_state.result_shown:
             <b>{t['saju_title']}</b>: {saju}<br><br>
             <b>{t['today_title']}</b>: {today}<br>
             <b>{t['tomorrow_title']}</b>: {tomorrow}<br><br>
-            <b>2026 전체 운세</b>: {t['overall_fortune_text']}<br>
-            <b>조합 한 마디</b>: {combo_comment}<br>
-            <b>럭키 컬러</b>: {t['lucky_color_text']} | <b>럭키 아이템</b>: {t['lucky_item_text']}<br>
-            <b>팁</b>: {t['tip_text']}
+            <b>{t['overall_fortune']}</b>: {t['overall_text']}<br>
+            <b>{t['combo_comment']}</b>: {combo_comment}<br>
+            <b>{t['lucky_color']}</b>: {t['lucky_color_val']} | <b>{t['lucky_item']}</b>: {t['lucky_item_val']}<br>
+            <b>{t['tip']}</b>: {t['tip_text']}
           </div>
 
           <div style="background:#ffffff40; border-radius:15px; padding:8px; margin:8px 8px; backdrop-filter: blur(5px); font-size:0.85em;">
