@@ -1,15 +1,20 @@
+import json
+import os
+import html
+import random
+from datetime import datetime, timedelta
+
 import streamlit as st
 import streamlit.components.v1 as components
-from datetime import datetime, timedelta
-import random
-import html
 
-# ----------------------------
+
+# =========================
 # 기본 설정
-# ----------------------------
+# =========================
 st.set_page_config(page_title="2026 Fortune", layout="centered")
 
-APP_URL = "https://my-fortune.streamlit.app"
+APP_URL = "https://my-fortune.streamlit.app"  # 본인 배포 URL로 유지/변경
+DB_PATH = "data/fortune_db.json"
 
 LANGS = [
     ("ko", "한국어"),
@@ -20,39 +25,63 @@ LANGS = [
     ("hi", "हिन्दी"),
 ]
 
+# =========================
+# I18N (UI 라벨)
+# =========================
 I18N = {
     "ko": {
         "lang_label": "언어 / Language",
-        "title": "2026 띠 + MBTI + 사주 + 오늘/내일 운세",
+        "title": "2026 띠 + MBTI + 사주 + 오늘/내일/주/월 운세",
         "caption": "완전 무료",
         "name_placeholder": "이름 입력 (결과에 표시돼요)",
         "birth_title": "생년월일 입력",
         "mbti_mode": "MBTI 어떻게 할까?",
-        "direct": "직접 입력",
-        "test16": "상세 테스트 (16문제)",
-        "test_start": "상세 테스트 시작! 하나씩 답해주세요",
+        "direct": "직접 선택",
+        "simple12": "간단 테스트 (12문항)",
+        "test16": "상세 테스트 (16문항)",
+        "test_start_12": "간단 테스트 시작! 12문항만 답하면 MBTI가 나와요",
+        "test_start_16": "상세 테스트 시작! 하나씩 답해주세요",
         "energy": "에너지 방향",
         "info": "정보 수집",
         "decision": "결정 방식",
         "life": "생활 방식",
         "result_btn": "결과 보기!",
-        "fortune_btn": "2026년 운세 보기!",
+        "fortune_btn": "운세 보기!",
         "reset": "처음부터 다시하기",
         "share_btn": "친구에게 결과 공유하기",
-        "share_hint": "모바일에서는 공유창(카톡/문자 등)이 뜹니다. PC에서는 복사로 동작할 수 있어요.",
+        "share_hint": "모바일은 공유창(카톡/문자 등)이 뜹니다. PC는 복사로 동작할 수 있어요.",
         "tarot_btn": "오늘의 타로 카드 보기",
         "tarot_title": "오늘의 타로 카드",
         "zodiac_title": "띠 운세",
         "mbti_title": "MBTI 특징",
         "saju_title": "사주 한 마디",
-        "today_title": "오늘 운세",
-        "tomorrow_title": "내일 운세",
         "combo": "최고 조합!",
-        "overall_title": "2026 전체 운세",
+        "overall_title": "핵심 총평",
         "combo_title": "조합 한 마디",
         "lucky_color_title": "럭키 컬러",
         "lucky_item_title": "럭키 아이템",
-        "tip_title": "팁",
+        "luck_scores": "운세 지수",
+        "work": "일/학업",
+        "money": "재물",
+        "love": "연애",
+        "health": "건강",
+        "people": "인간관계",
+        "keyword": "키워드",
+        "mood": "기분/에너지",
+        "caution": "주의할 점",
+        "best_time": "행운 시간",
+        "lucky_number": "행운 숫자",
+        "do_this": "오늘의 미션",
+        "one_line": "한 줄 조언",
+        "weekly_strategy": "이번 주 전략",
+        "tabs_today": "오늘",
+        "tabs_tomorrow": "내일",
+        "tabs_week": "이번 주",
+        "tabs_month": "이번 달",
+        "today_focus": "포인트",
+        "copy_fallback": "공유가 안 되면 아래 텍스트를 복사해서 보내세요.",
+        "share_text_title": "공유 텍스트",
+
         "ad_badge": "광고",
         "dananum_title": "정수기 렌탈 대박!",
         "dananum_line1": "제휴카드면 월 0원부터!",
@@ -60,440 +89,445 @@ I18N = {
         "dananum_btn": "다나눔렌탈.com 바로가기",
         "ad_slot_label": "AD",
         "ad_slot_sub": "(승인 후 이 위치에 광고가 표시됩니다)",
+
         "year": "년", "month": "월", "day": "일",
         "invalid_year": "생년은 1900~2030년 사이로 입력해주세요!",
         "mbti_select": "MBTI 선택",
-        "copy_fallback": "공유가 안 되면 아래 텍스트를 복사해서 보내세요.",
     },
     "en": {
         "lang_label": "Language",
-        "title": "2026 Zodiac + MBTI + Fortune (Today/Tomorrow)",
+        "title": "2026 Zodiac + MBTI + Fortune (Day/Week/Month)",
         "caption": "Completely Free",
         "name_placeholder": "Enter name (shown in result)",
         "birth_title": "Birth date",
         "mbti_mode": "How to do MBTI?",
-        "direct": "Direct input",
-        "test16": "Detailed test (16 questions)",
-        "test_start": "Detailed test start! Please answer one by one",
-        "energy": "Energy Direction",
-        "info": "Information Gathering",
-        "decision": "Decision Making",
+        "direct": "Direct pick",
+        "simple12": "Quick test (12)",
+        "test16": "Detailed test (16)",
+        "test_start_12": "Quick test! Answer 12 questions to get MBTI",
+        "test_start_16": "Detailed test start! Answer one by one",
+        "energy": "Energy",
+        "info": "Information",
+        "decision": "Decision",
         "life": "Lifestyle",
-        "result_btn": "View Result!",
-        "fortune_btn": "View 2026 Fortune!",
-        "reset": "Start Over",
+        "result_btn": "Show result!",
+        "fortune_btn": "Show fortune!",
+        "reset": "Start over",
         "share_btn": "Share with friends",
-        "share_hint": "On mobile, the share sheet should open. On PC it may copy instead.",
-        "tarot_btn": "See Today's Tarot",
+        "share_hint": "On mobile it opens share sheet. On PC it may copy.",
+        "tarot_btn": "Today's Tarot",
         "tarot_title": "Today's Tarot",
-        "zodiac_title": "Zodiac Fortune",
-        "mbti_title": "MBTI Traits",
-        "saju_title": "Fortune Comment",
-        "today_title": "Today's Luck",
-        "tomorrow_title": "Tomorrow's Luck",
-        "combo": "Best Combo!",
-        "overall_title": "2026 Annual Luck",
-        "combo_title": "Combination Meaning",
-        "lucky_color_title": "Lucky Color",
-        "lucky_item_title": "Lucky Item",
-        "tip_title": "Tip",
+        "zodiac_title": "Zodiac",
+        "mbti_title": "MBTI",
+        "saju_title": "Saju",
+        "combo": "Best combo!",
+        "overall_title": "Main summary",
+        "combo_title": "Combo line",
+        "lucky_color_title": "Lucky color",
+        "lucky_item_title": "Lucky item",
+        "luck_scores": "Luck scores",
+        "work": "Work/Study",
+        "money": "Money",
+        "love": "Love",
+        "health": "Health",
+        "people": "People",
+        "keyword": "Keyword",
+        "mood": "Mood/Energy",
+        "caution": "Caution",
+        "best_time": "Lucky time",
+        "lucky_number": "Lucky number",
+        "do_this": "Mission",
+        "one_line": "One-line advice",
+        "weekly_strategy": "Weekly strategy",
+        "tabs_today": "Today",
+        "tabs_tomorrow": "Tomorrow",
+        "tabs_week": "This week",
+        "tabs_month": "This month",
+        "today_focus": "Focus",
+        "copy_fallback": "If share doesn't work, copy the text below.",
+        "share_text_title": "Share text",
+
         "ad_slot_label": "AD",
-        "ad_slot_sub": "(Ads will appear here after approval)",
+        "ad_slot_sub": "(Ads appear here after approval)",
+
         "year": "Year", "month": "Month", "day": "Day",
         "invalid_year": "Please enter a birth year between 1900 and 2030!",
         "mbti_select": "Select MBTI",
-        "copy_fallback": "If share doesn't work, copy the text below and send it.",
     },
     "ja": {
         "lang_label": "言語 / Language",
-        "title": "2026 干支 + MBTI + 運勢（今日/明日）",
+        "title": "2026 干支 + MBTI + 運勢（今日/明日/週/月）",
         "caption": "完全無料",
         "name_placeholder": "名前（結果に表示）",
         "birth_title": "生年月日",
         "mbti_mode": "MBTI は？",
         "direct": "直接選択",
-        "test16": "詳細テスト（16問）",
-        "test_start": "詳細テスト開始！順番に答えてください",
+        "simple12": "簡単テスト（12）",
+        "test16": "詳細テスト（16）",
+        "test_start_12": "簡単テスト開始！12問でMBTIが出ます",
+        "test_start_16": "詳細テスト開始！順番に答えてください",
         "energy": "エネルギー",
         "info": "情報収集",
         "decision": "意思決定",
         "life": "生活スタイル",
         "result_btn": "結果を見る！",
-        "fortune_btn": "2026年の運勢を見る！",
+        "fortune_btn": "運勢を見る！",
         "reset": "最初から",
         "share_btn": "友達に共有",
-        "share_hint": "スマホは共有画面が開きます。PCはコピーになる場合があります。",
+        "share_hint": "スマホは共有画面が開きます。PCはコピーの場合があります。",
         "tarot_btn": "今日のタロット",
         "tarot_title": "今日のタロット",
-        "today_title": "今日の運勢",
-        "tomorrow_title": "明日の運勢",
+        "zodiac_title": "干支",
+        "mbti_title": "MBTI",
+        "saju_title": "サジュ",
+        "combo": "最高の組み合わせ！",
+        "overall_title": "総評",
+        "combo_title": "一言",
+        "lucky_color_title": "ラッキーカラー",
+        "lucky_item_title": "ラッキーアイテム",
+        "luck_scores": "運勢スコア",
+        "work": "仕事/学業",
+        "money": "金運",
+        "love": "恋愛",
+        "health": "健康",
+        "people": "人間関係",
+        "keyword": "キーワード",
+        "mood": "気分/エネルギー",
+        "caution": "注意点",
+        "best_time": "ラッキータイム",
+        "lucky_number": "ラッキーナンバー",
+        "do_this": "今日のミッション",
+        "one_line": "一言アドバイス",
+        "weekly_strategy": "今週の戦略",
+        "tabs_today": "今日",
+        "tabs_tomorrow": "明日",
+        "tabs_week": "今週",
+        "tabs_month": "今月",
+        "today_focus": "ポイント",
+        "copy_fallback": "共有できない場合は下のテキストをコピーしてください。",
+        "share_text_title": "Share text",
+
+        "ad_slot_label": "AD",
+        "ad_slot_sub": "（承認後ここに広告が表示されます）",
+
         "year": "年", "month": "月", "day": "日",
         "invalid_year": "1900〜2030の間で入力してください。",
         "mbti_select": "MBTI を選択",
-        "copy_fallback": "共有できない場合は下のテキストをコピーしてください。",
     },
     "zh": {
         "lang_label": "语言 / Language",
-        "title": "2026 生肖 + MBTI + 运势（今天/明天）",
+        "title": "2026 生肖 + MBTI + 运势（今日/明日/周/月）",
         "caption": "完全免费",
         "name_placeholder": "输入姓名（显示在结果中）",
         "birth_title": "生日",
         "mbti_mode": "MBTI 怎么做？",
         "direct": "直接选择",
-        "test16": "详细测试（16题）",
-        "test_start": "开始详细测试！请依次回答",
+        "simple12": "简测（12题）",
+        "test16": "详测（16题）",
+        "test_start_12": "简测开始！回答12题即可得到MBTI",
+        "test_start_16": "详测开始！请依次回答",
         "energy": "精力方向",
         "info": "信息获取",
         "decision": "决策方式",
         "life": "生活方式",
         "result_btn": "查看结果！",
-        "fortune_btn": "查看2026运势！",
+        "fortune_btn": "查看运势！",
         "reset": "重新开始",
         "share_btn": "分享给朋友",
-        "share_hint": "手机会弹出分享面板；电脑可能改为复制。",
-        "tarot_btn": "抽取今日塔罗",
+        "share_hint": "手机会弹出分享面板；电脑可能变成复制。",
+        "tarot_btn": "今日塔罗",
         "tarot_title": "今日塔罗",
-        "today_title": "今天运势",
-        "tomorrow_title": "明天运势",
+        "zodiac_title": "生肖",
+        "mbti_title": "MBTI",
+        "saju_title": "四柱一句",
+        "combo": "最佳组合！",
+        "overall_title": "总评",
+        "combo_title": "组合一句",
+        "lucky_color_title": "幸运色",
+        "lucky_item_title": "幸运物",
+        "luck_scores": "运势指数",
+        "work": "工作/学习",
+        "money": "财运",
+        "love": "感情",
+        "health": "健康",
+        "people": "人际",
+        "keyword": "关键词",
+        "mood": "情绪/能量",
+        "caution": "注意事项",
+        "best_time": "幸运时间",
+        "lucky_number": "幸运数字",
+        "do_this": "今日任务",
+        "one_line": "一句建议",
+        "weekly_strategy": "本周策略",
+        "tabs_today": "今天",
+        "tabs_tomorrow": "明天",
+        "tabs_week": "本周",
+        "tabs_month": "本月",
+        "today_focus": "重点",
+        "copy_fallback": "若分享无反应，请复制下方文本发送。",
+        "share_text_title": "Share text",
+
+        "ad_slot_label": "AD",
+        "ad_slot_sub": "（审核通过后此处显示广告）",
+
         "year": "年", "month": "月", "day": "日",
         "invalid_year": "请输入1900到2030之间的年份。",
         "mbti_select": "选择 MBTI",
-        "copy_fallback": "若分享无反应，请复制下方文本发送。",
     },
     "ru": {
         "lang_label": "Язык / Language",
-        "title": "2026 Зодиак + MBTI + Удача (Сегодня/Завтра)",
+        "title": "2026 Зодиак + MBTI + Удача（день/неделя/месяц）",
         "caption": "Бесплатно",
         "name_placeholder": "Имя (в результате)",
         "birth_title": "Дата рождения",
-        "mbti_mode": "Как выбрать MBTI?",
+        "mbti_mode": "Как MBTI?",
         "direct": "Выбрать вручную",
-        "test16": "Тест (16 вопросов)",
-        "test_start": "Начинаем тест! Ответьте по порядку",
+        "simple12": "Быстрый тест (12)",
+        "test16": "Тест (16)",
+        "test_start_12": "Быстрый тест! 12 вопросов — и MBTI готов",
+        "test_start_16": "Тест! Ответьте по порядку",
         "energy": "Энергия",
         "info": "Информация",
         "decision": "Решения",
         "life": "Стиль жизни",
-        "result_btn": "Показать результат!",
-        "fortune_btn": "Показать удачу 2026!",
+        "result_btn": "Показать!",
+        "fortune_btn": "Узнать удачу!",
         "reset": "Сначала",
         "share_btn": "Поделиться",
-        "share_hint": "На телефоне откроется панель «Поделиться». На ПК может копировать.",
+        "share_hint": "На телефоне откроется «Поделиться». На ПК может копировать.",
         "tarot_btn": "Таро на сегодня",
-        "tarot_title": "Таро на сегодня",
-        "today_title": "Сегодня",
-        "tomorrow_title": "Завтра",
+        "tarot_title": "Таро",
+        "zodiac_title": "Зодиак",
+        "mbti_title": "MBTI",
+        "saju_title": "Саджу",
+        "combo": "Лучшее сочетание!",
+        "overall_title": "Итог",
+        "combo_title": "Фраза",
+        "lucky_color_title": "Цвет удачи",
+        "lucky_item_title": "Предмет удачи",
+        "luck_scores": "Индексы удачи",
+        "work": "Работа/учёба",
+        "money": "Деньги",
+        "love": "Любовь",
+        "health": "Здоровье",
+        "people": "Люди",
+        "keyword": "Ключ",
+        "mood": "Настроение",
+        "caution": "Осторожно",
+        "best_time": "Счастливое время",
+        "lucky_number": "Счастливое число",
+        "do_this": "Задание",
+        "one_line": "Совет",
+        "weekly_strategy": "Стратегия недели",
+        "tabs_today": "Сегодня",
+        "tabs_tomorrow": "Завтра",
+        "tabs_week": "Неделя",
+        "tabs_month": "Месяц",
+        "today_focus": "Фокус",
+        "copy_fallback": "Если не работает — скопируйте текст ниже.",
+        "share_text_title": "Share text",
+
+        "ad_slot_label": "AD",
+        "ad_slot_sub": "(Реклама появится после одобрения)",
+
         "year": "Год", "month": "Месяц", "day": "День",
         "invalid_year": "Введите год рождения от 1900 до 2030.",
         "mbti_select": "Выберите MBTI",
-        "copy_fallback": "Если не работает, скопируйте текст ниже и отправьте.",
     },
     "hi": {
         "lang_label": "भाषा / Language",
-        "title": "2026 राशि + MBTI + भाग्य (आज/कल)",
+        "title": "2026 राशि + MBTI + भाग्य (दिन/सप्ताह/महीना)",
         "caption": "पूरी तरह मुफ्त",
         "name_placeholder": "नाम (परिणाम में दिखेगा)",
         "birth_title": "जन्म तिथि",
         "mbti_mode": "MBTI कैसे?",
         "direct": "सीधे चुनें",
-        "test16": "टेस्ट (16 प्रश्न)",
-        "test_start": "टेस्ट शुरू! एक-एक करके जवाब दें",
+        "simple12": "क्विक टेस्ट (12)",
+        "test16": "टेस्ट (16)",
+        "test_start_12": "क्विक टेस्ट! 12 सवालों में MBTI",
+        "test_start_16": "टेस्ट शुरू! एक-एक करके जवाब दें",
         "energy": "ऊर्जा",
         "info": "जानकारी",
         "decision": "निर्णय",
         "life": "जीवन शैली",
-        "result_btn": "परिणाम देखें!",
-        "fortune_btn": "2026 भाग्य देखें!",
-        "reset": "फिर से शुरू",
+        "result_btn": "देखें!",
+        "fortune_btn": "भाग्य देखें!",
+        "reset": "रीसेट",
         "share_btn": "साझा करें",
         "share_hint": "मोबाइल पर शेयर स्क्रीन खुलेगी; PC पर कॉपी हो सकता है।",
         "tarot_btn": "आज का टैरो",
-        "tarot_title": "आज का टैरो",
-        "today_title": "आज",
-        "tomorrow_title": "कल",
+        "tarot_title": "टैरो",
+        "zodiac_title": "राशि",
+        "mbti_title": "MBTI",
+        "saju_title": "Saju",
+        "combo": "बेस्ट कॉम्बो!",
+        "overall_title": "सार",
+        "combo_title": "कॉम्बो लाइन",
+        "lucky_color_title": "लकी रंग",
+        "lucky_item_title": "लकी आइटम",
+        "luck_scores": "लuck स्कोर",
+        "work": "काम/पढ़ाई",
+        "money": "पैसा",
+        "love": "प्यार",
+        "health": "स्वास्थ्य",
+        "people": "लोग",
+        "keyword": "कीवर्ड",
+        "mood": "मूड/ऊर्जा",
+        "caution": "सावधानी",
+        "best_time": "लकी समय",
+        "lucky_number": "लकी नंबर",
+        "do_this": "मिशन",
+        "one_line": "सलाह",
+        "weekly_strategy": "इस हफ्ते की रणनीति",
+        "tabs_today": "आज",
+        "tabs_tomorrow": "कल",
+        "tabs_week": "इस हफ्ते",
+        "tabs_month": "इस महीने",
+        "today_focus": "फोकस",
+        "copy_fallback": "यदि शेयर न चले, नीचे का टेक्स्ट कॉपी करें।",
+        "share_text_title": "Share text",
+
+        "ad_slot_label": "AD",
+        "ad_slot_sub": "(अनुमोदन के बाद विज्ञापन)",
+
         "year": "वर्ष", "month": "महीना", "day": "दिन",
         "invalid_year": "कृपया 1900 से 2030 के बीच वर्ष दर्ज करें।",
         "mbti_select": "MBTI चुनें",
-        "copy_fallback": "यदि शेयर न चले, नीचे का टेक्स्ट कॉपी करें।",
     },
 }
+
 
 def T(lang: str, key: str) -> str:
     return I18N.get(lang, {}).get(key) or I18N["en"].get(key) or key
 
-def pick_lang(dct, lang):
-    return dct.get(lang) or dct.get("en")
 
-
-# ----------------------------
-# 데이터
-# ----------------------------
-ZODIAC_LIST = {
-    "ko": ["쥐띠", "소띠", "호랑이띠", "토끼띠", "용띠", "뱀띠", "말띠", "양띠", "원숭이띠", "닭띠", "개띠", "돼지띠"],
-    "en": ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"],
-    "ja": ["鼠", "牛", "虎", "兎", "龍", "蛇", "馬", "羊", "猿", "鶏", "犬", "猪"],
-    "zh": ["鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊", "猴", "鸡", "狗", "猪"],
-    "ru": ["Крыса", "Бык", "Тигр", "Кролик", "Дракон", "Змея", "Лошадь", "Коза", "Обезьяна", "Петух", "Собака", "Свинья"],
-    "hi": ["चूहा", "बैल", "बाघ", "खरगोश", "ड्रैगन", "साँप", "घोड़ा", "बकरी", "बंदर", "मुर्गा", "कुत्ता", "सूअर"],
-}
-
-ZODIAC_DESC = {
-    "ko": [
-        "안정 속 새로운 기회! 민첩한 판단이 빛나요.",
-        "꾸준함의 결실! 안정된 성장과 가족운.",
-        "도전과 성공! 리더십이 크게 빛나는 해.",
-        "변화에는 신중! 안정적인 선택이 유리해요.",
-        "운기 상승! 승진·인정 기회가 늘어요.",
-        "직감과 실속! 예상치 못한 재물운.",
-        "추진력 최고! 균형 잡기가 핵심이에요.",
-        "편안함과 돈운! 가정의 행복도 커져요.",
-        "창의력 폭발! 변화 속에 기회가 숨어요.",
-        "노력 결실! 실력이 인정받기 쉬워요.",
-        "귀인운! 네트워킹이 성과로 이어져요.",
-        "여유와 재물운! 즐기며 성장하는 해.",
-    ],
-    "en": [
-        "New chances in stability. Quick judgment helps.",
-        "Perseverance pays off. Stable growth and family luck.",
-        "Challenge and success. Leadership shines.",
-        "Be cautious with changes. Choose stability.",
-        "Fortune rising. Recognition and promotion chances.",
-        "Intuition and gain. Unexpected money luck.",
-        "Strong drive. Balance is the key.",
-        "Comfort and money luck. Home happiness grows.",
-        "Creativity shines. Opportunities in change.",
-        "Effort rewarded. Easier to be recognized.",
-        "Helpful people. Networking brings results.",
-        "Relaxation and wealth luck. Enjoy and grow.",
-    ],
-}
-
-MBTI_DESC = {
-    "ko": {
-        "INTJ": "냉철 전략가", "INTP": "아이디어 천재", "ENTJ": "리더형", "ENTP": "토론왕",
-        "INFJ": "통찰가", "INFP": "감성 예술가", "ENFJ": "선생님형", "ENFP": "에너지 폭발",
-        "ISTJ": "원칙주의", "ISFJ": "따뜻한 수호자", "ESTJ": "관리자형", "ESFJ": "분위기 메이커",
-        "ISTP": "장인", "ISFP": "감성 힐러", "ESTP": "모험가", "ESFP": "핵인싸",
-    },
-    "en": {
-        "INTJ": "Strategist", "INTP": "Thinker", "ENTJ": "Commander", "ENTP": "Debater",
-        "INFJ": "Advocate", "INFP": "Mediator", "ENFJ": "Protagonist", "ENFP": "Campaigner",
-        "ISTJ": "Logistician", "ISFJ": "Defender", "ESTJ": "Executive", "ESFJ": "Consul",
-        "ISTP": "Virtuoso", "ISFP": "Adventurer", "ESTP": "Entrepreneur", "ESFP": "Entertainer",
-    },
-}
-
-SAJU_MSG = {
-    "ko": [
-        "목(木) 기운 강함 → 성장과 발전의 해!",
-        "화(火) 기운 강함 → 열정 폭발!",
-        "토(土) 기운 강함 → 안정과 재물운",
-        "금(金) 기운 강함 → 결단력이 좋아요!",
-        "수(水) 기운 강함 → 지혜와 흐름",
-        "오행 균형 → 행복한 한 해",
-        "양기 강함 → 도전 성공",
-        "음기 강함 → 내면 성찰",
-    ],
-    "en": [
-        "Strong Wood → Growth year!",
-        "Strong Fire → Passion boost!",
-        "Strong Earth → Stability and wealth",
-        "Strong Metal → Great decisiveness!",
-        "Strong Water → Wisdom and flow",
-        "Balanced elements → Happy year",
-        "Strong Yang → Challenge success",
-        "Strong Yin → Inner reflection",
-    ],
-}
-
-DAILY_MSG = {
-    "ko": [
-        "재물운 좋음! 작은 투자도 이득 볼 수 있어요.",
-        "연애운 최고! 고백이나 데이트에 좋아요.",
-        "건강 주의! 과로를 피하고 휴식하세요.",
-        "전체운 상승! 좋은 소식이 들어올 수 있어요.",
-        "인간관계 운 좋음! 귀인 만남 가능.",
-        "일/학업 운 최고! 집중력이 좋아요.",
-        "여행운 좋음! 즉흥적인 일정도 OK.",
-        "기분 좋은 하루! 웃음이 많아져요.",
-    ],
-    "en": [
-        "Money luck is good. Small moves can pay off.",
-        "Love luck is strong. Great for dates or confessions.",
-        "Health caution. Rest and avoid burnout.",
-        "Overall luck rising. Good news may arrive.",
-        "Relationships are lucky. You may meet a helper.",
-        "Work/study luck is high. Strong focus today.",
-        "Travel luck is good. Spontaneous plans are fine.",
-        "A cheerful day. More smiles and lightness.",
-    ],
-}
-
-OVERALL_2026 = {
-    "ko": [
-        "성장과 재물이 함께하는 최고의 해!",
-        "안정과 행복이 넘치는 한 해!",
-        "도전과 성공의 해! 큰 성과가 기대돼요.",
-        "사랑과 인연이 피어나는 로맨틱한 해!",
-        "변화와 새로운 시작! 창의력이 빛나요.",
-    ],
-    "en": [
-        "A year of growth and wealth!",
-        "A year full of stability and happiness!",
-        "A year of challenge and success!",
-        "A romantic year where connections bloom!",
-        "A year of change and fresh starts!",
-    ],
-}
-
-COMBO_COMMENTS = {
-    "ko": [
-        "{}의 추진력과 {}의 장점이 만나 시너지가 커져요!",
-        "{}의 안정감과 {}의 감각이 균형을 잡아줘요!",
-        "{}의 직감과 {}의 현실감이 함께 빛나요!",
-        "{}의 성실함과 {}의 유연함이 강점이에요!",
-        "{}의 결단과 {}의 센스가 좋은 결과로 이어져요!",
-    ],
-    "en": [
-        "A strong synergy between {} and {}!",
-        "Great balance between {} and {}.",
-        "Intuition and practicality align: {} + {}.",
-        "Consistency meets flexibility: {} + {}.",
-        "Decisiveness and sense work well: {} + {}.",
-    ],
-}
-
-LUCKY_COLORS = {"ko": ["골드", "레드", "블루", "그린", "퍼플"], "en": ["Gold", "Red", "Blue", "Green", "Purple"]}
-LUCKY_ITEMS = {"ko": ["황금 액세서리", "빨간 지갑", "파란 목걸이", "초록 식물", "보라색 펜"], "en": ["Golden accessory", "Red wallet", "Blue necklace", "Green plant", "Purple pen"]}
-TIPS = {
-    "ko": [
-        "새로운 사람 만나는 기회가 많아요. 적극적으로!",
-        "작은 투자에 집중하면 성과가 나기 쉬워요.",
-        "건강 관리에 신경 쓰세요. 가벼운 운동 추천!",
-        "가족/친구와 시간 보내며 에너지 충전!",
-        "창의적인 취미를 시작해보세요. 재능이 빛나요!",
-    ],
-    "en": [
-        "Be proactive meeting new people.",
-        "Focus on small investments and steady progress.",
-        "Take care of your health. Light exercise helps.",
-        "Spend time with family/friends to recharge.",
-        "Start a creative hobby. Your talent will shine.",
-    ],
-}
-
-TAROT = {
-    "The Fool": {"ko": "바보 - 새로운 시작, 모험", "en": "New beginnings, adventure"},
-    "The Magician": {"ko": "마법사 - 창조력, 집중", "en": "Manifestation, focus"},
-    "The High Priestess": {"ko": "여사제 - 직감, 내면의 목소리", "en": "Intuition, inner voice"},
-    "The Empress": {"ko": "여제 - 풍요, 창작", "en": "Abundance, creativity"},
-    "The Emperor": {"ko": "황제 - 안정, 구조", "en": "Stability, structure"},
-    "The Sun": {"ko": "태양 - 행복, 성공", "en": "Joy, success"},
-    "The World": {"ko": "세계 - 완성, 성취", "en": "Completion, fulfillment"},
-}
-
-# 16문항: ko/en만 제공 (다른 언어는 en으로 자동 fallback)
-Q16 = {
-    "ko": {
-        "q_energy": ["주말에 친구들이 갑자기 '놀자!' 하면?", "모임에서 처음 본 사람들과 대화하는 거?", "하루 종일 사람 만난 후에?", "생각이 떠오르면?"],
-        "q_info": ["새로운 카페 가면 뭐가 먼저 눈에 들어?", "친구가 고민 상담하면?", "책이나 영화 볼 때?", "쇼핑할 때?"],
-        "q_decision": ["친구가 늦어서 화날 때?", "팀 프로젝트에서 의견 충돌 시?", "누가 울면서 상담하면?", "거짓말 탐지 시?"],
-        "q_life": ["여행 갈 때?", "숙제/과제 마감 앞두고?", "방 정리할 때?", "선택해야 할 때?"],
-        "options_e": ["와 좋아! 바로 나감 (E)", "재밌고 신나! (E)", "아직 에너지 넘쳐! (E)", "바로 말로 풀어냄 (E)"],
-        "options_i": ["집에서 쉬고 싶어... (I)", "조금 피곤하고 부담 (I)", "완전 지쳐서 혼자 (I)", "머릿속에서 먼저 정리 (I)"],
-        "options_s": ["메뉴판 가격과 메뉴 (S)", "사실 위주로 들어줌 (S)", "스토리/디테일 집중 (S)", "필요한 거 보고 바로 사 (S)"],
-        "options_n": ["분위기/컨셉 (N)", "가능성과 미래로 생각 (N)", "상징/숨은 의미 (N)", "코디 상상 (N)"],
-        "options_t": ["솔직히 말함 (T)", "논리적으로 따짐 (T)", "해결책 조언 (T)", "바로 지적 (T)"],
-        "options_f": ["부드럽게 말함 (F)", "조율함 (F)", "공감부터 (F)", "넘김 (F)"],
-        "options_j": ["일정 촘촘히 (J)", "미리 끝냄 (J)", "기준대로 깔끔히 (J)", "빨리 결정 (J)"],
-        "options_p": ["즉흥적으로 (P)", "마감 직전 몰아 (P)", "대충도 OK (P)", "더 알아보고 싶음 (P)"],
-    },
-    "en": {
-        "q_energy": ["Friends suddenly say 'Let's hang out!' on weekend?", "Talking to strangers at a gathering?", "After meeting people all day?", "When a thought comes to mind?"],
-        "q_info": ["What catches your eye first in a new cafe?", "When a friend shares worries?", "When reading/watching a movie?", "When shopping?"],
-        "q_decision": ["When a friend is late and you're upset?", "When opinions clash in a project?", "When someone cries to you?", "When spotting a lie?"],
-        "q_life": ["When planning a trip?", "Before a deadline?", "When cleaning your room?", "When you must choose?"],
-        "options_e": ["Yes! Go out right away (E)", "Fun and exciting (E)", "Still full of energy (E)", "Say it out loud (E)"],
-        "options_i": ["Stay home and rest (I)", "A bit tired (I)", "Need alone time (I)", "Organize in my head (I)"],
-        "options_s": ["Menu/prices first (S)", "Listen to facts (S)", "Details and plot (S)", "Buy what I need (S)"],
-        "options_n": ["Vibe/concept (N)", "Possibilities/future (N)", "Symbols/hidden meaning (N)", "Imagine styling later (N)"],
-        "options_t": ["Be direct (T)", "Argue logically (T)", "Offer solutions (T)", "Point it out (T)"],
-        "options_f": ["Say gently (F)", "Mediate feelings (F)", "Empathize first (F)", "Let it pass (F)"],
-        "options_j": ["Plan tightly (J)", "Finish early (J)", "Neat & structured (J)", "Decide quickly (J)"],
-        "options_p": ["Go with the flow (P)", "Do it at the end (P)", "Messy is okay (P)", "Want more options (P)"],
-    },
-}
-
-# ----------------------------
-# 세션
-# ----------------------------
-if "lang" not in st.session_state:
-    st.session_state.lang = "ko"
-if "mbti" not in st.session_state:
-    st.session_state.mbti = None
-if "result_shown" not in st.session_state:
-    st.session_state.result_shown = False
-if "name" not in st.session_state:
-    st.session_state.name = ""
-if "year" not in st.session_state:
-    st.session_state.year = 2005
-if "month" not in st.session_state:
-    st.session_state.month = 1
-if "day" not in st.session_state:
-    st.session_state.day = 1
-
-# ----------------------------
-# CSS (라디오 가림/모바일 패딩)
-# ----------------------------
-st.markdown("""
+# =========================
+# CSS (모바일/가림 방지)
+# =========================
+st.markdown(
+    """
 <style>
 .block-container{
-    padding-top: 1.1rem !important;
-    padding-bottom: 2.0rem !important;
+  padding-top: 1.1rem !important;
+  padding-bottom: 2.0rem !important;
 }
 div[data-baseweb="radio"] label{
-    white-space: normal !important;
-    line-height: 1.2 !important;
+  white-space: normal !important;
+  line-height: 1.25 !important;
 }
 html, body, [class*="css"]{
-    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
 }
 .stButton > button{
-    border-radius: 18px !important;
-    padding: 0.85rem 1rem !important;
-    font-weight: 800 !important;
+  border-radius: 18px !important;
+  padding: 0.85rem 1rem !important;
+  font-weight: 900 !important;
 }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-# ----------------------------
+
+# =========================
+# DB 로드 (없으면 에러 안내)
+# =========================
+@st.cache_data(show_spinner=False)
+def load_db(path: str):
+    if not os.path.exists(path):
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+DB = load_db(DB_PATH)
+
+
+def db(lang: str, key: str, fallback_lang="en"):
+    """DB에서 lang 우선, 없으면 en fallback"""
+    if not DB:
+        return None
+    if lang in DB and key in DB[lang]:
+        return DB[lang][key]
+    if fallback_lang in DB and key in DB[fallback_lang]:
+        return DB[fallback_lang][key]
+    return None
+
+
+# =========================
 # 유틸
-# ----------------------------
+# =========================
+def seeded_pick(items, seed: int):
+    r = random.Random(seed)
+    return items[r.randrange(len(items))]
+
+
 def get_zodiac_index(year: int) -> int:
     return (year - 4) % 12
 
-def zodiac_name(lang: str, idx: int) -> str:
-    return ZODIAC_LIST.get(lang, ZODIAC_LIST["en"])[idx]
 
-def zodiac_desc(lang: str, idx: int) -> str:
-    arr = ZODIAC_DESC.get(lang) or ZODIAC_DESC["en"]
-    return arr[idx]
+def get_period_seed(base_date: datetime, period: str) -> int:
+    """
+    period: 'today'/'tomorrow'/'week'/'month'
+    """
+    if period == "today":
+        d = base_date
+        return int(d.strftime("%Y%m%d"))
+    if period == "tomorrow":
+        d = base_date + timedelta(days=1)
+        return int(d.strftime("%Y%m%d"))
+    if period == "week":
+        # ISO week 기준
+        y, w, _ = base_date.isocalendar()
+        return y * 100 + w
+    if period == "month":
+        return base_date.year * 100 + base_date.month
+    return int(base_date.strftime("%Y%m%d"))
 
-def saju_message(lang: str, y: int, m: int, d: int) -> str:
-    msgs = pick_lang(SAJU_MSG, lang)
-    return msgs[(y + m + d) % len(msgs)]
 
-def daily_fortune(lang: str, idx: int, offset_days: int) -> str:
-    msgs = pick_lang(DAILY_MSG, lang)
-    base = datetime.now() + timedelta(days=offset_days)
-    seed = int(base.strftime("%Y%m%d")) * 100 + idx
-    random.seed(seed)
-    return random.choice(msgs)
+def clamp(v, lo, hi):
+    return max(lo, min(hi, v))
+
+
+def make_scores(seed: int, zodiac_idx: int, mbti: str):
+    r = random.Random(seed + zodiac_idx * 97 + sum(ord(c) for c in mbti))
+    def score():
+        return r.randint(55, 95)
+    return {
+        "work": score(),
+        "money": score(),
+        "love": score(),
+        "health": score(),
+        "people": score(),
+    }
+
+
+def score_grade(lang: str, s: int):
+    # 문구 뽑을 때 grade로도 활용 가능
+    s = int(s)
+    if s >= 86:
+        return ("S", {"ko": "최고", "en": "Excellent", "ja": "最高", "zh": "极佳", "ru": "Отлично", "hi": "बहुत अच्छा"}).get(lang, "Excellent")
+    if s >= 75:
+        return ("A", {"ko": "좋음", "en": "Good", "ja": "良い", "zh": "不错", "ru": "Хорошо", "hi": "अच्छा"}).get(lang, "Good")
+    if s >= 65:
+        return ("B", {"ko": "보통", "en": "Okay", "ja": "普通", "zh": "一般", "ru": "Норм", "hi": "ठीक"}).get(lang, "Okay")
+    return ("C", {"ko": "주의", "en": "Caution", "ja": "注意", "zh": "注意", "ru": "Осторожно", "hi": "सावधानी"}).get(lang, "Caution")
+
+
+def bar_html(pct: int):
+    pct = clamp(int(pct), 0, 100)
+    return f"""
+    <div style="background:rgba(0,0,0,0.07); border-radius:999px; height:10px; overflow:hidden; margin-top:6px;">
+      <div style="width:{pct}%; height:10px; background:linear-gradient(90deg, rgba(111,66,193,0.85), rgba(231,76,60,0.75));"></div>
+    </div>
+    """
+
 
 def render_ad_placeholder(lang: str):
-    components.html(f"""
+    components.html(
+        f"""
     <div style="
-        margin: 16px 6px 10px 6px;
+        margin: 14px 6px 8px 6px;
         padding: 14px 14px;
         border: 1.6px dashed rgba(142,68,173,0.45);
         border-radius: 18px;
@@ -508,18 +542,22 @@ def render_ad_placeholder(lang: str):
             {html.escape(T(lang, "ad_slot_sub"))}
         </div>
     </div>
-    """, height=90)
+    """,
+        height=90,
+    )
+
 
 def render_dananum_ad_ko_only(lang: str):
     if lang != "ko":
         return
-    components.html(f"""
+    components.html(
+        f"""
     <div style="
-        margin: 16px 6px 10px 6px;
+        margin: 14px 6px 8px 6px;
         padding: 16px 14px;
         border: 2px solid rgba(231,76,60,0.35);
         border-radius: 18px;
-        background: rgba(255,255,255,0.75);
+        background: rgba(255,255,255,0.78);
         text-align: center;
         box-shadow: 0 8px 24px rgba(0,0,0,0.10);
         font-family: -apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;
@@ -554,7 +592,10 @@ def render_dananum_ad_ko_only(lang: str):
             ">{html.escape(T(lang, "dananum_btn"))}</button>
         </a>
     </div>
-    """, height=175)
+    """,
+        height=180,
+    )
+
 
 def share_button_component(lang: str, button_label: str, share_text: str, share_url: str):
     safe_text = share_text.replace("\\", "\\\\").replace("`", "\\`")
@@ -563,7 +604,7 @@ def share_button_component(lang: str, button_label: str, share_text: str, share_
 
     components.html(
         f"""
-        <div style="text-align:center; margin: 10px 0 14px 0; font-family:-apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;">
+        <div style="text-align:center; margin: 8px 0 14px 0; font-family:-apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;">
             <button id="shareBtn" style="
                 background:#6f42c1; color:white; padding:16px 22px;
                 border:none; border-radius:999px; font-size:1.05em; font-weight:900;
@@ -607,15 +648,41 @@ def share_button_component(lang: str, button_label: str, share_text: str, share_
         height=120,
     )
 
-def render_result_card_html(lang: str, name_line: str, zodiac: str, mbti: str, z_desc: str, m_desc: str,
-                           saju: str, today: str, tomorrow: str, overall: str, combo: str,
-                           lucky_color: str, lucky_item: str, tip: str):
-    # 모든 값 escape 처리 (안전 + 깨짐 방지)
-    def e(s): return html.escape(s)
 
-    title_2026 = f"{name_line}2026"
-    # 결과 카드 HTML을 components.html로 렌더링 → 태그가 문자로 보일 수 없음
-    card_html = f"""
+def render_fortune_card(
+    lang: str,
+    name_line: str,
+    zodiac_name: str,
+    zodiac_desc: str,
+    mbti: str,
+    mbti_desc: str,
+    saju: str,
+    keyword: str,
+    mood: str,
+    overall: str,
+    combo_line: str,
+    lucky_color: str,
+    lucky_item: str,
+    best_time: str,
+    lucky_number: int,
+    caution: str,
+    mission: str,
+    one_line: str,
+    weekly_strategy: str,
+    scores: dict,
+    detail_sentences: dict,
+    focus_line: str,
+):
+    def e(x): return html.escape(str(x))
+
+    # 디테일 문장 (각 카테고리 1개씩)
+    work_line = detail_sentences["work"]
+    money_line = detail_sentences["money"]
+    love_line = detail_sentences["love"]
+    health_line = detail_sentences["health"]
+    people_line = detail_sentences["people"]
+
+    html_block = f"""
     <div style="
         margin: 10px 6px 10px 6px;
         padding: 16px 14px;
@@ -625,13 +692,13 @@ def render_result_card_html(lang: str, name_line: str, zodiac: str, mbti: str, z
         text-align: center;
         font-family: -apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;
     ">
-        <div style="font-size:1.55em; font-weight:900; color:#5e2b97;">
-            {e(title_2026)}
+        <div style="font-size:1.45em; font-weight:900; color:#5e2b97;">
+            {e(name_line)}2026
         </div>
-        <div style="font-size:1.15em; font-weight:900; color:#222; margin-top:6px;">
-            {e(zodiac)} · {e(mbti)}
+        <div style="font-size:1.12em; font-weight:900; color:#222; margin-top:6px;">
+            {e(zodiac_name)} · {e(mbti)}
         </div>
-        <div style="font-size:1.05em; font-weight:900; color:#6f42c1; margin-top:8px;">
+        <div style="font-size:1.0em; font-weight:900; color:#6f42c1; margin-top:8px;">
             {e(T(lang, "combo"))}
         </div>
     </div>
@@ -640,49 +707,158 @@ def render_result_card_html(lang: str, name_line: str, zodiac: str, mbti: str, z
         margin: 12px 6px 12px 6px;
         padding: 18px 16px;
         border-radius: 18px;
-        background: rgba(255,255,255,0.92);
+        background: rgba(255,255,255,0.94);
         border: 1.6px solid rgba(142,68,173,0.22);
         box-shadow: 0 10px 26px rgba(0,0,0,0.10);
         font-family: -apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;
     ">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+            <div style="padding:8px 12px; border-radius:999px; background:rgba(111,66,193,0.08); border:1px solid rgba(111,66,193,0.18); font-weight:900; color:#6f42c1;">
+                {e(T(lang,'keyword'))}: {e(keyword)}
+            </div>
+            <div style="padding:8px 12px; border-radius:999px; background:rgba(231,76,60,0.06); border:1px solid rgba(231,76,60,0.14); font-weight:900; color:#d35400;">
+                {e(T(lang,'mood'))}: {e(mood)}
+            </div>
+        </div>
+
         <div style="font-size:1.02em; line-height:1.95; color:#111; text-align:left;">
-            <b>{e(T(lang,'zodiac_title'))}</b>: {e(z_desc)}<br>
-            <b>{e(T(lang,'mbti_title'))}</b>: {e(m_desc)}<br>
+            <b>{e(T(lang,'today_focus'))}</b>: {e(focus_line)}<br><br>
+
+            <b>{e(T(lang,'zodiac_title'))}</b>: {e(zodiac_desc)}<br>
+            <b>{e(T(lang,'mbti_title'))}</b>: {e(mbti_desc)}<br>
             <b>{e(T(lang,'saju_title'))}</b>: {e(saju)}<br><br>
 
-            <b>{e(T(lang,'today_title'))}</b>: {e(today)}<br>
-            <b>{e(T(lang,'tomorrow_title'))}</b>: {e(tomorrow)}<br><br>
-
             <b>{e(T(lang,'overall_title'))}</b>: {e(overall)}<br>
-            <b>{e(T(lang,'combo_title'))}</b>: {e(combo)}<br>
+            <b>{e(T(lang,'combo_title'))}</b>: {e(combo_line)}<br><br>
+
+            <b>{e(T(lang,'luck_scores'))}</b><br>
+
+            <div style="margin-top:10px;">
+                <div style="font-weight:900;">{e(T(lang,'work'))}: {scores['work']}/100</div>
+                {bar_html(scores['work'])}
+                <div style="margin-top:6px; color:#222;">• {e(work_line)}</div>
+
+                <div style="font-weight:900; margin-top:14px;">{e(T(lang,'money'))}: {scores['money']}/100</div>
+                {bar_html(scores['money'])}
+                <div style="margin-top:6px; color:#222;">• {e(money_line)}</div>
+
+                <div style="font-weight:900; margin-top:14px;">{e(T(lang,'love'))}: {scores['love']}/100</div>
+                {bar_html(scores['love'])}
+                <div style="margin-top:6px; color:#222;">• {e(love_line)}</div>
+
+                <div style="font-weight:900; margin-top:14px;">{e(T(lang,'health'))}: {scores['health']}/100</div>
+                {bar_html(scores['health'])}
+                <div style="margin-top:6px; color:#222;">• {e(health_line)}</div>
+
+                <div style="font-weight:900; margin-top:14px;">{e(T(lang,'people'))}: {scores['people']}/100</div>
+                {bar_html(scores['people'])}
+                <div style="margin-top:6px; color:#222;">• {e(people_line)}</div>
+            </div>
+
+            <br>
             <b>{e(T(lang,'lucky_color_title'))}</b>: {e(lucky_color)} &nbsp; | &nbsp;
             <b>{e(T(lang,'lucky_item_title'))}</b>: {e(lucky_item)}<br>
-            <b>{e(T(lang,'tip_title'))}</b>: {e(tip)}
+            <b>{e(T(lang,'best_time'))}</b>: {e(best_time)} &nbsp; | &nbsp;
+            <b>{e(T(lang,'lucky_number'))}</b>: {lucky_number}<br><br>
+
+            <b>{e(T(lang,'caution'))}</b>: {e(caution)}<br>
+            <b>{e(T(lang,'do_this'))}</b>: {e(mission)}<br>
+            <b>{e(T(lang,'one_line'))}</b>: {e(one_line)}<br><br>
+
+            <div style="
+                padding:12px 12px;
+                border-radius:14px;
+                background:rgba(142,197,252,0.18);
+                border:1px solid rgba(142,197,252,0.35);
+            ">
+                <b>{e(T(lang,'weekly_strategy'))}</b><br>
+                {e(weekly_strategy)}
+            </div>
         </div>
     </div>
     """
-    # 높이는 대충 넉넉하게
-    components.html(card_html, height=520)
+    components.html(html_block, height=980)
 
 
-# ----------------------------
+# =========================
+# MBTI 질문(12/16) - DB에서 가져옴
+# =========================
+def get_mbti_pack(lang: str, pack_key: str):
+    packs = db(lang, "mbti_questions") or db("en", "mbti_questions")
+    if not packs:
+        return None
+    return packs.get(pack_key) or (db("en", "mbti_questions") or {}).get(pack_key)
+
+
+def compute_mbti_from_answers(answers):
+    """
+    answers: list of tuples like [('E','I',choice), ...]
+    """
+    counts = {"E": 0, "I": 0, "S": 0, "N": 0, "T": 0, "F": 0, "J": 0, "P": 0}
+    for a, b, picked in answers:
+        if picked == a:
+            counts[a] += 1
+        else:
+            counts[b] += 1
+    ei = "E" if counts["E"] >= counts["I"] else "I"
+    sn = "S" if counts["S"] >= counts["N"] else "N"
+    tf = "T" if counts["T"] >= counts["F"] else "F"
+    jp = "J" if counts["J"] >= counts["P"] else "P"
+    return ei + sn + tf + jp
+
+
+# =========================
+# 세션 초기화
+# =========================
+if "lang" not in st.session_state:
+    st.session_state.lang = "ko"
+if "result_shown" not in st.session_state:
+    st.session_state.result_shown = False
+if "mbti" not in st.session_state:
+    st.session_state.mbti = None
+if "name" not in st.session_state:
+    st.session_state.name = ""
+if "year" not in st.session_state:
+    st.session_state.year = 2005
+if "month" not in st.session_state:
+    st.session_state.month = 1
+if "day" not in st.session_state:
+    st.session_state.day = 1
+
+
+# =========================
 # 언어 선택
-# ----------------------------
+# =========================
 lang_codes = [c for c, _ in LANGS]
 lang_labels = [f"{name} ({code})" for code, name in LANGS]
 default_idx = lang_codes.index(st.session_state.lang) if st.session_state.lang in lang_codes else 0
-
 selected = st.radio(T(st.session_state.lang, "lang_label"), lang_labels, index=default_idx, horizontal=True)
 st.session_state.lang = lang_codes[lang_labels.index(selected)]
 lang = st.session_state.lang
 
-# ----------------------------
-# 입력 화면
-# ----------------------------
-if not st.session_state.result_shown:
-    st.markdown(f"<h1 style='text-align:center; color:#6f42c1; margin:10px 0 6px 0;'>{html.escape(T(lang,'title'))}</h1>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align:center; color:#777; margin:0 0 14px 0;'>{html.escape(T(lang,'caption'))}</p>", unsafe_allow_html=True)
 
+# =========================
+# DB 없으면 안내
+# =========================
+if DB is None:
+    st.error("data/fortune_db.json 파일이 필요합니다. 아래 제공한 JSON을 그대로 추가하세요.")
+    st.stop()
+
+
+# =========================
+# 입력 화면
+# =========================
+if not st.session_state.result_shown:
+    st.markdown(
+        f"<h1 style='text-align:center; color:#6f42c1; margin:10px 0 6px 0;'>{html.escape(T(lang,'title'))}</h1>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"<p style='text-align:center; color:#777; margin:0 0 14px 0;'>{html.escape(T(lang,'caption'))}</p>",
+        unsafe_allow_html=True,
+    )
+
+    # 광고 (한국어만 다나눔렌탈)
     render_dananum_ad_ko_only(lang)
     render_ad_placeholder(lang)
 
@@ -694,52 +870,83 @@ if not st.session_state.result_shown:
     st.session_state.month = c2.number_input(T(lang, "month"), min_value=1, max_value=12, value=st.session_state.month, step=1)
     st.session_state.day = c3.number_input(T(lang, "day"), min_value=1, max_value=31, value=st.session_state.day, step=1)
 
-    choice = st.radio(T(lang, "mbti_mode"), [T(lang, "direct"), T(lang, "test16")])
+    mbti_mode = st.radio(T(lang, "mbti_mode"), [T(lang, "direct"), T(lang, "simple12"), T(lang, "test16")])
 
-    if choice == T(lang, "direct"):
-        mbti_input = st.selectbox(T(lang, "mbti_select"), sorted(MBTI_DESC["en"].keys()))
+    # 직접 선택
+    if mbti_mode == T(lang, "direct"):
+        mbti_keys = db(lang, "mbti_desc_keys") or db("en", "mbti_desc_keys") or []
+        if not mbti_keys:
+            mbti_keys = [
+                "INTJ","INTP","ENTJ","ENTP","INFJ","INFP","ENFJ","ENFP",
+                "ISTJ","ISFJ","ESTJ","ESFJ","ISTP","ISFP","ESTP","ESFP"
+            ]
+        mbti_input = st.selectbox(T(lang, "mbti_select"), sorted(mbti_keys))
         if st.button(T(lang, "fortune_btn"), use_container_width=True):
             st.session_state.mbti = mbti_input
             st.session_state.result_shown = True
             st.rerun()
-    else:
-        st.markdown(f"#### {T(lang,'test_start')}")
-        qpack = Q16.get(lang) or Q16["en"]
 
-        e_i = s_n = t_f = j_p = 0
+    # 12문항
+    elif mbti_mode == T(lang, "simple12"):
+        pack = get_mbti_pack(lang, "simple12")
+        st.markdown(f"#### {T(lang,'test_start_12')}")
+        if not pack:
+            st.error("MBTI 질문 DB가 없습니다. fortune_db.json을 확인하세요.")
+            st.stop()
 
-        st.subheader(T(lang, "energy"))
-        for i in range(4):
-            if st.radio(qpack["q_energy"][i], [qpack["options_e"][i], qpack["options_i"][i]], key=f"energy_{i}") == qpack["options_e"][i]:
-                e_i += 1
-
-        st.subheader(T(lang, "info"))
-        for i in range(4):
-            if st.radio(qpack["q_info"][i], [qpack["options_s"][i], qpack["options_n"][i]], key=f"info_{i}") == qpack["options_s"][i]:
-                s_n += 1
-
-        st.subheader(T(lang, "decision"))
-        for i in range(4):
-            if st.radio(qpack["q_decision"][i], [qpack["options_t"][i], qpack["options_f"][i]], key=f"decision_{i}") == qpack["options_t"][i]:
-                t_f += 1
-
-        st.subheader(T(lang, "life"))
-        for i in range(4):
-            if st.radio(qpack["q_life"][i], [qpack["options_j"][i], qpack["options_p"][i]], key=f"life_{i}") == qpack["options_j"][i]:
-                j_p += 1
+        answers = []
+        for i, q in enumerate(pack["questions"]):
+            label = q["q"]
+            opt_a = q["a"]["text"]
+            opt_b = q["b"]["text"]
+            picked = st.radio(label, [opt_a, opt_b], key=f"q12_{i}")
+            # 어떤 축인지
+            a_dim = q["a"]["dim"]
+            b_dim = q["b"]["dim"]
+            answers.append((a_dim, b_dim, a_dim if picked == opt_a else b_dim))
 
         if st.button(T(lang, "result_btn"), use_container_width=True):
-            ei = "E" if e_i >= 3 else "I"
-            sn = "S" if s_n >= 3 else "N"
-            tf = "T" if t_f >= 3 else "F"
-            jp = "J" if j_p >= 3 else "P"
-            st.session_state.mbti = ei + sn + tf + jp
+            st.session_state.mbti = compute_mbti_from_answers(answers)
             st.session_state.result_shown = True
             st.rerun()
 
-# ----------------------------
+    # 16문항
+    else:
+        pack = get_mbti_pack(lang, "detail16")
+        st.markdown(f"#### {T(lang,'test_start_16')}")
+        if not pack:
+            st.error("MBTI 질문 DB가 없습니다. fortune_db.json을 확인하세요.")
+            st.stop()
+
+        answers = []
+        # 4개씩 섹션
+        sections = [
+            ("EI", T(lang, "energy")),
+            ("SN", T(lang, "info")),
+            ("TF", T(lang, "decision")),
+            ("JP", T(lang, "life")),
+        ]
+
+        for sec_key, sec_title in sections:
+            st.subheader(sec_title)
+            for i, q in enumerate([x for x in pack["questions"] if x["axis"] == sec_key]):
+                label = q["q"]
+                opt_a = q["a"]["text"]
+                opt_b = q["b"]["text"]
+                picked = st.radio(label, [opt_a, opt_b], key=f"q16_{sec_key}_{i}")
+                a_dim = q["a"]["dim"]
+                b_dim = q["b"]["dim"]
+                answers.append((a_dim, b_dim, a_dim if picked == opt_a else b_dim))
+
+        if st.button(T(lang, "result_btn"), use_container_width=True):
+            st.session_state.mbti = compute_mbti_from_answers(answers)
+            st.session_state.result_shown = True
+            st.rerun()
+
+
+# =========================
 # 결과 화면
-# ----------------------------
+# =========================
 if st.session_state.result_shown:
     if not (1900 <= st.session_state.year <= 2030):
         st.error(T(lang, "invalid_year"))
@@ -748,71 +955,155 @@ if st.session_state.result_shown:
             st.rerun()
         st.stop()
 
-    idx = get_zodiac_index(st.session_state.year)
-    z_name = zodiac_name(lang, idx)
-    z_desc = zodiac_desc(lang, idx)
+    base_date = datetime.now()
+    zodiac_idx = get_zodiac_index(st.session_state.year)
+    mbti = st.session_state.mbti or "ENFP"
+    name_line = (st.session_state.name.strip() + " ") if st.session_state.name.strip() else ""
 
-    mbti = st.session_state.mbti
-    m_desc = (MBTI_DESC.get(lang) or MBTI_DESC["en"]).get(mbti, mbti)
+    # DB 데이터
+    zlist = db(lang, "zodiacs") or db("en", "zodiacs")
+    zodiac_name = zlist[zodiac_idx]["name"]
+    zodiac_desc = zlist[zodiac_idx]["desc"]
 
-    saju = saju_message(lang, st.session_state.year, st.session_state.month, st.session_state.day)
-    today = daily_fortune(lang, idx, 0)
-    tomorrow = daily_fortune(lang, idx, 1)
+    mbti_desc_map = db(lang, "mbti_desc") or db("en", "mbti_desc")
+    mbti_desc = mbti_desc_map.get(mbti, mbti)
 
-    overall = random.choice(pick_lang(OVERALL_2026, lang))
-    combo = random.choice(pick_lang(COMBO_COMMENTS, lang)).format(z_name, m_desc)
-    lucky_color = random.choice(pick_lang(LUCKY_COLORS, lang))
-    lucky_item = random.choice(pick_lang(LUCKY_ITEMS, lang))
-    tip = random.choice(pick_lang(TIPS, lang))
+    saju_msgs = db(lang, "saju_msgs") or db("en", "saju_msgs")
+    saju = saju_msgs[(st.session_state.year + st.session_state.month + st.session_state.day) % len(saju_msgs)]
 
-    name_display = st.session_state.name.strip()
-    name_line = f"{name_display} " if name_display else ""
+    # 공통 뽑기 함수들
+    def pick(key, seed):
+        arr = db(lang, key) or db("en", key)
+        return seeded_pick(arr, seed)
 
-    # ✅ 여기서부터는 components.html로 카드 렌더링 (태그 문자화 100% 방지)
-    render_result_card_html(
-        lang=lang,
-        name_line=name_line,
-        zodiac=z_name,
-        mbti=mbti,
-        z_desc=z_desc,
-        m_desc=m_desc,
-        saju=saju,
-        today=today,
-        tomorrow=tomorrow,
-        overall=overall,
-        combo=combo,
-        lucky_color=lucky_color,
-        lucky_item=lucky_item,
-        tip=tip
-    )
+    def pick_from_dict(key, subkey, seed):
+        d = db(lang, key) or db("en", key)
+        arr = d[subkey]
+        return seeded_pick(arr, seed)
 
-    render_ad_placeholder(lang)
-    render_dananum_ad_ko_only(lang)
+    def build_detail_sentences(period_seed, scores):
+        # 카테고리별 "구체 문장"을 DB에서 뽑음
+        cat_db = db(lang, "category_msgs") or db("en", "category_msgs")
 
-    with st.expander(T(lang, "tarot_btn"), expanded=False):
-        card = random.choice(list(TAROT.keys()))
-        meaning = TAROT[card].get(lang) or TAROT[card].get("en")
-        st.success(f"{T(lang,'tarot_title')}: {card} - {meaning}")
+        out = {}
+        for cat in ["work", "money", "love", "health", "people"]:
+            grade_code, grade_text = score_grade(lang, scores[cat])
+            # grade별 문장 풀에서 뽑되, zodiac/mbti/period에 따라 seed 흔들기
+            arr = cat_db[cat].get(grade_code) or cat_db[cat]["B"]
+            out[cat] = seeded_pick(arr, period_seed + zodiac_idx * 19 + sum(ord(c) for c in mbti) + len(cat) * 7)
 
-    # 공유 텍스트 (순수 텍스트)
-    share_text = (
-        f"{name_line}2026\n"
-        f"{z_name} · {mbti}\n"
-        f"{T(lang,'combo')}\n\n"
-        f"{T(lang,'today_title')}: {today}\n"
-        f"{T(lang,'tomorrow_title')}: {tomorrow}\n\n"
-        f"{T(lang,'overall_title')}: {overall}\n"
-        f"{T(lang,'combo_title')}: {combo}\n"
-        f"{T(lang,'lucky_color_title')}: {lucky_color} / {T(lang,'lucky_item_title')}: {lucky_item}\n"
-        f"{T(lang,'tip_title')}: {tip}\n"
-    )
+        return out
 
-    # ✅ 모바일 공유 시트
-    share_button_component(lang, T(lang, "share_btn"), share_text, APP_URL)
+    # 탭별 렌더 함수
+    def render_period(period: str):
+        pseed = get_period_seed(base_date, period)
 
-    st.caption(T(lang, "copy_fallback"))
-    st.text_area("Share Text", share_text + "\n" + APP_URL, height=200)
-    st.caption(APP_URL)
+        keyword = pick("keywords", pseed + zodiac_idx * 3)
+        mood = pick("moods", pseed + zodiac_idx * 5)
+        overall = pick("overall_fortunes", pseed + zodiac_idx * 7)
+        combo_line = seeded_pick(db(lang, "combo_comments") or db("en", "combo_comments"), pseed + zodiac_idx * 11).format(zodiac_name, mbti_desc)
+
+        lucky_color = pick("lucky_colors", pseed + zodiac_idx * 13)
+        lucky_item = pick("lucky_items", pseed + zodiac_idx * 17)
+
+        caution = pick("cautions", pseed + zodiac_idx * 19)
+        mission = pick("missions", pseed + zodiac_idx * 23)
+        one_line = pick("one_lines", pseed + zodiac_idx * 29)
+        weekly_strategy = pick("weekly_strategies", pseed + zodiac_idx * 31)
+
+        # 포인트 문장: 기간별로 다른 풀 사용
+        focus_key = {
+            "today": "focus_today",
+            "tomorrow": "focus_tomorrow",
+            "week": "focus_week",
+            "month": "focus_month",
+        }[period]
+        focus_line = pick(focus_key, pseed + zodiac_idx * 37)
+
+        # 시간/숫자
+        times = db(lang, "best_times") or db("en", "best_times")
+        best_time = seeded_pick(times, pseed + zodiac_idx * 41)
+        lucky_number = random.Random(pseed + zodiac_idx * 43).randint(1, 9)
+
+        # 점수 + 디테일 문장
+        scores = make_scores(pseed, zodiac_idx, mbti)
+        detail_sentences = build_detail_sentences(pseed, scores)
+
+        render_fortune_card(
+            lang=lang,
+            name_line=name_line,
+            zodiac_name=zodiac_name,
+            zodiac_desc=zodiac_desc,
+            mbti=mbti,
+            mbti_desc=mbti_desc,
+            saju=saju,
+            keyword=keyword,
+            mood=mood,
+            overall=overall,
+            combo_line=combo_line,
+            lucky_color=lucky_color,
+            lucky_item=lucky_item,
+            best_time=best_time,
+            lucky_number=lucky_number,
+            caution=caution,
+            mission=mission,
+            one_line=one_line,
+            weekly_strategy=weekly_strategy,
+            scores=scores,
+            detail_sentences=detail_sentences,
+            focus_line=focus_line,
+        )
+
+        # 공유 텍스트(탭별)
+        share_text = (
+            f"{name_line}2026\n"
+            f"{zodiac_name} · {mbti}\n"
+            f"{T(lang,'combo')}\n\n"
+            f"{T(lang,'keyword')}: {keyword}\n"
+            f"{T(lang,'mood')}: {mood}\n\n"
+            f"{T(lang,'overall_title')}: {overall}\n"
+            f"{T(lang,'combo_title')}: {combo_line}\n\n"
+            f"{T(lang,'luck_scores')} - "
+            f"{T(lang,'work')} {scores['work']}/100: {detail_sentences['work']}\n"
+            f"{T(lang,'money')} {scores['money']}/100: {detail_sentences['money']}\n"
+            f"{T(lang,'love')} {scores['love']}/100: {detail_sentences['love']}\n"
+            f"{T(lang,'health')} {scores['health']}/100: {detail_sentences['health']}\n"
+            f"{T(lang,'people')} {scores['people']}/100: {detail_sentences['people']}\n\n"
+            f"{T(lang,'lucky_color_title')}: {lucky_color}\n"
+            f"{T(lang,'lucky_item_title')}: {lucky_item}\n"
+            f"{T(lang,'best_time')}: {best_time} / {T(lang,'lucky_number')}: {lucky_number}\n\n"
+            f"{T(lang,'caution')}: {caution}\n"
+            f"{T(lang,'do_this')}: {mission}\n"
+            f"{T(lang,'one_line')}: {one_line}\n"
+        )
+
+        # 광고 자리 + 한국어 광고
+        render_ad_placeholder(lang)
+        render_dananum_ad_ko_only(lang)
+
+        # 타로
+        with st.expander(T(lang, "tarot_btn"), expanded=False):
+            tarot = db(lang, "tarot_cards") or db("en", "tarot_cards")
+            card = random.choice(list(tarot.keys()))
+            st.success(f"{T(lang,'tarot_title')}: {card} - {tarot[card]}")
+
+        # 공유 버튼(모바일 공유시트 / PC 복사 fallback)
+        share_button_component(lang, T(lang, "share_btn"), share_text, APP_URL)
+
+        st.caption(T(lang, "copy_fallback"))
+        st.text_area(T(lang, "share_text_title"), share_text + "\n" + APP_URL, height=220)
+        st.caption(APP_URL)
+
+    # 탭 UI
+    tab1, tab2, tab3, tab4 = st.tabs([T(lang, "tabs_today"), T(lang, "tabs_tomorrow"), T(lang, "tabs_week"), T(lang, "tabs_month")])
+    with tab1:
+        render_period("today")
+    with tab2:
+        render_period("tomorrow")
+    with tab3:
+        render_period("week")
+    with tab4:
+        render_period("month")
 
     if st.button(T(lang, "reset"), use_container_width=True):
         st.session_state.clear()
