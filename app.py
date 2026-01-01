@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 import random
 import json
 from pathlib import Path
@@ -61,6 +61,14 @@ UI = {
         "db_path_hint": "다운받은 파일을 GitHub에 data/fortunes_{lang}.json 으로 업로드하세요.",
         "db_status_external": "✅ 외부 DB 사용 중 (data 폴더 JSON 읽음)",
         "db_status_generated": "⚠️ 외부 DB 파일이 없어서 자동 생성 DB로 동작 중",
+        "ad_badge": "제휴 혜택",
+        "ad_title": "렌탈 상담 최대 페이백",
+        "ad_sub": "정수기·비데·공기청정기·안마의자",
+        "ad_chip_1": "제휴카드 시 월 0원~",
+        "ad_chip_2": "설치당일 최대 50만원",
+        "ad_chip_3": "사은품 + 빠른설치",
+        "ad_cta": "다나눔렌탈 보러가기",
+        "ad_disclaimer": "광고",
     },
     "en": {
         "title": "⭐ 2026 Fortune ⭐",
@@ -69,7 +77,7 @@ UI = {
         "name_label": "Name (shown in result)",
         "birth_label": "Birth date",
         "mbti_mode": "How to do MBTI?",
-        "mbti_direct": "Select directly (I know it)",
+        "mbti_direct": "Select directly",
         "mbti_test": "Quick test (12 questions)",
         "btn_view": "See my 2026 fortune!",
         "btn_view_test": "See fortune from test result!",
@@ -95,15 +103,23 @@ UI = {
         "sec_tf": "3) Decision (T/F)",
         "sec_jp": "4) Lifestyle (J/P)",
         "share_title": "2026 Fortune",
-        "share_fail_copy": "Sharing isn't supported here, so the text was copied.\nPaste it in KakaoTalk or message.",
-        "share_manual_prompt": "Copy and paste this text to share:",
-        "share_cancel": "Sharing was canceled or not supported.\nPlease copy & paste.",
-        "db_tools_title": "📦 Fortune DB download/upload (recommended)",
+        "share_fail_copy": "Sharing isn't supported, so the text was copied.\nPaste it in your messenger.",
+        "share_manual_prompt": "Copy and paste this text:",
+        "share_cancel": "Sharing canceled or not supported.\nPlease copy & paste.",
+        "db_tools_title": "📦 Fortune DB download/upload",
         "db_tools_desc": "Download DB(JSON) for this language and upload it to GitHub so the app can read it.",
         "download_db_btn": "Download DB(JSON) for this language",
         "db_path_hint": "Upload as data/fortunes_{lang}.json",
         "db_status_external": "✅ External DB loaded (from data/ JSON)",
         "db_status_generated": "⚠️ No external DB file, using generated DB",
+        "ad_badge": "Partner Deal",
+        "ad_title": "Max Cashback for Rental",
+        "ad_sub": "Purifier · Bidet · Air Purifier · Massage Chair",
+        "ad_chip_1": "From 0 won/month",
+        "ad_chip_2": "Up to 500,000 won",
+        "ad_chip_3": "Gifts + Fast setup",
+        "ad_cta": "Go to Dananum Rental",
+        "ad_disclaimer": "Ad",
     },
     "hi": {
         "title": "⭐ 2026 भाग्य ⭐",
@@ -138,7 +154,7 @@ UI = {
         "sec_tf": "3) Decision (T/F)",
         "sec_jp": "4) Lifestyle (J/P)",
         "share_title": "2026 Fortune",
-        "share_fail_copy": "Sharing is not supported here, so the text was copied.\nPlease paste it in your messenger.",
+        "share_fail_copy": "Sharing isn't supported here, so the text was copied.\nPlease paste it in your messenger.",
         "share_manual_prompt": "Copy and paste this text:",
         "share_cancel": "Sharing canceled or not supported.\nPlease copy & paste.",
         "db_tools_title": "📦 DB डाउनलोड/अपलोड",
@@ -147,6 +163,14 @@ UI = {
         "db_path_hint": "GitHub: data/fortunes_{lang}.json",
         "db_status_external": "✅ External DB loaded",
         "db_status_generated": "⚠️ Generated DB in use",
+        "ad_badge": "Partner Deal",
+        "ad_title": "Max Cashback for Rental",
+        "ad_sub": "Purifier · Bidet · Air Purifier · Massage Chair",
+        "ad_chip_1": "From 0 won/month",
+        "ad_chip_2": "Up to 500,000 won",
+        "ad_chip_3": "Gifts + Fast setup",
+        "ad_cta": "Go to Dananum Rental",
+        "ad_disclaimer": "Ad",
     },
     "zh": {
         "title": "⭐ 2026 运势 ⭐",
@@ -190,6 +214,14 @@ UI = {
         "db_path_hint": "GitHub：data/fortunes_{lang}.json",
         "db_status_external": "✅ 已加载外部 DB",
         "db_status_generated": "⚠️ 未找到外部 DB，使用自动生成 DB",
+        "ad_badge": "合作福利",
+        "ad_title": "租赁最大返现",
+        "ad_sub": "净水器 · 智能马桶盖 · 空气净化器 · 按摩椅",
+        "ad_chip_1": "月租低至 0 韩元",
+        "ad_chip_2": "最高 50万韩元",
+        "ad_chip_3": "礼品 + 快速安装",
+        "ad_cta": "前往 Dananum Rental",
+        "ad_disclaimer": "广告",
     },
     "ru": {
         "title": "⭐ 2026 Удача ⭐",
@@ -233,6 +265,14 @@ UI = {
         "db_path_hint": "GitHub: data/fortunes_{lang}.json",
         "db_status_external": "✅ External DB loaded",
         "db_status_generated": "⚠️ Generated DB in use",
+        "ad_badge": "Partner Deal",
+        "ad_title": "Max Cashback for Rental",
+        "ad_sub": "Purifier · Bidet · Air Purifier · Massage Chair",
+        "ad_chip_1": "From 0 won/month",
+        "ad_chip_2": "Up to 500,000 won",
+        "ad_chip_3": "Gifts + Fast setup",
+        "ad_cta": "Go to Dananum Rental",
+        "ad_disclaimer": "Ad",
     },
     "ja": {
         "title": "⭐ 2026 運勢 ⭐",
@@ -276,6 +316,14 @@ UI = {
         "db_path_hint": "GitHub: data/fortunes_{lang}.json",
         "db_status_external": "✅ External DB loaded",
         "db_status_generated": "⚠️ Generated DB in use",
+        "ad_badge": "Partner Deal",
+        "ad_title": "Max Cashback for Rental",
+        "ad_sub": "Purifier · Bidet · Air Purifier · Massage Chair",
+        "ad_chip_1": "From 0 won/month",
+        "ad_chip_2": "Up to 500,000 won",
+        "ad_chip_3": "Gifts + Fast setup",
+        "ad_cta": "Go to Dananum Rental",
+        "ad_disclaimer": "Ad",
     }
 }
 
@@ -504,7 +552,6 @@ def _uniq_keep_order(items):
     return out
 
 def build_generated_db(lang: str):
-    # --------- per language phrase parts
     if lang == "ko":
         openers = ["오늘은", "지금은", "이번엔", "특히", "의외로", "가볍게"]
         actions = [
@@ -531,7 +578,6 @@ def build_generated_db(lang: str):
         luck_colors = ["골드","레드","블루","그린","퍼플","네이비","민트","핑크","오프화이트","실버","오렌지","버건디"]
         luck_items = ["작은 노트","카드지갑","미니 향수","보조배터리","우산","텀블러","이어폰","손세정제","키링","손거울","볼펜","파우치"]
 
-        # category base advice (more natural variety)
         cat_base = {
             "money": ["지출을 점검", "구독을 정리", "가격을 비교", "충동구매를 피하기", "정산/환불 확인", "예산을 메모"],
             "love": ["먼저 연락하기", "칭찬 한 마디", "오해 풀기", "말투를 부드럽게", "약속 지키기", "질문 하나 던지기"],
@@ -542,7 +588,6 @@ def build_generated_db(lang: str):
             "mindset": ["정리하기", "작은 성공 쌓기", "통제 가능한 것에 집중", "감사 한 줄", "도움 요청", "급할수록 천천히"]
         }
 
-        # MBTI “tone” words by letters (for combo)
         mbti_strength = {
             "E": ["확장력", "추진력", "네트워킹"],
             "I": ["집중력", "깊이", "자기정리"],
@@ -558,12 +603,10 @@ def build_generated_db(lang: str):
             parts = []
             for ch in mbti:
                 parts.append(random.choice(mbti_strength.get(ch, [])))
-            # safe uniq
             return _uniq_keep_order([p for p in parts if p])
 
         def combo_sentence(zodiac, mbti, mbti_desc):
             prof = mbti_profile(mbti)
-            # deterministic-ish variety inside generator (later seeded when picking)
             patterns = [
                 f"{zodiac}의 흐름에 {mbti_desc}의 {prof[0]}이(가) 붙어 ‘정리→실행’이 대박이에요.",
                 f"{zodiac} 운이 들어올 때 {mbti}의 {prof[1] if len(prof)>1 else prof[0]}으로 ‘선택과 집중’하면 성과가 커져요.",
@@ -572,10 +615,8 @@ def build_generated_db(lang: str):
                 f"{zodiac} + {mbti_desc}: 작은 루틴을 만들면 큰 복으로 돌아오는 조합!"
             ]
             return patterns
-
     else:
-        # For non-KO languages, generate in that language if possible, otherwise simple English-like but still varied
-        # (You can later replace with fully native DB by downloading JSON and editing.)
+        # simple but varied non-KO
         if lang == "zh":
             openers = ["今天", "现在", "这次", "尤其", "意外地", "轻松地"]
             actions = ["只要整理一次", "稍微减少一点", "确认一次", "从小开始", "保持轻松节奏", "抓住关键点", "花10分钟"]
@@ -604,6 +645,7 @@ def build_generated_db(lang: str):
                 "J": ["规划","完成度","整理力"],
                 "P": ["灵活","适应","反应快"]
             }
+
             def mbti_profile(mbti: str):
                 parts = []
                 for ch in mbti:
@@ -620,7 +662,6 @@ def build_generated_db(lang: str):
                     f"{zodiac}+{mbti_desc}：建立小习惯，会收获大回报。"
                 ]
                 return patterns
-
         elif lang == "ja":
             openers = ["今日は", "今は", "今回は", "特に", "意外と", "気楽に"]
             actions = ["一度整理するだけで", "少し減らすだけで", "一回確認すれば", "小さく始めても", "力を抜いて動けば", "要点だけ押さえれば", "10分使うだけで"]
@@ -649,6 +690,7 @@ def build_generated_db(lang: str):
                 "J": ["計画","整理","完了力"],
                 "P": ["柔軟","適応","瞬発"]
             }
+
             def mbti_profile(mbti: str):
                 parts = []
                 for ch in mbti:
@@ -665,9 +707,7 @@ def build_generated_db(lang: str):
                     f"{zodiac}+{mbti_desc}：小さな習慣が大きな運を呼びます。"
                 ]
                 return patterns
-
         else:
-            # en/hi/ru -> English-ish templates (hi/ru can be replaced via DB later)
             openers = ["Today", "Right now", "This time", "Especially", "Surprisingly", "Gently"]
             actions = ["a quick cleanup", "a small reduction", "one extra check", "starting small", "moving lightly", "focusing on the key", "spending 10 minutes"]
             effects = ["boosts your luck.", "improves your flow.", "reduces losses.", "pulls opportunities closer.", "makes your mind lighter.", "turns into results.", "brings good news."]
@@ -702,6 +742,7 @@ def build_generated_db(lang: str):
                 "J": ["planning", "organization", "completion"],
                 "P": ["flexibility", "adaptation", "quick-response"]
             }
+
             def mbti_profile(mbti: str):
                 parts = []
                 for ch in mbti:
@@ -719,8 +760,7 @@ def build_generated_db(lang: str):
                 ]
                 return patterns
 
-    # --------- build big daily messages (80~200 per category)
-    rng = random.Random(12345)  # stable generation base (not user result)
+    rng = random.Random(12345)
     daily = {}
     for cat in CATEGORIES:
         base_list = cat_base.get(cat, [])
@@ -729,7 +769,6 @@ def build_generated_db(lang: str):
             for o in openers:
                 for a in actions:
                     for e in effects:
-                        # Example: "오늘은 지출을 점검, 한 번만 정리해도 운이 확 올라가요."
                         if lang == "ko":
                             msgs.append(f"{o} {b} {a} {e}")
                         elif lang == "zh":
@@ -738,13 +777,10 @@ def build_generated_db(lang: str):
                             msgs.append(f"{o}{b}、{a}{e}")
                         else:
                             msgs.append(f"{o}, {b} + {a} {e}")
-        # shuffle & cut to keep size reasonable
         rng.shuffle(msgs)
         msgs = _uniq_keep_order(msgs)
-        # ensure at least 120 per category if possible
         daily[cat] = msgs[:160] if len(msgs) > 160 else msgs
 
-    # --------- build 192 combo matrix
     zlist = ZODIAC_LIST.get(lang, ZODIAC_LIST["en"])
     mkeys = sorted(MBTIS.get(lang, MBTIS["en"]).keys())
     combo_matrix = {}
@@ -754,34 +790,20 @@ def build_generated_db(lang: str):
             mbti_desc = MBTIS.get(lang, MBTIS["en"]).get(mbti, mbti)
             combo_matrix[z][mbti] = combo_sentence(z, mbti, mbti_desc)
 
-    # --------- lucky pool + yearly
     db = {
         "daily": daily,
         "yearly": {"general": _uniq_keep_order(yearly)},
-        "combo": {
-            # fallback list format (kept for compatibility)
-            "zodiac_mbti": [
-                # generic fallback patterns
-                "{zodiac} + {mbti_desc}: small routines bring big returns.",
-                "{zodiac} luck rises when {mbti_desc} focuses on one priority.",
-                "{zodiac} energy becomes results through {mbti_desc}'s execution.",
-                "{zodiac} + {mbti_desc}: direction beats speed.",
-                "{zodiac} + {mbti_desc}: plan → execute is your advantage."
-            ]
-        },
         "combo_matrix": combo_matrix,
         "lucky": {
             "colors": _uniq_keep_order(luck_colors),
             "items": _uniq_keep_order(luck_items),
-            "tips": _uniq_keep_order(tips)
+            "tips": _uniq_keep_order(tips),
         }
     }
     return db
 
 # =========================================
-# 4) DB load priority:
-#    1) data/fortunes_{lang}.json (if exists)
-#    2) build_generated_db(lang)
+# 4) DB loader (data/fortunes_{lang}.json -> else generated)
 # =========================================
 def _safe_read_json(fp: Path):
     try:
@@ -791,13 +813,7 @@ def _safe_read_json(fp: Path):
         return None
 
 def _validate_db(db: dict):
-    if not isinstance(db, dict):
-        return False
-    if "daily" not in db or "lucky" not in db:
-        return False
-    if not isinstance(db.get("daily"), dict):
-        return False
-    return True
+    return isinstance(db, dict) and "daily" in db and "lucky" in db
 
 @st.cache_data
 def load_fortune_db(lang: str):
@@ -827,7 +843,6 @@ def stable_rng(name: str, y: int, m: int, d: int, mbti: str, lang: str):
     return random.Random(seed)
 
 def pick_daily(db, rng: random.Random, offset_days: int, zodiac: str, mbti: str):
-    # offset를 섞어 "오늘/내일" 서로 다른 느낌
     day_seed = abs(hash(f"{datetime.now().date().isoformat()}|{offset_days}|{zodiac}|{mbti}")) % (10**9)
     rr = random.Random(day_seed ^ rng.randint(0, 10**9))
     cats = list(db["daily"].keys())
@@ -836,23 +851,13 @@ def pick_daily(db, rng: random.Random, offset_days: int, zodiac: str, mbti: str)
     return msg
 
 def pick_combo(db, rng: random.Random, zodiac: str, mbti: str, mbti_desc: str):
-    # 1) combo_matrix 있으면 192조합 전용
-    cm = db.get("combo_matrix")
-    if isinstance(cm, dict) and zodiac in cm and isinstance(cm[zodiac], dict) and mbti in cm[zodiac]:
-        arr = cm[zodiac][mbti]
-        if isinstance(arr, list) and len(arr) > 0:
-            return rng.choice(arr)
-        if isinstance(arr, str) and arr.strip():
-            return arr
-    # 2) fallback list
-    arr = db.get("combo", {}).get("zodiac_mbti", [])
-    if isinstance(arr, list) and arr:
-        return rng.choice(arr).format(zodiac=zodiac, mbti_desc=mbti_desc, mbti=mbti)
-    # 3) final fallback
-    return f"{zodiac} + {mbti_desc}: plan → execute is strong."
+    cm = db.get("combo_matrix", {})
+    if isinstance(cm, dict) and zodiac in cm and mbti in cm[zodiac] and isinstance(cm[zodiac][mbti], list) and cm[zodiac][mbti]:
+        return rng.choice(cm[zodiac][mbti])
+    return f"{zodiac} + {mbti_desc}: small routines bring big returns."
 
 # =========================================
-# 6) Streamlit setup
+# 6) Streamlit setup + Mobile UI CSS
 # =========================================
 st.set_page_config(page_title="2026 Fortune", layout="centered")
 
@@ -873,27 +878,107 @@ st.markdown(
       header {visibility: hidden;}
       #MainMenu {visibility: hidden;}
       footer {visibility: hidden;}
-      .stApp { background: #efe9ff; }
+
+      /* 모바일 상단 잘림 방지 + 폭 최적화 */
       .block-container {
-        padding-top: 10px !important;
-        padding-bottom: 30px !important;
+        padding-top: 12px !important;
+        padding-bottom: 36px !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
         max-width: 760px;
       }
-      .title { font-size: 28px; font-weight: 900; color:#2b2b2b; text-align:center; margin: 14px 0 4px;}
-      .subtitle { font-size: 14px; font-weight: 700; color:#555; text-align:center; margin: 0 0 14px;}
+
+      .stApp {
+        background: radial-gradient(1200px 800px at 10% 0%, #f6f0ff 0%, #efe9ff 35%, #eaf4ff 100%);
+      }
+
+      .title { font-size: 28px; font-weight: 950; color:#1f1f1f; text-align:center; margin: 12px 0 4px; letter-spacing:-0.2px;}
+      .subtitle { font-size: 14px; font-weight: 750; color:#4b4b4b; text-align:center; margin: 0 0 14px;}
+      .hint { font-size: 12px; color:#666; text-align:center; margin-top: -6px; }
+
       .card {
-        background: rgba(255,255,255,0.86);
-        border: 1px solid rgba(140,120,200,0.25);
+        background: rgba(255,255,255,0.88);
+        border: 1px solid rgba(124,58,237,0.16);
         border-radius: 18px;
-        padding: 16px;
-        box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+        padding: 16px 16px;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+        margin: 10px 0 14px;
+      }
+      .card p { margin: 6px 0; line-height: 1.65; font-size: 14.7px; color:#202020; }
+      .kv { font-weight: 950; }
+
+      .bigline { font-size: 19px; font-weight: 950; text-align: center; color: #202020; margin: 8px 0 2px;}
+
+      /* 광고 카드 */
+      .ad-wrap {
+        border-radius: 22px;
+        padding: 1px;
+        background: linear-gradient(135deg, rgba(124,58,237,0.9), rgba(59,130,246,0.85), rgba(236,72,153,0.75));
+        box-shadow: 0 14px 34px rgba(17,24,39,0.14);
         margin: 10px 0 16px;
       }
-      .card p { margin: 6px 0; line-height: 1.65; font-size: 14.5px; color:#2b2b2b; }
-      .kv { font-weight: 900; }
-      .bigline { font-size: 20px; font-weight: 900; text-align: center; color: #2b2b2b; margin: 8px 0 4px;}
-      .hint { font-size: 12px; color:#666; text-align:center; margin-top: -4px; }
-      @media (max-width: 480px) {.title { font-size: 24px; } .bigline { font-size: 18px; }}
+      .ad-card {
+        border-radius: 21px;
+        padding: 16px;
+        background: rgba(255,255,255,0.92);
+        position: relative;
+        overflow: hidden;
+      }
+      .ad-badge {
+        display:inline-block;
+        font-size: 12px;
+        font-weight: 900;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(124,58,237,0.10);
+        color: #6d28d9;
+        border: 1px solid rgba(124,58,237,0.18);
+      }
+      .ad-disclaimer {
+        position:absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 11px;
+        font-weight: 900;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: rgba(239,68,68,0.10);
+        color: #b91c1c;
+        border: 1px solid rgba(239,68,68,0.20);
+      }
+      .ad-title { font-size: 18px; font-weight: 950; margin: 10px 0 4px; color:#111827; letter-spacing:-0.2px;}
+      .ad-sub { font-size: 12.6px; font-weight: 750; margin: 0 0 10px; color:#4b5563; }
+      .chips { display:flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 14px; }
+      .chip {
+        font-size: 12px;
+        font-weight: 850;
+        padding: 8px 10px;
+        border-radius: 999px;
+        background: rgba(17,24,39,0.04);
+        border: 1px solid rgba(17,24,39,0.08);
+        color:#111827;
+      }
+      .ad-cta {
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #7c3aed, #2563eb);
+        color: white;
+        font-weight: 950;
+        font-size: 14.8px;
+        text-decoration: none;
+        box-shadow: 0 10px 20px rgba(37,99,235,0.25);
+      }
+      .ad-cta:active { transform: scale(0.99); }
+
+      @media (max-width: 480px) {
+        .title { font-size: 24px; }
+        .bigline { font-size: 18px; }
+        .card { padding: 14px; }
+      }
     </style>
     """,
     unsafe_allow_html=True
@@ -910,14 +995,43 @@ st.radio(
 lang = st.session_state.lang
 t = UI.get(lang, UI["en"])
 APP_URL = "https://my-fortune.streamlit.app"  # 너의 실제 배포 URL로 바꿔도 됨
-
+AD_URL = "https://www.다나눔렌탈.com"
 
 # =========================================
-# 7) Input screen
+# 7) Beautiful Ad Card (HTML)
+# =========================================
+def render_ad_card():
+    components.html(
+        f"""
+        <div class="ad-wrap">
+          <div class="ad-card">
+            <div class="ad-disclaimer">{t["ad_disclaimer"]}</div>
+            <span class="ad-badge">✨ {t["ad_badge"]}</span>
+            <div class="ad-title">{t["ad_title"]}</div>
+            <div class="ad-sub">{t["ad_sub"]}</div>
+
+            <div class="chips">
+              <span class="chip">💳 {t["ad_chip_1"]}</span>
+              <span class="chip">💸 {t["ad_chip_2"]}</span>
+              <span class="chip">🎁 {t["ad_chip_3"]}</span>
+            </div>
+
+            <a class="ad-cta" href="{AD_URL}" target="_blank" rel="noopener noreferrer">
+              {t["ad_cta"]} ↗
+            </a>
+          </div>
+        </div>
+        """,
+        height=215,
+    )
+
+# =========================================
+# 8) Input screen
 # =========================================
 if not st.session_state.result:
     st.markdown(f"<div class='title'>{t['title']}</div>", unsafe_allow_html=True)
     st.markdown(f"<div class='subtitle'>{t['subtitle']}</div>", unsafe_allow_html=True)
+    render_ad_card()
 
     st.session_state.name = st.text_input(t["name_label"], value=st.session_state.name)
 
@@ -937,7 +1051,6 @@ if not st.session_state.result:
             st.rerun()
     else:
         st.caption(t["test_caption"])
-
         tq = TEST_Q.get(lang, TEST_Q["en"])  # ✅ 언어별 12문항
 
         score_ei = score_sn = score_tf = score_jp = 0
@@ -972,9 +1085,8 @@ if not st.session_state.result:
             st.session_state.result = True
             st.rerun()
 
-
 # =========================================
-# 8) Result screen
+# 9) Result screen
 # =========================================
 if st.session_state.result:
     y = st.session_state.birthdate.year
@@ -1022,10 +1134,10 @@ if st.session_state.result:
           <p><span class="kv">✨ {t['zodiac_title']}</span>: {zodiac}</p>
           <p><span class="kv">🧠 {t['mbti_title']}</span>: {mbti_desc} ({mbti})</p>
           <p><span class="kv">🍀 {t['saju_title']}</span>: {saju}</p>
-          <hr style="border:none;height:1px;background:rgba(120,100,180,0.18);margin:12px 0;">
+          <hr style="border:none;height:1px;background:rgba(124,58,237,0.12);margin:12px 0;">
           <p><span class="kv">💗 {t['today_title']}</span>: {today_msg}</p>
           <p><span class="kv">🌙 {t['tomorrow_title']}</span>: {tomorrow_msg}</p>
-          <hr style="border:none;height:1px;background:rgba(120,100,180,0.18);margin:12px 0;">
+          <hr style="border:none;height:1px;background:rgba(124,58,237,0.12);margin:12px 0;">
           <p><span class="kv">💝 {t['overall_title']}</span>: {overall}</p>
           <p><span class="kv">💬 {t['combo_title']}</span>: {combo_comment}</p>
           <p><span class="kv">🎨 {t['lucky_color_title']}</span>: {lucky_color} &nbsp; | &nbsp;
@@ -1036,6 +1148,9 @@ if st.session_state.result:
         unsafe_allow_html=True
     )
 
+    # 광고 카드 (결과에도 1번 더 노출)
+    render_ad_card()
+
     # tarot
     with st.expander(t["tarot_btn"], expanded=False):
         tarot_rng = random.Random(abs(hash(f"tarot|{datetime.now().strftime('%Y%m%d')}|{name}|{mbti}|{lang}")) % (10**9))
@@ -1044,8 +1159,8 @@ if st.session_state.result:
         st.markdown(
             f"""
             <div class="card" style="text-align:center;">
-              <p style="font-weight:900; color:#7c3aed;">{t["tarot_title"]}</p>
-              <p style="font-size:22px; font-weight:900; margin-top:6px;">{tarot_card}</p>
+              <p style="font-weight:950; color:#7c3aed;">{t["tarot_title"]}</p>
+              <p style="font-size:22px; font-weight:950; margin-top:6px;">{tarot_card}</p>
               <p style="margin-top:8px;">{tarot_meaning}</p>
             </div>
             """,
@@ -1073,10 +1188,10 @@ if st.session_state.result:
 
     components.html(
         f"""
-        <div style="text-align:center; margin:22px 0 10px;">
+        <div style="text-align:center; margin:16px 0 6px;">
           <button onclick="doShare()"
             style="background:#7c3aed; color:#ffffff; padding:16px 64px; border:none; border-radius:999px;
-                   font-size:1.1em; font-weight:900; box-shadow: 0 8px 25px rgba(124,58,237,0.35);
+                   font-size:1.06em; font-weight:950; box-shadow: 0 10px 22px rgba(124,58,237,0.30);
                    cursor:pointer;">
             {t["share_btn"]}
           </button>
@@ -1086,21 +1201,17 @@ if st.session_state.result:
         async function doShare() {{
           const text = {share_payload};
           const title = {share_title_payload};
-
           try {{
             if (navigator.share) {{
               await navigator.share({{ title: title, text: text }});
               return;
             }}
-
             if (navigator.clipboard && navigator.clipboard.writeText) {{
               await navigator.clipboard.writeText(text);
               alert({fail_copy_payload});
               return;
             }}
-
             prompt({manual_prompt_payload}, text);
-
           }} catch (e) {{
             alert({cancel_payload});
             try {{
@@ -1112,16 +1223,13 @@ if st.session_state.result:
         }}
         </script>
         """,
-        height=110
+        height=98
     )
 
-    # DB tools (download + status)
+    # DB tools
     with st.expander(t["db_tools_title"], expanded=False):
         st.write(t["db_tools_desc"])
-
-        # ✅ 다운로드는 "자동 생성 DB"를 그대로 저장(=DB로 굳히기)
         generated_db = build_generated_db(lang)
-
         st.download_button(
             t["download_db_btn"],
             data=json.dumps(generated_db, ensure_ascii=False, indent=2).encode("utf-8"),
