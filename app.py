@@ -425,7 +425,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 화면
+# 결과 화면 - 하나의 큰 HTML로 구성 (성공했던 방식)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -446,26 +446,20 @@ if st.session_state.result_shown:
         lucky_item = random.choice(t["lucky_items"])
         tip = random.choice(t["tips"])
 
-        # 완벽한 인스타 감성 배경 + 모든 글자 선명하게
         st.markdown(f"""
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
         <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
                      width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:20px;
                      box-sizing:border-box; text-align:center; overflow-y:auto;
-                     font-family:'Noto Sans KR', sans-serif; position:relative;">
+                     font-family:'Noto Sans KR', sans-serif;">
           
-          <!-- 부드러운 어두운 오버레이로 배경 보호 + 글자 살리기 -->
-          <div style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.2); pointer-events:none; border-radius:0;"></div>
-          
-          <div style="position:relative; z-index:2;">
-            <!-- 상단 제목 -->
+          <div style="position:relative;">
             <h1 style="font-size:1.4em; margin:15px 0; color:#ffffff; text-shadow: 2px 2px 6px rgba(0,0,0,0.6);">⭐ {name_display} ⭐</h1>
             <h2 style="font-size:1.6em; margin:15px 0; color:#ffffff; text-shadow: 3px 3px 8px rgba(0,0,0,0.7);">
               <span style="font-size:2em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:2em;">{mbti_emoji}</span> {mbti}
             </h2>
             <h3 style="font-size:1.2em; margin:20px 0; color:#ffffff; text-shadow: 2px 2px 6px rgba(0,0,0,0.6);">{t['combo']}</h3>
 
-            <!-- 운세 내용 박스 -->
             <div style="background:rgba(255,255,255,0.92); border-radius:22px; padding:22px; margin:20px 15px; 
                          backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
               <p style="font-size:1.15em; line-height:1.8; color:#000000;">
@@ -481,7 +475,6 @@ if st.session_state.result_shown:
               </p>
             </div>
 
-            <!-- 광고 박스 -->
             <div style="background:rgba(255,255,255,0.9); border-radius:20px; padding:18px; margin:20px 15px; 
                          backdrop-filter: blur(12px); box-shadow: 0 8px 25px rgba(0,0,0,0.25);">
               <small style="color:#e74c3c; font-weight:bold;">광고</small><br>
@@ -491,7 +484,6 @@ if st.session_state.result_shown:
               <a href="https://www.다나눔렌탈.com" target="_blank" style="color:#3498db; text-decoration:underline; font-weight:bold; font-size:1.1em;">🔗 다나눔렌탈.com 바로가기</a>
             </div>
 
-            <!-- 앱 URL -->
             <p style="font-size:0.9em; color:#ffffff; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); margin:20px 0;">
               {app_url}
             </p>
@@ -499,20 +491,19 @@ if st.session_state.result_shown:
         </div>
         """, unsafe_allow_html=True)
 
-        # 타로 카드 뽑기
+        # 타로와 공유 버튼은 그대로 유지 (성공했던 버전)
         if st.button(t["tarot_btn"], use_container_width=True):
             tarot_card = random.choice(list(t["tarot_cards"].keys()))
             tarot_meaning = t["tarot_cards"][tarot_card]
             st.markdown(f"""
             <div style="background:rgba(255,255,255,0.95); border-radius:22px; padding:25px; margin:20px 10px; 
                          backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align:center;">
-              <h3 style="color:#9b59b6; font-size:1.3em; margin:10px 0;">{t['tarot_title']}</h3>
-              <h2 style="font-size:2em; color:#333; margin:15px 0;">{tarot_card}</h2>
+              <h3 style="color:#9b59b6; font-size:1.3em;">{t['tarot_title']}</h3>
+              <h2 style="font-size:2em; color:#333;">{tarot_card}</h2>
               <p style="font-size:1.2em; color:#000000; line-height:1.7;">{tarot_meaning}</p>
             </div>
             """, unsafe_allow_html=True)
 
-        # 공유 버튼
         share_text = f"{name_display}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
         <div style="text-align:center; margin:30px 0;">
@@ -536,5 +527,3 @@ if st.session_state.result_shown:
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
         st.rerun()
-
-st.caption(t["footer"])
