@@ -446,22 +446,87 @@ if st.session_state.result_shown:
         lucky_item = random.choice(t["lucky_items"])
         tip = random.choice(t["tips"])
 
-        st.markdown(f"""
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-        <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
-                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:20px;
-                     box-sizing:border-box; text-align:center; overflow-y:auto;
-                     font-family:'Noto Sans KR', sans-serif;">
-          <div style="position:relative;">
-            <h1 style="font-size:1.4em; margin:15px 0; color:#ffffff; text-shadow: 2px 2px 6px rgba(0,0,0,0.6);">⭐ {name_display} ⭐</h1>
-            <h2 style="font-size:1.6em; margin:15px 0; color:#ffffff; text-shadow: 3px 3px 8px rgba(0,0,0,0.7);">
-              <span style="font-size:2em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:2em;">{mbti_emoji}</span> {mbti}
-            </h2>
-            <h3 style="font-size:1.2em; margin:20px 0; color:#ffffff; text-shadow: 2px 2px 6px rgba(0,0,0,0.6);">{t['combo']}</h3>
+if st.session_state.result_shown:
+    mbti = st.session_state.mbti
+    zodiac = get_zodiac(st.session_state.year)
+    
+    if zodiac is None:
+        st.error("생년이 1900~2030년 사이가 아니에요. 다시 입력해주세요!")
+        if st.button(t["reset"], use_container_width=True):
+            st.session_state.clear()
+            st.rerun()
+    else:
+        saju = get_saju(st.session_state.year, st.session_state.month, st.session_state.day)
+        today = get_daily_fortune(zodiac, 0)
+        tomorrow = get_daily_fortune(zodiac, 1)
+        zodiac_emoji = Z[zodiac].split(' ', 1)[0]
+        zodiac_desc = Z[zodiac].split(' ', 1)[1] if ' ' in Z[zodiac] else Z[zodiac]
+        mbti_emoji = M[mbti].split(' ', 1)[0]
+        mbti_desc = M[mbti].split(' ', 1)[1] if ' ' in M[mbti] else M[mbti]
+        name_display = f"{st.session_state.name}님" if st.session_state.name else ""
+        overall = random.choice(t["overall_fortunes"])
+        combo_comment = random.choice(t["combo_comments"]).format(zodiac, mbti_desc)
+        lucky_color = random.choice(t["lucky_colors"])
+        lucky_item = random.choice(t["lucky_items"])
+        tip = random.choice(t["tips"])
 
-            <div style="background:rgba(255,255,255,0.92); border-radius:22px; padding:22px; margin:20px 15px; 
-                         backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-              <p style="font-size:1.15em; line-height:1.8; color:#000000;">
+        # 커스텀 CSS (그라데이션 배경 + 예쁜 카드)
+        st.markdown("""
+        <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
+            min-height: 100vh;
+            padding: 20px;
+            text-align: center;
+        }
+        .main-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 25px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 800px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+        .title-text {
+            font-size: 2.2em;
+            color: white;
+            text-shadow: 3px 3px 8px rgba(0,0,0,0.7);
+            margin: 20px 0;
+        }
+        .combo-text {
+            font-size: 1.8em;
+            color: white;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+        }
+        .content-text {
+            font-size: 1.2em;
+            line-height: 2;
+            color: #000;
+        }
+        .ad-card {
+            background: rgba(255,255,255,0.9);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 30px auto;
+            max-width: 700px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # 그라데이션 배경 컨테이너
+        st.markdown('<div class="gradient-bg">', unsafe_allow_html=True)
+
+        st.markdown(f"<h1 class='title-text'>⭐ {name_display} 2026년 운세 ⭐</h1>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='font-size:2.5em; color:white; text-shadow:3px 3px 8px rgba(0,0,0,0.7);'>"
+                    f"{zodiac_emoji} {zodiac} + {mbti_emoji} {mbti}</h2>", unsafe_allow_html=True)
+        st.markdown("<h3 class='combo-text'>최고 조합!</h3>", unsafe_allow_html=True)
+
+        with st.container():
+            st.markdown('<div class="main-card">', unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="content-text">
                 <b>{t['zodiac_title']}</b>: {zodiac_desc}<br>
                 <b>{t['mbti_title']}</b>: {mbti_desc}<br>
                 <b>{t['saju_title']}</b>: {saju}<br><br>
@@ -471,43 +536,42 @@ if st.session_state.result_shown:
                 <b>{t['combo_title']}</b>: {combo_comment}<br>
                 <b>{t['lucky_color_title']}</b>: {lucky_color} | <b>{t['lucky_item_title']}</b>: {lucky_item}<br>
                 <b>{t['tip_title']}</b>: {tip}
-              </p>
             </div>
+            """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
-            <div style="background:rgba(255,255,255,0.9); border-radius:20px; padding:18px; margin:20px 15px; 
-                         backdrop-filter: blur(12px); box-shadow: 0 8px 25px rgba(0,0,0,0.25);">
-              <small style="color:#e74c3c; font-weight:bold;">광고</small><br>
-              💧 <b style="font-size:1.1em;">정수기 렌탈 대박!</b><br>
-              제휴카드면 <b>월 0원부터</b>!<br>
-              설치 당일 <b>최대 50만원 지원</b> + 사은품 듬뿍 ✨<br>
-              <a href="https://www.다나눔렌탈.com" target="_blank" style="color:#3498db; text-decoration:underline; font-weight:bold; font-size:1.1em;">🔗 다나눔렌탈.com 바로가기</a>
-            </div>
-
-            <p style="font-size:0.9em; color:#ffffff; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); margin:20px 0;">
-              {app_url}
-            </p>
-          </div>
-        </div>
+        # 광고 카드
+        st.markdown('<div class="ad-card">', unsafe_allow_html=True)
+        st.markdown("""
+        <small style="color:#e74c3c; font-weight:bold;">광고</small><br>
+        💧 <b style="font-size:1.3em;">정수기 렌탈 대박!</b><br>
+        제휴카드면 <b>월 0원부터</b>!<br>
+        설치 당일 <b>최대 50만원 지원</b> + 사은품 듬뿍 ✨<br><br>
+        <a href="https://www.다나눔렌탈.com" target="_blank" 
+           style="color:#3498db; text-decoration:underline; font-weight:bold; font-size:1.2em;">
+           🔗 다나눔렌탈.com 바로가기</a>
         """, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        # 타로와 공유 버튼은 별도로 (이건 정상 작동함)
+        # 타로 버튼
         if st.button(t["tarot_btn"], use_container_width=True):
             tarot_card = random.choice(list(t["tarot_cards"].keys()))
             tarot_meaning = t["tarot_cards"][tarot_card]
             st.markdown(f"""
-            <div style="background:rgba(255,255,255,0.95); border-radius:22px; padding:25px; margin:20px 10px; 
-                         backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align:center;">
-              <h3 style="color:#9b59b6; font-size:1.3em;">{t['tarot_title']}</h3>
-              <h2 style="font-size:2em; color:#333;">{tarot_card}</h2>
-              <p style="font-size:1.2em; color:#000000; line-height:1.7;">{tarot_meaning}</p>
+            <div class="main-card">
+                <h3 style="color:#9b59b6; font-size:1.5em;">{t['tarot_title']}</h3>
+                <h2 style="font-size:2.2em; color:#333;">{tarot_card}</h2>
+                <p style="font-size:1.3em; line-height:1.8;">{tarot_meaning}</p>
             </div>
             """, unsafe_allow_html=True)
 
-        share_text = f"{name_display}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
-        share_component = f"""
-        <div style="text-align:center; margin:30px 0;">
-            <button style="background:#ffffff; color:#8e44ad; padding:15px 70px; border:none; border-radius:50px; 
-                         font-size:1.2em; font-weight:bold; box-shadow: 0 6px 20px rgba(142,68,173,0.4);">
+        # 공유 버튼 (작동 보장)
+        share_text = f"{name_display} 2026 운세\n{zodiac} + {mbti}\n오늘: {today}\n내일: {tomorrow}\n\n{app_url}"
+        st.markdown(f"""
+        <div style="text-align:center; margin:40px 0;">
+            <button onclick="shareResult()" style="background:#8e44ad; color:white; padding:18px 80px; 
+                     border:none; border-radius:50px; font-size:1.4em; font-weight:bold;
+                     box-shadow: 0 8px 25px rgba(142,68,173,0.5); cursor:pointer;">
               {t["share_btn"]}
             </button>
         </div>
@@ -516,13 +580,17 @@ if st.session_state.result_shown:
             if (navigator.share) {{
                 navigator.share({{title: '2026 운세', text: `{share_text}`, url: '{app_url}'}});
             }} else {{
-                navigator.clipboard.writeText(`{share_text}`).then(() => {{alert('복사됐어요! 친구에게 공유해주세요 😊');}});
+                navigator.clipboard.writeText(`{share_text}`);
+                alert('결과가 복사됐어요! 친구에게 공유해주세요 😊');
             }}
         }}
         </script>
-        """
-        st_html(share_component, height=100)
+        """, unsafe_allow_html=True)
 
-    if st.button(t["reset"], use_container_width=True):
-        st.session_state.clear()
-        st.rerun()
+        st.markdown(f"<p style='color:white; text-shadow:1px 1px 3px black; margin:30px 0;'>{app_url}</p>", unsafe_allow_html=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)  # gradient-bg 끝
+
+        if st.button(t["reset"], use_container_width=True):
+            st.session_state.clear()
+            st.rerun()
