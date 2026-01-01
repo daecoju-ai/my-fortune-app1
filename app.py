@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import random
 from streamlit.components.v1 import html as st_html
 
-# 다국어 사전
+# 다국어 사전 (한국어 + 영어)
 translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 + 오늘/내일 운세 🌟",
