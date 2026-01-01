@@ -6,6 +6,7 @@ import textwrap
 import base64
 from PIL import Image, ImageDraw, ImageFont
 import streamlit.components.v1 as components
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 # =========================
 # 기본 설정
@@ -159,57 +160,231 @@ def load_font(font_path: str, size: int):
 
 def make_share_image(title_lines, body_lines, footer_text=APP_URL):
     """
-    공유용 PNG (9:16)
-    ※ 레포에 NotoSansKR-Regular.ttf 업로드 필요(한글 깨짐 방지)
+def load_font(font_path: str, size: int):
+    try:
+        return ImageFont.truetype(font_path, size)
+    except:
+        return ImageFont.load_default()
+
+def _rounded(draw, xy, r, fill, outline=None, width=1):
+    draw.rounded_rectangle(xy, radius=r, fill=fill, outline=outline, width=width)
+
+def _shadow_card(base: Image.Image, xy, radius=34, shadow_offset=(0, 14), shadow_blur=18):
+    # 간단한 그림자(알파 레이어)
+    x1, y1, x2, y2 = xy
+    w, h = base.size
+    shadow = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(shadow)
+    sx1 = x1 + shadow_offset[0]
+    sy1 = y1 + shadow_offset[1]
+    sx2 = x2 + shadow_offset[0]
+    sy2 = y2 + shadow_offset[1]
+    sd.rounded_rectangle((sx1, sy1, sx2, sy2), radius=radius, fill=(0, 0, 0, 85))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(shadow_blur))
+    base.paste(shadow, (0, 0), shadow)
+
+def _wrap_lines(text, width_chars=26):
+    return textwrap.wrap(text, width=width_chars, break_long_words=False)
+
+def make_share_image(title_lines, body_lines, footer_text=APP_URL):
     """
-    W, H = 1080, 1920
-    bg = Image.new("RGB", (W, H), (239, 233, 255))
+    더 예쁜 공유용 PNG (9:16)
+    - 상단: 타이틀/서브타이틀
+    - 본문: 섹션 카드(오늘/내일/전체/조합/럭키/팁)
+    - 하단: 링크
+    """
+    from PIL import ImageFilter  # pillow 내장
+
+    W, H = 1080, 1920  # 9:16
+    # ---------- 배경 그라데이션 ----------
+    bg = Image.new("RGB", (W, H), (245, 240, 255))
+    px = bg.load()
+    top = (164, 140, 220)   # 보라
+    mid = (251, 194, 235)   # 핑크
+    bot = (142, 197, 252)   # 하늘
+    for y in range(H):
+        t = y / (H - 1)
+        if t < 0.5:
+            k = t / 0.5
+            r = int(top[0] * (1-k) + mid[0] * k)
+            g = int(top[1] * (1-k) + mid[1] * k)
+            b = int(top[2] * (1-k) + mid[2] * k)
+        else:
+            k = (t - 0.5) / 0.5
+            r = int(mid[0] * (1-k) + bot[0] * k)
+            g = int(mid[1] * (1-k) + bot[1] * k)
+            b = int(mid[2] * (1-k) + bot[2] * k)
+        for x in range(W):
+            px[x, y] = (r, g, b)
+
+    # 살짝 블러로 부드럽게
+    bg = bg.filter(ImageFilter.GaussianBlur(0.8))
+
+    # ---------- 폰트 ----------
+    font_path = "NotoSansKR-Regular.ttf"  # 레포 루트에 업로드 필수
+    title_f = load_font(font_path, 72)
+    sub_f   = load_font(font_path, 46)
+    badge_f = load_font(font_path, 34)
+    body_f  = load_font(font_path, 40)
+    small_f = load_font(font_path, 30)
+
     draw = ImageDraw.Draw(bg)
 
-    font_path = "NotoSansKR-Regular.ttf"  # ✅ 레포 루트(app.py 옆)에 업로드
+    # ---------- 상단 타이틀 ----------
+    # 타이틀(중앙)
+    y = 90
+    t1 = title_lines[0] if title_lines else "⭐ 2026년 운세 ⭐"
+    w1 = draw.textlength(t1, font=title_f)
+    draw.text(((W - w1) / 2, y), t1, fill=(255, 255, 255), font=title_f)
+    # 살짝 글로우 느낌(그림자)
+    draw.text(((W - w1) / 2 + 2, y + 2), t1, fill=(0, 0, 0, 55), font=title_f)
 
-    font_title = load_font(font_path, 64)
-    font_sub   = load_font(font_path, 44)
-    font_body  = load_font(font_path, 38)
-    font_footer= load_font(font_path, 28)
+    # 서브타이틀(중앙)
+    y += 95
+    t2 = title_lines[1] if len(title_lines) > 1 else ""
+    w2 = draw.textlength(t2, font=sub_f)
+    draw.text(((W - w2) / 2, y), t2, fill=(255, 255, 255), font=sub_f)
 
-    # 카드 영역
-    card_margin = 60
-    card = (card_margin, 250, W - card_margin, H - 340)
-    draw.rounded_rectangle(card, radius=40, fill=(255, 255, 255), outline=(190, 180, 230), width=3)
+    # “최고 조합!” 배지
+    y += 80
+    badge = title_lines[2] if len(title_lines) > 2 else "최고 조합!"
+    bw = draw.textlength(badge, font=badge_f)
+    pad_x, pad_y = 26, 14
+    bx1 = (W - (bw + pad_x*2)) / 2
+    by1 = y
+    bx2 = bx1 + bw + pad_x*2
+    by2 = y + 52
+    _rounded(draw, (bx1, by1, bx2, by2), r=26, fill=(255, 255, 255), outline=(255, 255, 255), width=1)
+    draw.text((bx1 + pad_x, by1 + 9), badge, fill=(88, 56, 163), font=badge_f)
 
-    # 제목
-    y = 80
-    for i, line in enumerate(title_lines[:3]):
-        f = font_title if i == 0 else font_sub
-        draw.text((card_margin, y), line, fill=(40, 40, 40), font=f)
-        y += 78 if i == 0 else 60
+    # ---------- 메인 카드 ----------
+    card_margin = 70
+    card_top = 330
+    card_bottom = H - 330
+    card_xy = (card_margin, card_top, W - card_margin, card_bottom)
 
-    # 본문
-    x = card[0] + 40
-    y = card[1] + 40
+    # 그림자 + 카드
+    # (그림자)
+    shadow = Image.new("RGBA", (W, H), (0,0,0,0))
+    sd = ImageDraw.Draw(shadow)
+    sd.rounded_rectangle(
+        (card_xy[0] + 6, card_xy[1] + 18, card_xy[2] + 6, card_xy[3] + 18),
+        radius=38,
+        fill=(0, 0, 0, 70)
+    )
+    shadow = shadow.filter(ImageFilter.GaussianBlur(18))
+    bg.paste(shadow, (0,0), shadow)
 
-    max_width_chars = 32
-    for line in body_lines:
-        if line.strip() == "":
-            y += 20
-            continue
+    # 카드 본체(약간 유리 느낌)
+    card = Image.new("RGBA", (W, H), (0,0,0,0))
+    cd = ImageDraw.Draw(card)
+    cd.rounded_rectangle(card_xy, radius=38, fill=(255,255,255,230), outline=(255,255,255,255), width=2)
+    # 상단 얇은 그라데이션 라인
+    cd.rounded_rectangle((card_xy[0], card_xy[1], card_xy[2], card_xy[1]+10), radius=38, fill=(150,120,220,160))
+    bg = Image.alpha_composite(bg.convert("RGBA"), card)
+    draw = ImageDraw.Draw(bg)
 
-        wrapped = textwrap.wrap(line, width=max_width_chars)
-        for wline in wrapped:
-            draw.text((x, y), wline, fill=(30, 30, 30), font=font_body)
-            y += 52
-        y += 8
+    # ---------- 본문: 섹션 분리 ----------
+    # body_lines는 우리가 만든 문장들: "✨ 띠 운세: ...", "💗 오늘 운세: ..." 등
+    # 예쁘게: 키 그룹별로 잘라서 넣기
+    def pick(prefix):
+        for line in body_lines:
+            if line.strip().startswith(prefix):
+                return line
+        return None
 
-        if y > card[3] - 120:
-            break
+    z1 = pick("✨") or ""
+    m1 = pick("🧠") or ""
+    s1 = pick("🍀") or ""
+    today = pick("💗") or ""
+    tom = pick("🌙") or ""
+    overall = pick("💝") or ""
+    combo = pick("💬") or ""
+    lucky = pick("🎨") or ""
+    tip = pick("✅") or ""
 
-    # 푸터
-    draw.text((card_margin, H - 250), footer_text, fill=(110, 110, 110), font=font_footer)
+    sections = [
+        ("기본", [z1, m1, s1]),
+        ("오늘 · 내일", [today, tom]),
+        ("2026 전체", [overall, combo]),
+        ("럭키", [lucky, tip]),
+    ]
 
-    buf = io.BytesIO()
-    bg.save(buf, format="PNG")
-    return buf.getvalue()
+    inner_x = card_xy[0] + 34
+    inner_y = card_xy[1] + 28
+    inner_w = card_xy[2] - card_xy[0] - 68
+
+    # 섹션 박스 스타일
+    box_gap = 18
+    box_radius = 26
+
+    def draw_section(title, lines, x, y, w):
+        # 박스 높이 계산(대략)
+        # 각 줄 래핑해서 줄 수 계산
+        content_lines = []
+        for ln in lines:
+            if not ln:
+                continue
+            content_lines += _wrap_lines(ln, width_chars=26)
+        h = 64 + len(content_lines) * 52 + 10
+
+        # 박스 배경
+        _rounded(draw, (x, y, x + w, y + h), r=box_radius, fill=(255, 255, 255, 200), outline=(210, 200, 235, 255), width=2)
+
+        # 섹션 타이틀 pill
+        pill_text = title
+        pw = draw.textlength(pill_text, font=small_f)
+        pill_x1 = x + 18
+        pill_y1 = y + 16
+        pill_x2 = pill_x1 + pw + 22
+        pill_y2 = pill_y1 + 42
+        _rounded(draw, (pill_x1, pill_y1, pill_x2, pill_y2), r=18, fill=(124, 58, 237, 230))
+        draw.text((pill_x1 + 11, pill_y1 + 7), pill_text, fill=(255, 255, 255), font=small_f)
+
+        # 콘텐츠 텍스트
+        ty = y + 66
+        for ln in lines:
+            if not ln:
+                continue
+            wrapped = _wrap_lines(ln, width_chars=26)
+            for wln in wrapped:
+                draw.text((x + 18, ty), wln, fill=(33, 33, 33), font=body_f)
+                ty += 52
+            ty += 6
+
+        return y + h
+
+    # 2열 레이아웃(모바일 공유이미지에서 가독성 좋음)
+    col_w = (inner_w - 18) // 2
+    left_x = inner_x
+    right_x = inner_x + col_w + 18
+
+    # 위쪽 2개는 2열
+    y1 = inner_y
+    y2 = inner_y
+
+    # 기본(왼쪽)
+    y1_end = draw_section(sections[0][0], sections[0][1], left_x, y1, col_w)
+    # 오늘내일(오른쪽)
+    y2_end = draw_section(sections[1][0], sections[1][1], right_x, y2, col_w)
+
+    # 아래쪽은 전체 폭 1열(긴 문장 대비)
+    y_next = max(y1_end, y2_end) + box_gap
+    full_w = inner_w
+
+    y_next = draw_section(sections[2][0], sections[2][1], inner_x, y_next, full_w) + box_gap
+    y_next = draw_section(sections[3][0], sections[3][1], inner_x, y_next, full_w)
+
+    # ---------- 하단 푸터 ----------
+    ft = footer_text
+    fw = draw.textlength(ft, font=small_f)
+    draw.text(((W - fw) / 2, H - 250), ft, fill=(255, 255, 255, 230), font=small_f)
+
+    # PNG 출력
+    out = io.BytesIO()
+    bg.convert("RGB").save(out, format="PNG")
+    return out.getvalue()
+
 
 # =========================
 # Streamlit 기본
