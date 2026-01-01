@@ -1,0 +1,163 @@
+{
+  "daily": {
+    "money": [
+      "Today, small savings beat big risks. Cut one unnecessary subscription.",
+      "Compare prices before buying — your ‘deal sense’ is strong today.",
+      "Keep money talk short and clear. Less words, less confusion.",
+      "Choose the option that leaves a record (receipt, transfer). It protects your flow.",
+      "A small restraint turns into a nice reward later. Save one coffee.",
+      "Refunds, settlements, and ‘money you forgot’ can come back today — check your list.",
+      "Go step-by-step instead of all-in. Gradual moves are safer now.",
+      "Value matters more than pure cheapness. Buy what lasts.",
+      "Money luck improves with structure. Write one line of spending.",
+      "Shared spending works only with clear rules. If unclear, skip it."
+    ],
+    "love": [
+      "Love luck starts with a smile. A light joke can melt tension.",
+      "One sincere sentence beats a long explanation. Send a warm compliment.",
+      "Good timing for messages. The text you’ve been hesitating to send may land well.",
+      "Match their pace. Don’t rush conclusions — clarity comes soon.",
+      "Today needs empathy first, solutions later. Listening is your power.",
+      "Social/intro luck is here. A casual meetup can open new doors.",
+      "Keep small promises. Especially time — punctuality boosts trust.",
+      "Avoid comparison. Use ‘we’ more than ‘me vs you’ today.",
+      "Honesty looks attractive — soften the tone, keep the truth.",
+      "Check your own feelings. It’s okay to move closer or to slow down."
+    ],
+    "health": [
+      "Neck and shoulders may tighten. Two minutes of stretching changes everything.",
+      "Sleep decides your luck today. Try going to bed 30 minutes earlier.",
+      "Drink more water. Hydration beats extra caffeine.",
+      "If you feel overworked, pause. Rest increases productivity.",
+      "A short walk clears your mind. 15 minutes is enough.",
+      "Craving sweets? Don’t quit completely — reduce the portion.",
+      "Temperature balance matters. Dress for indoor/outdoor changes.",
+      "Stress hits the body first. Drop your shoulders and breathe longer.",
+      "Consistency beats intensity. A 10-minute routine is a win.",
+      "Eye fatigue is likely. Give your eyes short breaks from the screen."
+    ],
+    "work": [
+      "Great day to finish and clean up tasks. Completion becomes visible results.",
+      "Use written notes and records. Documentation is your advantage.",
+      "Keep meetings short, decisions clear. Summarize in 3 lines.",
+      "New offers may appear — check conditions before saying yes.",
+      "Small mistakes can happen. Use a checklist to protect your outcome.",
+      "Collaboration luck is strong. Ask for help instead of struggling alone.",
+      "Reorder priorities: important + urgent first. Your speed will improve.",
+      "Recognition may come. Accept it and prepare your next step.",
+      "Decision fatigue may hit later. Do easier tasks in the afternoon.",
+      "Automation ideas arise. Reduce repetitive work with a small tool."
+    ],
+    "relationship": [
+      "Ask more questions than you speak. ‘What do you think?’ opens people.",
+      "Arriving 5 minutes early improves your impression today.",
+      "Clear small misunderstandings quickly. Delays make them bigger.",
+      "You may get requests. Set a clear boundary — it’s okay to say no.",
+      "Kindness returns. A small favor becomes a big help later.",
+      "Past connections may reach out. Breathe once before replying.",
+      "Family talks work best with summary + empathy, not long persuasion.",
+      "You’ll notice someone’s strength today. A compliment softens everything.",
+      "Don’t solve everything for them. Help them organize instead.",
+      "Doing things together flows better than going solo today."
+    ],
+    "study": [
+      "Focus is all about the first 5 minutes. Start and the flow follows.",
+      "Understanding beats memorizing today. Draw a simple concept map.",
+      "Reduce distractions, not just add hours. Clean environment = better results.",
+      "Ask questions openly. Question luck is good today.",
+      "Small goals (one chapter, 10 pages) lead to big progress.",
+      "Connections between subjects become clearer. Group similar concepts.",
+      "Review is highly efficient now. Revisit before adding new material.",
+      "Change your location to reset focus. Library/cafe can help.",
+      "Make a one-page summary. It boosts recall.",
+      "Study is physical too. Water + snack + short breaks improve performance."
+    ],
+    "travel": [
+      "A short outing is the best refresh. Near places feel better than far ones.",
+      "Navigation luck is good. Trying a new route should be fine.",
+      "Great day for photos and memories. Choose a scenic spot.",
+      "Leave breathing room in plans. Flexibility prevents stress.",
+      "The best part is the conversation, not the destination.",
+      "Food luck is strong — but if the line is too long, switch quickly.",
+      "Add a 10-minute buffer. That small margin becomes luck.",
+      "A small item (umbrella, power bank) saves your day.",
+      "Unexpected changes won’t hurt. Fast response turns it into a fun story.",
+      "Backups matter: photo backup or receipt整理 gives a perfect finish."
+    ],
+    "mindset": [
+      "Today, ‘done’ beats ‘perfect’. Completion lifts your momentum.",
+      "Anxiety often comes from missing info. Check what matters and relax.",
+      "Too many options drain you. Pick one 기준 and it gets easier.",
+      "Start with what you can control. Small control creates stability.",
+      "You don’t have to do it alone. Receiving help is also skill.",
+      "Write feelings down. Words on paper create clarity.",
+      "Cleaning is healing today. Tidy one area: desk, room, or mind.",
+      "Less negative talk, one more action — energy shifts fast.",
+      "Celebrate small wins. Celebration pulls the next win.",
+      "Compare with yesterday’s you, not someone else."
+    ]
+  },
+  "yearly": {
+    "general": [
+      "Build foundations in the first half; bigger results arrive in the second half.",
+      "People luck is strong — introductions and teamwork open doors.",
+      "New routines attract good flow. Small habits create big change.",
+      "Small improvements done often beat one dramatic change.",
+      "When opportunities come, preparation makes them bigger."
+    ],
+    "career": [
+      "Your expertise shines this year. Go deep on one core skill.",
+      "Work methods may shift. Tools and automation amplify results.",
+      "Project luck is good — finishing matters more than starting.",
+      "Responsibility can increase, but so does growth. Define your scope.",
+      "Show outcomes with numbers. Tracking becomes your weapon."
+    ],
+    "money": [
+      "Money is about flow. Fix the leaks before chasing more income.",
+      "Adjusting fixed costs creates real breathing room.",
+      "Investing in learning pays long-term more than risky bets.",
+      "Small income streams can grow — side projects and partnerships help.",
+      "A simpler financial system invites better opportunities."
+    ],
+    "love": [
+      "Trust beats speed. Keep small promises and the bond deepens.",
+      "New connections come naturally — friends-of-friends are favored.",
+      "Clear misunderstandings early. Delays stack emotions.",
+      "Say what you need. Clarity helps both sides align.",
+      "Love grows in daily routines. Shared meals become strength."
+    ]
+  },
+  "combo": {
+    "zodiac_mbti": [
+      "If you align {zodiac}'s rhythm with {mbti_desc} strengths, you’ll spot opportunities faster.",
+      "{mbti} works best this year by riding {zodiac}'s timing — consistency turns into results.",
+      "{zodiac}'s advantages + {mbti_desc}'s strengths open strong people luck.",
+      "This year, {mbti_desc} learns ‘smart pacing’ from {zodiac}'s flow.",
+      "{zodiac}'s drive and {mbti_desc}'s judgment make decisions quicker.",
+      "For {mbti}, the winning formula is ‘organize → execute’; {zodiac} supports it.",
+      "{zodiac}'s change energy is stabilized by {mbti_desc} — a solid combo.",
+      "{mbti_desc} is strong in relationships; with {zodiac}, introductions become easier.",
+      "Start small and iterate fast — {zodiac}+{mbti_desc} fits that strategy well.",
+      "{zodiac}'s sense and {mbti_desc}'s direction can boost money and work together."
+    ]
+  },
+  "lucky": {
+    "colors": ["Gold", "Red", "Blue", "Green", "Purple", "Off-white", "Silver", "Mint", "Navy", "Pink"],
+    "items": [
+      "Small notebook", "Card wallet", "Mini perfume", "Power bank", "Keychain",
+      "Tumbler", "Wristwatch", "Wireless earbuds", "Umbrella", "Lip balm"
+    ],
+    "tips": [
+      "Finishing one thing is enough today. Completion lifts your flow.",
+      "Keep messages short — one clean line prevents misunderstandings.",
+      "Greet first. A simple hello attracts people luck.",
+      "Do 10 minutes of cleanup. The effect will be bigger than you expect.",
+      "Drop one unnecessary plan to recover your energy.",
+      "When your mood shakes: water + three deep breaths.",
+      "Tracking is luck today. Write it down and it improves.",
+      "When choosing, pick what makes tomorrow-you easier.",
+      "Give one small compliment. Relationship energy softens fast.",
+      "Write one gratitude line at night to stabilize your mind."
+    ]
+  }
+}
