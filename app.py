@@ -1,10 +1,9 @@
 import streamlit as st
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import random
 import json
 from pathlib import Path
 import streamlit.components.v1 as components
-
 
 # =========================================
 # 0) Language options
@@ -15,7 +14,7 @@ LANG_OPTIONS = {
     "hi": "हिन्दी",
     "zh": "中文(简体)",
     "ru": "Русский",
-    "ja": "日本語"
+    "ja": "日本語",
 }
 LANG_KEYS = list(LANG_OPTIONS.keys())
 
@@ -53,9 +52,15 @@ UI = {
         "sec_tf": "3) 판단(T/F)",
         "sec_jp": "4) 생활(J/P)",
         "share_title": "2026년 운세",
-        "share_fail_copy": "공유 기능이 지원되지 않아 텍스트를 복사했어요!\n카톡에 붙여넣기 해주세요.",
+        "share_fail_copy": "공유가 지원되지 않아 텍스트를 복사했어요!\n카톡에 붙여넣기 해주세요.",
         "share_manual_prompt": "아래 내용을 복사해서 카톡에 붙여넣기 해주세요:",
         "share_cancel": "공유가 취소되었거나 지원되지 않아요.\n복사 후 붙여넣기 해주세요.",
+        "db_tools_title": "📦 운세 DB 다운로드/업로드(추천)",
+        "db_tools_desc": "아래에서 이 언어의 운세 DB(JSON)를 다운로드해서 GitHub에 올리면, 앱이 DB를 읽어 더 다양하게 보여줘요.",
+        "download_db_btn": "이 언어 DB(JSON) 다운로드",
+        "db_path_hint": "다운받은 파일을 GitHub에 data/fortunes_{lang}.json 으로 업로드하세요.",
+        "db_status_external": "✅ 외부 DB 사용 중 (data 폴더 JSON 읽음)",
+        "db_status_generated": "⚠️ 외부 DB 파일이 없어서 자동 생성 DB로 동작 중",
     },
     "en": {
         "title": "⭐ 2026 Fortune ⭐",
@@ -93,6 +98,12 @@ UI = {
         "share_fail_copy": "Sharing isn't supported here, so the text was copied.\nPaste it in KakaoTalk or message.",
         "share_manual_prompt": "Copy and paste this text to share:",
         "share_cancel": "Sharing was canceled or not supported.\nPlease copy & paste.",
+        "db_tools_title": "📦 Fortune DB download/upload (recommended)",
+        "db_tools_desc": "Download DB(JSON) for this language and upload it to GitHub so the app can read it.",
+        "download_db_btn": "Download DB(JSON) for this language",
+        "db_path_hint": "Upload as data/fortunes_{lang}.json",
+        "db_status_external": "✅ External DB loaded (from data/ JSON)",
+        "db_status_generated": "⚠️ No external DB file, using generated DB",
     },
     "hi": {
         "title": "⭐ 2026 भाग्य ⭐",
@@ -130,6 +141,12 @@ UI = {
         "share_fail_copy": "Sharing is not supported here, so the text was copied.\nPlease paste it in your messenger.",
         "share_manual_prompt": "Copy and paste this text:",
         "share_cancel": "Sharing canceled or not supported.\nPlease copy & paste.",
+        "db_tools_title": "📦 DB डाउनलोड/अपलोड",
+        "db_tools_desc": "इस भाषा का DB(JSON) डाउनलोड करें और GitHub में अपलोड करें।",
+        "download_db_btn": "इस भाषा का DB(JSON) डाउनलोड",
+        "db_path_hint": "GitHub: data/fortunes_{lang}.json",
+        "db_status_external": "✅ External DB loaded",
+        "db_status_generated": "⚠️ Generated DB in use",
     },
     "zh": {
         "title": "⭐ 2026 运势 ⭐",
@@ -167,6 +184,12 @@ UI = {
         "share_fail_copy": "当前环境不支持分享，已复制文本。\n请粘贴到聊天软件发送。",
         "share_manual_prompt": "复制并粘贴以下内容：",
         "share_cancel": "分享取消或不支持。\n请复制并粘贴。",
+        "db_tools_title": "📦 生成/下载 DB",
+        "db_tools_desc": "下载该语言 DB(JSON) 并上传到 GitHub。",
+        "download_db_btn": "下载该语言 DB(JSON)",
+        "db_path_hint": "GitHub：data/fortunes_{lang}.json",
+        "db_status_external": "✅ 已加载外部 DB",
+        "db_status_generated": "⚠️ 未找到外部 DB，使用自动生成 DB",
     },
     "ru": {
         "title": "⭐ 2026 Удача ⭐",
@@ -204,6 +227,12 @@ UI = {
         "share_fail_copy": "Sharing isn't supported here, so the text was copied.\nPlease paste it in messenger.",
         "share_manual_prompt": "Copy and paste this text:",
         "share_cancel": "Sharing canceled or not supported.\nPlease copy & paste.",
+        "db_tools_title": "📦 Скачать/загрузить DB",
+        "db_tools_desc": "Скачайте DB(JSON) и загрузите в GitHub.",
+        "download_db_btn": "Скачать DB(JSON) для языка",
+        "db_path_hint": "GitHub: data/fortunes_{lang}.json",
+        "db_status_external": "✅ External DB loaded",
+        "db_status_generated": "⚠️ Generated DB in use",
     },
     "ja": {
         "title": "⭐ 2026 運勢 ⭐",
@@ -238,16 +267,20 @@ UI = {
         "sec_tf": "3) Decision (T/F)",
         "sec_jp": "4) Lifestyle (J/P)",
         "share_title": "2026運勢",
-        "share_fail_copy": "共有が使えないためテキストをコピーしました。\nメッセンジャーに貼り付けてください。",
+        "share_fail_copy": "共有が使えないためテキストをコピーしました。\n貼り付けて送ってください。",
         "share_manual_prompt": "以下をコピーして貼り付けてください：",
         "share_cancel": "共有がキャンセル/非対応です。\nコピーして貼り付けてください。",
+        "db_tools_title": "📦 DBダウンロード/アップ",
+        "db_tools_desc": "DB(JSON)をダウンロードしてGitHubにアップできます。",
+        "download_db_btn": "この言語のDB(JSON)をダウンロード",
+        "db_path_hint": "GitHub: data/fortunes_{lang}.json",
+        "db_status_external": "✅ External DB loaded",
+        "db_status_generated": "⚠️ Generated DB in use",
     }
 }
 
-
 # =========================================
 # 1) 12-question MBTI test (PER LANGUAGE)
-#    ✅ This is the 핵심: language별 질문/선택지
 # =========================================
 TEST_Q = {
     "ko": {
@@ -384,9 +417,8 @@ TEST_Q = {
     }
 }
 
-
 # =========================================
-# 2) Other data
+# 2) Zodiac / MBTI / Saju / Tarot
 # =========================================
 ZODIAC_LIST = {
     "ko": ["쥐띠","소띠","호랑이띠","토끼띠","용띠","뱀띠","말띠","양띠","원숭이띠","닭띠","개띠","돼지띠"],
@@ -457,9 +489,299 @@ TAROT_CARDS = {
     "The World": {"ko":"세계 - 완성, 성취","en":"Completion, achievement","hi":"Completion, achievement","zh":"完成与成就","ru":"Completion, achievement","ja":"完成・達成"}
 }
 
+# =========================================
+# 3) Fortune DB generator (big + 192 combo)
+# =========================================
+CATEGORIES = ["money", "love", "health", "work", "relationship", "study", "mindset"]
+
+def _uniq_keep_order(items):
+    seen = set()
+    out = []
+    for x in items:
+        if x not in seen:
+            out.append(x)
+            seen.add(x)
+    return out
+
+def build_generated_db(lang: str):
+    # --------- per language phrase parts
+    if lang == "ko":
+        openers = ["오늘은", "지금은", "이번엔", "특히", "의외로", "가볍게"]
+        actions = [
+            "한 번만 정리해도", "조금만 줄여도", "딱 한 번 확인하면", "작게 시작해도",
+            "부담 없이 움직이면", "핵심만 잡으면", "시간을 10분만 써도"
+        ]
+        effects = [
+            "운이 확 올라가요.", "흐름이 좋아져요.", "손해를 줄일 수 있어요.", "기회가 붙어요.",
+            "마음이 가벼워져요.", "성과로 이어져요.", "좋은 소식이 따라옵니다."
+        ]
+        tips = [
+            "완벽보다 완료!", "오늘 할 일 1개만 끝내기", "지출/구독 한 번 정리",
+            "물 1컵 더 마시기", "스트레칭 1분", "연락은 짧고 따뜻하게",
+            "메모로 생각 정리", "10분 산책", "파일/사진 정리", "감사 1줄"
+        ]
+        yearly = [
+            "2026년은 ‘정리 후 확장’의 흐름이 강합니다.",
+            "상반기엔 기반을 다지고, 하반기에 성과가 커져요.",
+            "인맥과 기회가 연결되는 해입니다.",
+            "하나를 꾸준히 밀면 결과가 확실히 나옵니다.",
+            "돈은 ‘새는 구멍’을 막는 순간 늘어납니다.",
+            "결정은 빠르게, 실행은 꾸준히!"
+        ]
+        luck_colors = ["골드","레드","블루","그린","퍼플","네이비","민트","핑크","오프화이트","실버","오렌지","버건디"]
+        luck_items = ["작은 노트","카드지갑","미니 향수","보조배터리","우산","텀블러","이어폰","손세정제","키링","손거울","볼펜","파우치"]
+
+        # category base advice (more natural variety)
+        cat_base = {
+            "money": ["지출을 점검", "구독을 정리", "가격을 비교", "충동구매를 피하기", "정산/환불 확인", "예산을 메모"],
+            "love": ["먼저 연락하기", "칭찬 한 마디", "오해 풀기", "말투를 부드럽게", "약속 지키기", "질문 하나 던지기"],
+            "health": ["수면을 보강", "목/어깨 스트레칭", "물 한 컵", "가벼운 산책", "카페인 줄이기", "심호흡"],
+            "work": ["우선순위를 1개로", "기록을 남기기", "검수 체크", "짧은 회의", "요청을 구체적으로", "마감 정리"],
+            "relationship": ["먼저 인사", "경계 정하기", "요약+공감", "부탁은 간단히", "비교 줄이기", "시간 지키기"],
+            "study": ["시작 5분", "한 장 요약", "개념도 그리기", "방해 요소 제거", "복습 1번", "장소 바꾸기"],
+            "mindset": ["정리하기", "작은 성공 쌓기", "통제 가능한 것에 집중", "감사 한 줄", "도움 요청", "급할수록 천천히"]
+        }
+
+        # MBTI “tone” words by letters (for combo)
+        mbti_strength = {
+            "E": ["확장력", "추진력", "네트워킹"],
+            "I": ["집중력", "깊이", "자기정리"],
+            "S": ["현실감", "디테일", "실행력"],
+            "N": ["통찰", "상상력", "큰 그림"],
+            "T": ["논리", "결정력", "문제해결"],
+            "F": ["공감", "배려", "관계감각"],
+            "J": ["계획성", "완성도", "정리력"],
+            "P": ["유연함", "적응력", "순발력"]
+        }
+
+        def mbti_profile(mbti: str):
+            parts = []
+            for ch in mbti:
+                parts.append(random.choice(mbti_strength.get(ch, [])))
+            # safe uniq
+            return _uniq_keep_order([p for p in parts if p])
+
+        def combo_sentence(zodiac, mbti, mbti_desc):
+            prof = mbti_profile(mbti)
+            # deterministic-ish variety inside generator (later seeded when picking)
+            patterns = [
+                f"{zodiac}의 흐름에 {mbti_desc}의 {prof[0]}이(가) 붙어 ‘정리→실행’이 대박이에요.",
+                f"{zodiac} 운이 들어올 때 {mbti}의 {prof[1] if len(prof)>1 else prof[0]}으로 ‘선택과 집중’하면 성과가 커져요.",
+                f"{zodiac}의 기회운을 {mbti_desc}의 {prof[2] if len(prof)>2 else prof[0]}이(가) 현실 성과로 바꿔줘요.",
+                f"올해 {zodiac}는 {mbti}처럼 ‘속도보다 방향’으로 가면 운이 붙습니다.",
+                f"{zodiac} + {mbti_desc}: 작은 루틴을 만들면 큰 복으로 돌아오는 조합!"
+            ]
+            return patterns
+
+    else:
+        # For non-KO languages, generate in that language if possible, otherwise simple English-like but still varied
+        # (You can later replace with fully native DB by downloading JSON and editing.)
+        if lang == "zh":
+            openers = ["今天", "现在", "这次", "尤其", "意外地", "轻松地"]
+            actions = ["只要整理一次", "稍微减少一点", "确认一次", "从小开始", "保持轻松节奏", "抓住关键点", "花10分钟"]
+            effects = ["运势会更顺。", "节奏会更好。", "能减少损失。", "机会会靠近。", "心会更轻。", "更容易出成果。", "好消息会跟来。"]
+            tips = ["完成比完美重要", "只完成一件重要的事", "整理一次开支/订阅", "多喝一杯水", "拉伸1分钟", "发一条温暖信息",
+                    "用备忘录整理思路", "散步10分钟", "整理照片/文件", "写一行感谢"]
+            yearly = ["2026年适合先整理，再扩张。", "上半年打基础，下半年收获更大。", "人脉会带来机会。", "持续会产生结果。", "堵住漏财点，钱就会变多。", "快速决定、稳步执行。"]
+            luck_colors = ["金","红","蓝","绿","紫","藏青","薄荷","粉","米白","银","橙","酒红"]
+            luck_items = ["小本子","卡包","香水","充电宝","雨伞","水杯","耳机","免洗洗手液","钥匙扣","小镜子","笔","收纳袋"]
+            cat_base = {
+                "money": ["核对支出", "整理订阅", "比价", "避免冲动消费", "确认结算/退款", "记一笔预算"],
+                "love": ["先发消息", "给出夸奖", "解开误会", "语气更柔和", "守住小承诺", "问一个好问题"],
+                "health": ["补充睡眠", "肩颈拉伸", "多喝水", "短暂散步", "减少咖啡因", "深呼吸"],
+                "work": ["只定一个优先级", "留下记录", "多检查一次", "短会更省时", "需求说具体", "整理截止事项"],
+                "relationship": ["先打招呼", "设定边界", "总结+共情", "请求简单具体", "少比较", "守时"],
+                "study": ["开始5分钟", "一页总结", "画概念图", "去掉干扰", "复习一次", "换个地方"],
+                "mindset": ["整理一下", "堆小胜利", "专注可控", "写感谢", "寻求帮助", "慢下来"]
+            }
+            mbti_strength = {
+                "E": ["拓展力","推动力","社交资源"],
+                "I": ["专注","深度","自我整理"],
+                "S": ["务实","细节","执行力"],
+                "N": ["洞察","想象","大局观"],
+                "T": ["逻辑","决断","解决问题"],
+                "F": ["共情","体贴","关系感"],
+                "J": ["规划","完成度","整理力"],
+                "P": ["灵活","适应","反应快"]
+            }
+            def mbti_profile(mbti: str):
+                parts = []
+                for ch in mbti:
+                    parts.append(random.choice(mbti_strength.get(ch, [])))
+                return _uniq_keep_order([p for p in parts if p])
+
+            def combo_sentence(zodiac, mbti, mbti_desc):
+                prof = mbti_profile(mbti)
+                patterns = [
+                    f"{zodiac}的机会配上{mbti_desc}的「{prof[0]}」，更容易把好运变成成果。",
+                    f"当{zodiac}运势上升时，用{mbti}的「{prof[1] if len(prof)>1 else prof[0]}」做选择与聚焦。",
+                    f"{mbti_desc}的「{prof[2] if len(prof)>2 else prof[0]}」会帮你把{zodiac}的流转化为现实进展。",
+                    f"{zodiac}+{mbti_desc}：比速度更重要的是方向，稳步更旺。",
+                    f"{zodiac}+{mbti_desc}：建立小习惯，会收获大回报。"
+                ]
+                return patterns
+
+        elif lang == "ja":
+            openers = ["今日は", "今は", "今回は", "特に", "意外と", "気楽に"]
+            actions = ["一度整理するだけで", "少し減らすだけで", "一回確認すれば", "小さく始めても", "力を抜いて動けば", "要点だけ押さえれば", "10分使うだけで"]
+            effects = ["運が上向きます。", "流れが良くなります。", "損を減らせます。", "チャンスが寄ってきます。", "心が軽くなります。", "成果につながりやすい。", "良い知らせが来ます。"]
+            tips = ["完璧より完了", "大事なことを1つ終える", "支出/サブスクを1回整理", "水を1杯多く", "ストレッチ1分", "短く温かい連絡",
+                    "メモで整理", "10分散歩", "写真/ファイル整理", "感謝を一行"]
+            yearly = ["2026年は『整える→広げる』が強い年。", "上半期は基盤、下半期は成果。", "つながりが機会を呼ぶ。", "継続が結果になる。", "漏れを止めると金運が上がる。", "決断は早く、実行は着実に。"]
+            luck_colors = ["Gold","Red","Blue","Green","Purple","Navy","Mint","Pink","Off-white","Silver","Orange","Burgundy"]
+            luck_items = ["小さなノート","カード財布","ミニ香水","モバイルバッテリー","傘","タンブラー","イヤホン","除菌ジェル","キーホルダー","手鏡","ペン","ポーチ"]
+            cat_base = {
+                "money": ["支出を見直す", "サブスク整理", "価格比較", "衝動買いを避ける", "精算/返金確認", "簡単に予算メモ"],
+                "love": ["先に連絡する", "褒め言葉", "誤解を解く", "言い方を柔らかく", "小さな約束を守る", "良い質問をする"],
+                "health": ["睡眠を増やす", "肩首ストレッチ", "水を飲む", "短い散歩", "カフェイン控えめ", "深呼吸"],
+                "work": ["優先順位を1つ", "記録を残す", "確認を増やす", "短い会議", "依頼を具体的に", "締切整理"],
+                "relationship": ["先に挨拶", "境界線", "要約+共感", "お願いはシンプルに", "比較を減らす", "時間を守る"],
+                "study": ["5分だけ始める", "1枚要約", "概念マップ", "邪魔を消す", "復習1回", "場所を変える"],
+                "mindset": ["整理する", "小さな成功", "可控に集中", "感謝を一行", "助けを求める", "急がば回れ"]
+            }
+            mbti_strength = {
+                "E": ["拡張力","推進力","交流"],
+                "I": ["集中","深さ","自己整理"],
+                "S": ["現実感","細部","実行"],
+                "N": ["洞察","発想","全体像"],
+                "T": ["論理","決断","解決力"],
+                "F": ["共感","配慮","関係感"],
+                "J": ["計画","整理","完了力"],
+                "P": ["柔軟","適応","瞬発"]
+            }
+            def mbti_profile(mbti: str):
+                parts = []
+                for ch in mbti:
+                    parts.append(random.choice(mbti_strength.get(ch, [])))
+                return _uniq_keep_order([p for p in parts if p])
+
+            def combo_sentence(zodiac, mbti, mbti_desc):
+                prof = mbti_profile(mbti)
+                patterns = [
+                    f"{zodiac}の流れに{mbti_desc}の「{prof[0]}」が乗ると、成果に繋がりやすいです。",
+                    f"{zodiac}運が来たら、{mbti}の「{prof[1] if len(prof)>1 else prof[0]}」で選択と集中。",
+                    f"{mbti_desc}の「{prof[2] if len(prof)>2 else prof[0]}」が{zodiac}の運を現実化します。",
+                    f"{zodiac}+{mbti_desc}：速度より方向、着実が吉。",
+                    f"{zodiac}+{mbti_desc}：小さな習慣が大きな運を呼びます。"
+                ]
+                return patterns
+
+        else:
+            # en/hi/ru -> English-ish templates (hi/ru can be replaced via DB later)
+            openers = ["Today", "Right now", "This time", "Especially", "Surprisingly", "Gently"]
+            actions = ["a quick cleanup", "a small reduction", "one extra check", "starting small", "moving lightly", "focusing on the key", "spending 10 minutes"]
+            effects = ["boosts your luck.", "improves your flow.", "reduces losses.", "pulls opportunities closer.", "makes your mind lighter.", "turns into results.", "brings good news."]
+            tips = ["Done over perfect", "Finish one important task", "Clean up one expense/subscription", "Drink one more glass of water",
+                    "Stretch for one minute", "Send a short warm message", "Write a quick memo", "Walk for 10 minutes", "Organize photos/files", "Write one gratitude line"]
+            yearly = [
+                "2026 favors ‘organize first, expand next’.",
+                "Build foundations early; results grow later.",
+                "Connections create opportunities this year.",
+                "Consistency brings clear outcomes.",
+                "Stop money leaks and wealth grows.",
+                "Decide fast, execute steadily."
+            ]
+            luck_colors = ["Gold","Red","Blue","Green","Purple","Navy","Mint","Pink","Off-white","Silver","Orange","Burgundy"]
+            luck_items = ["Small notebook","Card wallet","Mini perfume","Power bank","Umbrella","Tumbler","Earbuds","Sanitizer","Keychain","Hand mirror","Pen","Pouch"]
+            cat_base = {
+                "money": ["checking expenses", "cleaning subscriptions", "comparing prices", "avoiding impulse buys", "reviewing refunds", "writing a tiny budget note"],
+                "love": ["sending the first message", "giving a small compliment", "clearing a misunderstanding", "softening your tone", "keeping a small promise", "asking one good question"],
+                "health": ["sleeping a bit more", "neck/shoulder stretch", "one extra glass of water", "a short walk", "less caffeine", "deep breathing"],
+                "work": ["choosing one priority", "leaving a note/record", "one extra review", "a short meeting", "making requests specific", "closing deadlines"],
+                "relationship": ["saying hello first", "setting boundaries", "summarizing with empathy", "keeping requests simple", "less comparing", "being on time"],
+                "study": ["starting for 5 minutes", "one-page summary", "concept map", "removing distractions", "one review session", "changing your place"],
+                "mindset": ["organizing your space", "stacking small wins", "focusing on control", "writing gratitude", "asking for support", "slowing down"]
+            }
+            mbti_strength = {
+                "E": ["reach", "drive", "networking"],
+                "I": ["focus", "depth", "self-order"],
+                "S": ["practicality", "details", "execution"],
+                "N": ["insight", "imagination", "big-picture"],
+                "T": ["logic", "decisiveness", "problem-solving"],
+                "F": ["empathy", "care", "people-sense"],
+                "J": ["planning", "organization", "completion"],
+                "P": ["flexibility", "adaptation", "quick-response"]
+            }
+            def mbti_profile(mbti: str):
+                parts = []
+                for ch in mbti:
+                    parts.append(random.choice(mbti_strength.get(ch, [])))
+                return _uniq_keep_order([p for p in parts if p])
+
+            def combo_sentence(zodiac, mbti, mbti_desc):
+                prof = mbti_profile(mbti)
+                patterns = [
+                    f"{zodiac} energy + {mbti_desc}'s {prof[0]} makes ‘plan → execute’ very strong.",
+                    f"When {zodiac} luck rises, use {mbti}'s {prof[1] if len(prof)>1 else prof[0]} for focus and gains.",
+                    f"{mbti_desc}'s {prof[2] if len(prof)>2 else prof[0]} turns {zodiac} luck into real progress.",
+                    f"{zodiac} + {mbti_desc}: direction beats speed—steady wins.",
+                    f"{zodiac} + {mbti_desc}: small routines bring big returns."
+                ]
+                return patterns
+
+    # --------- build big daily messages (80~200 per category)
+    rng = random.Random(12345)  # stable generation base (not user result)
+    daily = {}
+    for cat in CATEGORIES:
+        base_list = cat_base.get(cat, [])
+        msgs = []
+        for b in base_list:
+            for o in openers:
+                for a in actions:
+                    for e in effects:
+                        # Example: "오늘은 지출을 점검, 한 번만 정리해도 운이 확 올라가요."
+                        if lang == "ko":
+                            msgs.append(f"{o} {b} {a} {e}")
+                        elif lang == "zh":
+                            msgs.append(f"{o}{b}，{a}{e}")
+                        elif lang == "ja":
+                            msgs.append(f"{o}{b}、{a}{e}")
+                        else:
+                            msgs.append(f"{o}, {b} + {a} {e}")
+        # shuffle & cut to keep size reasonable
+        rng.shuffle(msgs)
+        msgs = _uniq_keep_order(msgs)
+        # ensure at least 120 per category if possible
+        daily[cat] = msgs[:160] if len(msgs) > 160 else msgs
+
+    # --------- build 192 combo matrix
+    zlist = ZODIAC_LIST.get(lang, ZODIAC_LIST["en"])
+    mkeys = sorted(MBTIS.get(lang, MBTIS["en"]).keys())
+    combo_matrix = {}
+    for z in zlist:
+        combo_matrix[z] = {}
+        for mbti in mkeys:
+            mbti_desc = MBTIS.get(lang, MBTIS["en"]).get(mbti, mbti)
+            combo_matrix[z][mbti] = combo_sentence(z, mbti, mbti_desc)
+
+    # --------- lucky pool + yearly
+    db = {
+        "daily": daily,
+        "yearly": {"general": _uniq_keep_order(yearly)},
+        "combo": {
+            # fallback list format (kept for compatibility)
+            "zodiac_mbti": [
+                # generic fallback patterns
+                "{zodiac} + {mbti_desc}: small routines bring big returns.",
+                "{zodiac} luck rises when {mbti_desc} focuses on one priority.",
+                "{zodiac} energy becomes results through {mbti_desc}'s execution.",
+                "{zodiac} + {mbti_desc}: direction beats speed.",
+                "{zodiac} + {mbti_desc}: plan → execute is your advantage."
+            ]
+        },
+        "combo_matrix": combo_matrix,
+        "lucky": {
+            "colors": _uniq_keep_order(luck_colors),
+            "items": _uniq_keep_order(luck_items),
+            "tips": _uniq_keep_order(tips)
+        }
+    }
+    return db
 
 # =========================================
-# 3) Fortune DB load (optional)
+# 4) DB load priority:
+#    1) data/fortunes_{lang}.json (if exists)
+#    2) build_generated_db(lang)
 # =========================================
 def _safe_read_json(fp: Path):
     try:
@@ -468,69 +790,26 @@ def _safe_read_json(fp: Path):
     except Exception:
         return None
 
+def _validate_db(db: dict):
+    if not isinstance(db, dict):
+        return False
+    if "daily" not in db or "lucky" not in db:
+        return False
+    if not isinstance(db.get("daily"), dict):
+        return False
+    return True
+
 @st.cache_data
 def load_fortune_db(lang: str):
     fp = Path(__file__).parent / "data" / f"fortunes_{lang}.json"
     if fp.exists():
         db = _safe_read_json(fp)
-        if isinstance(db, dict) and "daily" in db:
+        if _validate_db(db):
             return db, True
-    return generate_big_db(lang), False
-
-def generate_big_db(lang: str):
-    # 기본은 간단 템플릿(나중에 언어별 DB 파일로 교체 권장)
-    rng = random.Random(20260101 + len(lang))
-    daily_pool = [
-        "Today is a good day to organize your plans.",
-        "Small kindness brings big luck.",
-        "Focus on one thing and finish it.",
-        "Rest is also productivity.",
-        "A message you send first can change the flow.",
-        "Avoid impulsive spending today.",
-        "Take a short walk to refresh your mind.",
-        "Your consistency will be rewarded."
-    ]
-    daily = {
-        "money": daily_pool[:],
-        "love": daily_pool[:],
-        "health": daily_pool[:],
-        "work": daily_pool[:],
-        "relationship": daily_pool[:],
-        "study": daily_pool[:],
-        "travel": daily_pool[:],
-        "mindset": daily_pool[:]
-    }
-    yearly = {"general": daily_pool[:]}
-
-    combo = {"zodiac_mbti": ["{zodiac} + {mbti_desc}: Today, try 'plan → execute' in one shot!"] * 40}
-    lucky = {
-        "colors": ["Gold", "Red", "Blue", "Green", "Purple"],
-        "items": ["Notebook", "Card wallet", "Perfume", "Power bank", "Umbrella"],
-        "tips": daily_pool[:]
-    }
-    # 한국어만 살짝 자연스럽게
-    if lang == "ko":
-        daily_ko = [
-            "오늘은 계획을 정리하면 운이 더 좋아져요.",
-            "작은 친절이 큰 행운을 불러와요.",
-            "한 가지에 집중해서 끝내보세요.",
-            "휴식도 생산성이에요.",
-            "먼저 보내는 연락이 흐름을 바꿔요.",
-            "충동구매만 피하면 돈운이 좋아요.",
-            "가벼운 산책으로 머리를 환기해요.",
-            "꾸준함이 보상으로 돌아와요."
-        ]
-        for k in daily:
-            daily[k] = daily_ko[:]
-        yearly["general"] = daily_ko[:]
-        combo["zodiac_mbti"] = ["{zodiac} + {mbti_desc}: 오늘은 ‘정리→실행’이 핵심!"] * 40
-        lucky["items"] = ["작은 노트", "카드지갑", "미니 향수", "보조배터리", "우산"]
-
-    return {"daily": daily, "yearly": yearly, "combo": combo, "lucky": lucky}
-
+    return build_generated_db(lang), False
 
 # =========================================
-# 4) Utils
+# 5) Utils
 # =========================================
 def get_zodiac(year: int, lang: str):
     if not (1900 <= year <= 2030):
@@ -547,13 +826,36 @@ def stable_rng(name: str, y: int, m: int, d: int, mbti: str, lang: str):
     seed = abs(hash(key)) % (10**9)
     return random.Random(seed)
 
+def pick_daily(db, rng: random.Random, offset_days: int, zodiac: str, mbti: str):
+    # offset를 섞어 "오늘/내일" 서로 다른 느낌
+    day_seed = abs(hash(f"{datetime.now().date().isoformat()}|{offset_days}|{zodiac}|{mbti}")) % (10**9)
+    rr = random.Random(day_seed ^ rng.randint(0, 10**9))
+    cats = list(db["daily"].keys())
+    cat = rr.choice(cats)
+    msg = rr.choice(db["daily"][cat])
+    return msg
+
+def pick_combo(db, rng: random.Random, zodiac: str, mbti: str, mbti_desc: str):
+    # 1) combo_matrix 있으면 192조합 전용
+    cm = db.get("combo_matrix")
+    if isinstance(cm, dict) and zodiac in cm and isinstance(cm[zodiac], dict) and mbti in cm[zodiac]:
+        arr = cm[zodiac][mbti]
+        if isinstance(arr, list) and len(arr) > 0:
+            return rng.choice(arr)
+        if isinstance(arr, str) and arr.strip():
+            return arr
+    # 2) fallback list
+    arr = db.get("combo", {}).get("zodiac_mbti", [])
+    if isinstance(arr, list) and arr:
+        return rng.choice(arr).format(zodiac=zodiac, mbti_desc=mbti_desc, mbti=mbti)
+    # 3) final fallback
+    return f"{zodiac} + {mbti_desc}: plan → execute is strong."
 
 # =========================================
-# 5) Streamlit setup
+# 6) Streamlit setup
 # =========================================
 st.set_page_config(page_title="2026 Fortune", layout="centered")
 
-# session defaults
 if "lang" not in st.session_state:
     st.session_state.lang = "ko"
 if "result" not in st.session_state:
@@ -565,7 +867,6 @@ if "birthdate" not in st.session_state:
 if "mbti" not in st.session_state:
     st.session_state.mbti = "ENFJ"
 
-# mobile CSS
 st.markdown(
     """
     <style>
@@ -581,7 +882,7 @@ st.markdown(
       .title { font-size: 28px; font-weight: 900; color:#2b2b2b; text-align:center; margin: 14px 0 4px;}
       .subtitle { font-size: 14px; font-weight: 700; color:#555; text-align:center; margin: 0 0 14px;}
       .card {
-        background: rgba(255,255,255,0.80);
+        background: rgba(255,255,255,0.86);
         border: 1px solid rgba(140,120,200,0.25);
         border-radius: 18px;
         padding: 16px;
@@ -591,13 +892,13 @@ st.markdown(
       .card p { margin: 6px 0; line-height: 1.65; font-size: 14.5px; color:#2b2b2b; }
       .kv { font-weight: 900; }
       .bigline { font-size: 20px; font-weight: 900; text-align: center; color: #2b2b2b; margin: 8px 0 4px;}
+      .hint { font-size: 12px; color:#666; text-align:center; margin-top: -4px; }
       @media (max-width: 480px) {.title { font-size: 24px; } .bigline { font-size: 18px; }}
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# Language selector (IMPORTANT: no overwrite assignment)
 st.radio(
     UI.get(st.session_state.lang, UI["en"])["lang_label"],
     LANG_KEYS,
@@ -605,13 +906,14 @@ st.radio(
     key="lang",
     horizontal=True
 )
+
 lang = st.session_state.lang
 t = UI.get(lang, UI["en"])
-APP_URL = "https://my-fortune.streamlit.app"
+APP_URL = "https://my-fortune.streamlit.app"  # 너의 실제 배포 URL로 바꿔도 됨
 
 
 # =========================================
-# 6) Input screen
+# 7) Input screen
 # =========================================
 if not st.session_state.result:
     st.markdown(f"<div class='title'>{t['title']}</div>", unsafe_allow_html=True)
@@ -628,18 +930,15 @@ if not st.session_state.result:
 
     mbti_mode = st.radio(t["mbti_mode"], [t["mbti_direct"], t["mbti_test"]], horizontal=True)
 
-    # Direct MBTI
     if mbti_mode == t["mbti_direct"]:
         st.session_state.mbti = st.selectbox("MBTI", sorted(MBTIS.get(lang, MBTIS["en"]).keys()))
         if st.button(t["btn_view"], use_container_width=True):
             st.session_state.result = True
             st.rerun()
-
-    # 12-question Test (✅ language 적용)
     else:
         st.caption(t["test_caption"])
 
-        tq = TEST_Q.get(lang, TEST_Q["en"])  # ✅ 핵심: 언어별 문항 사용
+        tq = TEST_Q.get(lang, TEST_Q["en"])  # ✅ 언어별 12문항
 
         score_ei = score_sn = score_tf = score_jp = 0
 
@@ -675,7 +974,7 @@ if not st.session_state.result:
 
 
 # =========================================
-# 7) Result screen
+# 8) Result screen
 # =========================================
 if st.session_state.result:
     y = st.session_state.birthdate.year
@@ -692,20 +991,23 @@ if st.session_state.result:
             st.rerun()
         st.stop()
 
+    db, used_external = load_fortune_db(lang)
+    rng = stable_rng(name, y, m, d, mbti, lang)
+
     mbti_desc = MBTIS.get(lang, MBTIS["en"]).get(mbti, mbti)
     saju = get_saju(y, m, d, lang)
 
-    db, _ = load_fortune_db(lang)
-    rng = stable_rng(name, y, m, d, mbti, lang)
+    today_msg = pick_daily(db, rng, 0, zodiac, mbti)
+    tomorrow_msg = pick_daily(db, rng, 1, zodiac, mbti)
 
-    daily_categories = list(db["daily"].keys())
-    today_msg = rng.choice(db["daily"][rng.choice(daily_categories)])
-    tomorrow_msg = rng.choice(db["daily"][rng.choice(daily_categories)])
-    overall = rng.choice(db["yearly"]["general"])
-    combo_comment = rng.choice(db["combo"]["zodiac_mbti"]).format(zodiac=zodiac, mbti_desc=mbti_desc, mbti=mbti)
-    lucky_color = rng.choice(db["lucky"]["colors"])
-    lucky_item = rng.choice(db["lucky"]["items"])
-    tip = rng.choice(db["lucky"]["tips"])
+    overall_list = db.get("yearly", {}).get("general", [])
+    overall = rng.choice(overall_list) if isinstance(overall_list, list) and overall_list else "Good flow in 2026."
+
+    combo_comment = pick_combo(db, rng, zodiac, mbti, mbti_desc)
+
+    lucky_color = rng.choice(db["lucky"]["colors"]) if db.get("lucky", {}).get("colors") else "Gold"
+    lucky_item = rng.choice(db["lucky"]["items"]) if db.get("lucky", {}).get("items") else "Notebook"
+    tip = rng.choice(db["lucky"]["tips"]) if db.get("lucky", {}).get("tips") else "Done over perfect."
 
     name_display = (f"{name}" + ("님의" if lang == "ko" else "")) if name else ""
     line_head = f"{name_display} {zodiac} · {mbti}" if name_display else f"{zodiac} · {mbti}"
@@ -750,7 +1052,7 @@ if st.session_state.result:
             unsafe_allow_html=True
         )
 
-    # share text
+    # share (text only)
     share_text = (
         f"{line_head}\n"
         f"{t['combo']}\n\n"
@@ -812,6 +1114,22 @@ if st.session_state.result:
         """,
         height=110
     )
+
+    # DB tools (download + status)
+    with st.expander(t["db_tools_title"], expanded=False):
+        st.write(t["db_tools_desc"])
+
+        # ✅ 다운로드는 "자동 생성 DB"를 그대로 저장(=DB로 굳히기)
+        generated_db = build_generated_db(lang)
+
+        st.download_button(
+            t["download_db_btn"],
+            data=json.dumps(generated_db, ensure_ascii=False, indent=2).encode("utf-8"),
+            file_name=f"fortunes_{lang}.json",
+            mime="application/json"
+        )
+        st.caption(t["db_path_hint"].format(lang=lang))
+        st.caption(t["db_status_external"] if used_external else t["db_status_generated"])
 
     if st.button(t["reset_btn"], use_container_width=True):
         st.session_state.result = False
