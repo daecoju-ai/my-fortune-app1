@@ -425,7 +425,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 화면 - HTML을 여러 st.markdown으로 나누어 렌더링 (태그 안 보이게 보장)
+# 결과 화면
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -446,63 +446,69 @@ if st.session_state.result_shown:
         lucky_item = random.choice(t["lucky_items"])
         tip = random.choice(t["tips"])
 
-        # 1. 배경 + 상단 제목 + 조합
+        # 완벽한 인스타 감성 배경 + 모든 글자 선명하게
         st.markdown(f"""
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700&display=swap" rel="stylesheet">
         <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
-                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:20px 8px;
+                     width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:20px;
                      box-sizing:border-box; text-align:center; overflow-y:auto;
-                     font-family:'Noto Sans KR', sans-serif;">
-          <div style="color:#000000;">
-            <h1 style="font-size:1.3em; margin:10px 0;">{name_display}</h1>
-            <h2 style="font-size:1.4em; margin:10px 0;">
-              <span style="font-size:1.8em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:1.8em;">{mbti_emoji}</span> {mbti}
+                     font-family:'Noto Sans KR', sans-serif; position:relative;">
+          
+          <!-- 부드러운 어두운 오버레이로 배경 보호 + 글자 살리기 -->
+          <div style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.2); pointer-events:none; border-radius:0;"></div>
+          
+          <div style="position:relative; z-index:2;">
+            <!-- 상단 제목 -->
+            <h1 style="font-size:1.4em; margin:15px 0; color:#ffffff; text-shadow: 2px 2px 6px rgba(0,0,0,0.6);">⭐ {name_display} ⭐</h1>
+            <h2 style="font-size:1.6em; margin:15px 0; color:#ffffff; text-shadow: 3px 3px 8px rgba(0,0,0,0.7);">
+              <span style="font-size:2em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:2em;">{mbti_emoji}</span> {mbti}
             </h2>
-            <h3 style="font-size:1.1em; margin:10px 0;">{t['combo']}</h3>
+            <h3 style="font-size:1.2em; margin:20px 0; color:#ffffff; text-shadow: 2px 2px 6px rgba(0,0,0,0.6);">{t['combo']}</h3>
+
+            <!-- 운세 내용 박스 -->
+            <div style="background:rgba(255,255,255,0.92); border-radius:22px; padding:22px; margin:20px 15px; 
+                         backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+              <p style="font-size:1.15em; line-height:1.8; color:#000000;">
+                <b>{t['zodiac_title']}</b>: {zodiac_desc}<br>
+                <b>{t['mbti_title']}</b>: {mbti_desc}<br>
+                <b>{t['saju_title']}</b>: {saju}<br><br>
+                <b>{t['today_title']}</b>: {today}<br>
+                <b>{t['tomorrow_title']}</b>: {tomorrow}<br><br>
+                <b>{t['overall_title']}</b>: {overall}<br>
+                <b>{t['combo_title']}</b>: {combo_comment}<br>
+                <b>{t['lucky_color_title']}</b>: {lucky_color} | <b>{t['lucky_item_title']}</b>: {lucky_item}<br>
+                <b>{t['tip_title']}</b>: {tip}
+              </p>
+            </div>
+
+            <!-- 광고 박스 -->
+            <div style="background:rgba(255,255,255,0.9); border-radius:20px; padding:18px; margin:20px 15px; 
+                         backdrop-filter: blur(12px); box-shadow: 0 8px 25px rgba(0,0,0,0.25);">
+              <small style="color:#e74c3c; font-weight:bold;">광고</small><br>
+              💧 <b style="font-size:1.1em;">정수기 렌탈 대박!</b><br>
+              제휴카드면 <b>월 0원부터</b>!<br>
+              설치 당일 <b>최대 50만원 지원</b> + 사은품 듬뿍 ✨<br>
+              <a href="https://www.다나눔렌탈.com" target="_blank" style="color:#3498db; text-decoration:underline; font-weight:bold; font-size:1.1em;">🔗 다나눔렌탈.com 바로가기</a>
+            </div>
+
+            <!-- 앱 URL -->
+            <p style="font-size:0.9em; color:#ffffff; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); margin:20px 0;">
+              {app_url}
+            </p>
           </div>
         </div>
         """, unsafe_allow_html=True)
 
-        # 2. 운세 내용 박스
-        st.markdown(f"""
-        <div style="background:#ffffff40; border-radius:18px; padding:15px; margin:15px 10px; backdrop-filter: blur(10px);">
-          <p style="font-size:1.1em; line-height:1.6; color:#000000;">
-            <b>{t['zodiac_title']}</b>: {zodiac_desc}<br>
-            <b>{t['mbti_title']}</b>: {mbti_desc}<br>
-            <b>{t['saju_title']}</b>: {saju}<br><br>
-            <b>{t['today_title']}</b>: {today}<br>
-            <b>{t['tomorrow_title']}</b>: {tomorrow}<br><br>
-            <b>{t['overall_title']}</b>: {overall}<br>
-            <b>{t['combo_title']}</b>: {combo_comment}<br>
-            <b>{t['lucky_color_title']}</b>: {lucky_color} | <b>{t['lucky_item_title']}</b>: {lucky_item}<br>
-            <b>{t['tip_title']}</b>: {tip}
-          </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # 3. 광고 박스
-        st.markdown(f"""
-        <div style="background:#ffffff40; border-radius:15px; padding:12px; margin:15px 10px; backdrop-filter: blur(5px);">
-          <small style="color:#ff4444; font-weight:bold;">광고</small><br>
-          💧 <b>정수기 렌탈 대박!</b><br>
-          제휴카드면 <b>월 0원부터</b>!<br>
-          설치 당일 <b>최대 50만원 지원</b> + 사은품 듬뿍 ✨<br>
-          <a href="https://www.다나눔렌탈.com" target="_blank" style="color:#00bfff; text-decoration:underline;">🔗 다나눔렌탈.com 바로가기</a>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # 4. 앱 URL
-        st.markdown(f"<p style='text-align:center; font-size:0.8em; opacity:0.8; margin:10px 0;'>{app_url}</p>", unsafe_allow_html=True)
-
-        # 타로 카드 뽑기 버튼
+        # 타로 카드 뽑기
         if st.button(t["tarot_btn"], use_container_width=True):
             tarot_card = random.choice(list(t["tarot_cards"].keys()))
             tarot_meaning = t["tarot_cards"][tarot_card]
             st.markdown(f"""
-            <div style="background:#ffffff40; border-radius:18px; padding:15px; margin:15px 10px; backdrop-filter: blur(10px); text-align:center;">
-              <h3>{t['tarot_title']}</h3>
-              <h2 style="font-size:1.8em;">{tarot_card}</h2>
-              <p style="font-size:1.1em; color:#000000;">{tarot_meaning}</p>
+            <div style="background:rgba(255,255,255,0.95); border-radius:22px; padding:25px; margin:20px 10px; 
+                         backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align:center;">
+              <h3 style="color:#9b59b6; font-size:1.3em; margin:10px 0;">{t['tarot_title']}</h3>
+              <h2 style="font-size:2em; color:#333; margin:15px 0;">{tarot_card}</h2>
+              <p style="font-size:1.2em; color:#000000; line-height:1.7;">{tarot_meaning}</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -510,7 +516,8 @@ if st.session_state.result_shown:
         share_text = f"{name_display}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
         <div style="text-align:center; margin:30px 0;">
-            <button style="background:white; color:#6a11cb; padding:12px 50px; border:none; border-radius:30px; font-size:1em; font-weight:bold;" onclick="shareResult()">
+            <button style="background:#ffffff; color:#8e44ad; padding:15px 70px; border:none; border-radius:50px; 
+                         font-size:1.2em; font-weight:bold; box-shadow: 0 6px 20px rgba(142,68,173,0.4);">
               {t["share_btn"]}
             </button>
         </div>
@@ -519,12 +526,12 @@ if st.session_state.result_shown:
             if (navigator.share) {{
                 navigator.share({{title: '2026 운세', text: `{share_text}`, url: '{app_url}'}});
             }} else {{
-                navigator.clipboard.writeText(`{share_text}`).then(() => {{alert('복사됐어요! 공유해주세요 😊');}});
+                navigator.clipboard.writeText(`{share_text}`).then(() => {{alert('복사됐어요! 친구에게 공유해주세요 😊');}});
             }}
         }}
         </script>
         """
-        st_html(share_component, height=80)
+        st_html(share_component, height=100)
 
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
