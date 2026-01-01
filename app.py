@@ -406,83 +406,86 @@ if "share_png" not in st.session_state:
 # =========================
 # 모바일 최적화 + 상단 잘림 해결 CSS
 # =========================
-st.markdown("""
-<style>
-header {visibility: hidden;}
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
+st.markdown(
+    """
+    <style>
+    header {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
 
-.stApp { background: #efe9ff; }
+    .stApp { background: #efe9ff; }
 
-.block-container {
-  padding-top: 10px !important;
-  padding-bottom: 30px !important;
-  max-width: 720px;
-}
+    .block-container {
+      padding-top: 10px !important;
+      padding-bottom: 30px !important;
+      max-width: 720px;
+    }
 
-.ppt-title {
-  font-size: 28px; font-weight: 900; color:#2b2b2b; text-align:center;
-  margin: 14px 0 10px;
-}
-.ppt-subtitle {
-  font-size: 20px; font-weight: 900; color:#2b2b2b; text-align:center;
-  margin: 4px 0 6px;
-}
-.ppt-combo {
-  font-size: 16px; font-weight: 800; color:#2b2b2b; text-align:center;
-  margin: 6px 0 14px;
-}
+    .ppt-title {
+      font-size: 28px; font-weight: 900; color:#2b2b2b; text-align:center;
+      margin: 14px 0 10px;
+    }
+    .ppt-subtitle {
+      font-size: 20px; font-weight: 900; color:#2b2b2b; text-align:center;
+      margin: 4px 0 6px;
+    }
+    .ppt-combo {
+      font-size: 16px; font-weight: 800; color:#2b2b2b; text-align:center;
+      margin: 6px 0 14px;
+    }
 
-.card {
-  background: rgba(255,255,255,0.75);
-  border: 1px solid rgba(140,120,200,0.25);
-  border-radius: 18px;
-  padding: 16px 16px;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.08);
-  margin: 10px 0 16px;
-  text-align: left;
-}
-.card p { margin: 6px 0; line-height: 1.65; font-size: 14.5px; color:#2b2b2b; }
-.kv { font-weight: 900; }
-.hr { height: 1px; background: rgba(120,100,180,0.18); margin: 12px 0; }
+    .card {
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(140,120,200,0.25);
+      border-radius: 18px;
+      padding: 16px 16px;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+      margin: 10px 0 16px;
+      text-align: left;
+    }
+    .card p { margin: 6px 0; line-height: 1.65; font-size: 14.5px; color:#2b2b2b; }
+    .kv { font-weight: 900; }
+    .hr { height: 1px; background: rgba(120,100,180,0.18); margin: 12px 0; }
 
-.ad {
-  background: rgba(255,255,255,0.65);
-  border: 1px solid rgba(140,120,200,0.22);
-  border-radius: 18px;
-  padding: 14px 16px;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.06);
-  margin: 10px 0 18px;
-}
-.ad-title { font-weight: 900; font-size: 15px; }
-.ad-link {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 7px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(80,80,180,0.25);
-  background: rgba(255,255,255,0.7);
-  font-weight: 900;
-  color: #2b5bd7;
-  text-decoration: none;
-}
+    .ad {
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(140,120,200,0.22);
+      border-radius: 18px;
+      padding: 14px 16px;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.06);
+      margin: 10px 0 18px;
+    }
+    .ad-title { font-weight: 900; font-size: 15px; }
+    .ad-link {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 7px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(80,80,180,0.25);
+      background: rgba(255,255,255,0.7);
+      font-weight: 900;
+      color: #2b5bd7;
+      text-decoration: none;
+    }
 
-.tarot-wrap {
-  background: rgba(255,255,255,0.6);
-  border: 1px solid rgba(140,120,200,0.18);
-  border-radius: 16px;
-  padding: 14px 16px;
-}
-.tarot-title { font-weight: 900; color: #7c3aed; margin-bottom: 6px; }
-.tarot-cardname { font-weight: 900; font-size: 22px; margin: 0 0 6px; color:#2b2b2b; }
-.tarot-meaning { margin: 0; color:#2b2b2b; }
+    .tarot-wrap {
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(140,120,200,0.18);
+      border-radius: 16px;
+      padding: 14px 16px;
+    }
+    .tarot-title { font-weight: 900; color: #7c3aed; margin-bottom: 6px; }
+    .tarot-cardname { font-weight: 900; font-size: 22px; margin: 0 0 6px; color:#2b2b2b; }
+    .tarot-meaning { margin: 0; color:#2b2b2b; }
 
-@media (max-width: 480px) {
-  .ppt-title { font-size: 24px; margin-top: 12px; }
-  .ppt-subtitle { font-size: 18px; }
-}
-</style>
-""", unsafe_allow_html=True)
+    @media (max-width: 480px) {
+      .ppt-title { font-size: 24px; margin-top: 12px; }
+      .ppt-subtitle { font-size: 18px; }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # =========================
 # 입력 화면
