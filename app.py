@@ -3,13 +3,13 @@ from datetime import datetime, timedelta
 import random
 from streamlit.components.v1 import html as st_html
 
-# 다국어 사전
+# 다국어 사전 (한국어 + 영어, 완전 전체)
 translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 + 오늘/내일 운세 🌟",
         "caption": "완전 무료 😄",
-        "ad_title": "💳 정수기렌탈 궁금할 때?",
-        "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 최대 50만원 페이백</b>!",
+        "ad_title": "💳정수기 렌탈 궁금할 때?",
+        "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 최대50만원 페이백</b>!",
         "ad_btn": "🔗 보러가기",
         "birth": "### 생년월일 입력",
         "name_placeholder": "이름 입력 (결과에 표시돼요)",
@@ -446,7 +446,6 @@ if st.session_state.result_shown:
         lucky_item = random.choice(t["lucky_items"])
         tip = random.choice(t["tips"])
 
-        # 여기!!! unsafe_allow_html=True 반드시 포함
         st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
         <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
@@ -483,9 +482,8 @@ if st.session_state.result_shown:
             <p style="font-size:0.6em; opacity:0.8; margin:4px 0;">{app_url}</p>
           </div>
         </div>
-        """, unsafe_allow_html=True)  # <--- 이게 핵심!!
+        """, unsafe_allow_html=True)
 
-        # 타로 버튼
         if st.button(t["tarot_btn"], use_container_width=True):
             tarot_card = random.choice(list(t["tarot_cards"].keys()))
             tarot_meaning = t["tarot_cards"][tarot_card]
@@ -497,7 +495,6 @@ if st.session_state.result_shown:
             </div>
             """, unsafe_allow_html=True)
 
-        # 공유 버튼
         share_text = f"{name_display}\\n{zodiac} + {mbti}\\n{t['combo']}\\n{t['today_title']}: {today}\\n{t['tomorrow_title']}: {tomorrow}\\n\\n{app_url}"
         share_component = f"""
         <div style="text-align:center; margin:20px 0;">
