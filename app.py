@@ -425,7 +425,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 화면 - 하나의 큰 HTML로 구성 (성공했던 방식)
+# 결과 화면 - 하나의 큰 HTML 블록으로 (태그 안 보이게 보장)
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
@@ -452,7 +452,6 @@ if st.session_state.result_shown:
                      width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:20px;
                      box-sizing:border-box; text-align:center; overflow-y:auto;
                      font-family:'Noto Sans KR', sans-serif;">
-          
           <div style="position:relative;">
             <h1 style="font-size:1.4em; margin:15px 0; color:#ffffff; text-shadow: 2px 2px 6px rgba(0,0,0,0.6);">⭐ {name_display} ⭐</h1>
             <h2 style="font-size:1.6em; margin:15px 0; color:#ffffff; text-shadow: 3px 3px 8px rgba(0,0,0,0.7);">
@@ -491,7 +490,7 @@ if st.session_state.result_shown:
         </div>
         """, unsafe_allow_html=True)
 
-        # 타로와 공유 버튼은 그대로 유지 (성공했던 버전)
+        # 타로와 공유 버튼은 별도로 (이건 정상 작동함)
         if st.button(t["tarot_btn"], use_container_width=True):
             tarot_card = random.choice(list(t["tarot_cards"].keys()))
             tarot_meaning = t["tarot_cards"][tarot_card]
