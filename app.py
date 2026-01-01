@@ -8,9 +8,9 @@ from PIL import Image, ImageDraw, ImageFont
 import streamlit.components.v1 as components
 
 # =========================
-# 설정
+# 기본 설정
 # =========================
-APP_URL = "https://my-fortune.streamlit.app"  # 너 앱 주소
+APP_URL = "https://my-fortune.streamlit.app"   # 너 앱 주소(배포 주소로 맞춰줘)
 AD_URL = "https://www.다나눔렌탈.com"
 
 # =========================
@@ -125,7 +125,7 @@ TAROT_CARDS = {
 }
 
 # =========================
-# 유틸 (띠/운세/고정 랜덤)
+# 유틸: 고정 랜덤(신뢰)
 # =========================
 def get_zodiac_ko(year: int):
     if not (1900 <= year <= 2030):
@@ -136,42 +136,49 @@ def get_saju_msg(year: int, month: int, day: int):
     return SAJU_MSGS_KO[(year + month + day) % 8]
 
 def daily_fortune(zodiac: str, offset_days: int):
+    """오늘/내일은 날짜+띠로 고정"""
     d = datetime.now() + timedelta(days=offset_days)
     seed = int(d.strftime("%Y%m%d")) + ZODIAC_LIST_KO.index(zodiac)
     rng = random.Random(seed)
     return rng.choice(DAILY_MSGS_KO)
 
 def stable_rng(name: str, y: int, m: int, d: int, mbti: str):
+    """연간/럭키/팁은 사용자 입력으로 고정"""
     key = f"ko|{name}|{y:04d}-{m:02d}-{d:02d}|{mbti}"
     seed = abs(hash(key)) % (10**9)
     return random.Random(seed)
 
 # =========================
-# 공유 이미지 생성 (서버에서 PNG 생성)
+# 공유 이미지 생성(한글 폰트 적용)
 # =========================
+def load_font(font_path: str, size: int):
+    try:
+        return ImageFont.truetype(font_path, size)
+    except:
+        return ImageFont.load_default()
+
 def make_share_image(title_lines, body_lines, footer_text=APP_URL):
-    W, H = 1080, 1920  # 9:16
+    """
+    공유용 PNG (9:16)
+    ※ 레포에 NotoSansKR-Regular.ttf 업로드 필요(한글 깨짐 방지)
+    """
+    W, H = 1080, 1920
     bg = Image.new("RGB", (W, H), (239, 233, 255))
     draw = ImageDraw.Draw(bg)
 
-    # 폰트(환경에 따라 없을 수 있어 fallback)
-    try:
-        font_title = ImageFont.truetype("DejaVuSans.ttf", 64)
-        font_sub = ImageFont.truetype("DejaVuSans.ttf", 44)
-        font_body = ImageFont.truetype("DejaVuSans.ttf", 38)
-        font_footer = ImageFont.truetype("DejaVuSans.ttf", 28)
-    except:
-        font_title = ImageFont.load_default()
-        font_sub = ImageFont.load_default()
-        font_body = ImageFont.load_default()
-        font_footer = ImageFont.load_default()
+    font_path = "NotoSansKR-Regular.ttf"  # ✅ 레포에 이 파일명으로 업로드
 
-    # 카드
+    font_title = load_font(font_path, 64)
+    font_sub   = load_font(font_path, 44)
+    font_body  = load_font(font_path, 38)
+    font_footer= load_font(font_path, 28)
+
+    # 카드 영역
     card_margin = 60
     card = (card_margin, 250, W - card_margin, H - 340)
     draw.rounded_rectangle(card, radius=40, fill=(255, 255, 255), outline=(190, 180, 230), width=3)
 
-    # 제목 영역(상단)
+    # 제목
     y = 80
     for i, line in enumerate(title_lines[:3]):
         f = font_title if i == 0 else font_sub
@@ -182,7 +189,7 @@ def make_share_image(title_lines, body_lines, footer_text=APP_URL):
     x = card[0] + 40
     y = card[1] + 40
 
-    max_width_chars = 32  # 대략 줄바꿈 기준
+    max_width_chars = 32
     for line in body_lines:
         if line.strip() == "":
             y += 20
@@ -205,7 +212,7 @@ def make_share_image(title_lines, body_lines, footer_text=APP_URL):
     return buf.getvalue()
 
 # =========================
-# Streamlit 페이지 설정
+# Streamlit 기본
 # =========================
 st.set_page_config(page_title="2026년 운세", layout="centered")
 
@@ -224,52 +231,38 @@ if "show_share" not in st.session_state:
     st.session_state.show_share = False
 
 # =========================
-# 모바일 최적화 CSS + 상단 잘림 해결
+# 모바일 최적화 + 상단 잘림 해결 CSS
 # =========================
 st.markdown("""
 <style>
-/* Streamlit 상단 기본 UI 숨김 (모바일 안전영역 이슈 완화) */
 header {visibility: hidden;}
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 
-/* 전체 배경 */
 .stApp { background: #efe9ff; }
 
-/* 컨테이너 여백 (모바일에서 상단 잘림 방지) */
 .block-container {
   padding-top: 10px !important;
   padding-bottom: 30px !important;
   max-width: 720px;
 }
 
-/* 타이틀 */
 .ppt-title {
-  font-size: 28px;
-  font-weight: 900;
-  color: #2b2b2b;
-  text-align: center;
+  font-size: 28px; font-weight: 900; color:#2b2b2b; text-align:center;
   margin: 14px 0 10px;
 }
 .ppt-subtitle {
-  font-size: 20px;
-  font-weight: 900;
-  color: #2b2b2b;
-  text-align: center;
+  font-size: 20px; font-weight: 900; color:#2b2b2b; text-align:center;
   margin: 4px 0 6px;
 }
 .ppt-combo {
-  font-size: 16px;
-  font-weight: 800;
-  color: #2b2b2b;
-  text-align: center;
+  font-size: 16px; font-weight: 800; color:#2b2b2b; text-align:center;
   margin: 6px 0 14px;
 }
 
-/* 카드 */
 .card {
   background: rgba(255,255,255,0.75);
-  border: 1px solid rgba(140, 120, 200, 0.25);
+  border: 1px solid rgba(140,120,200,0.25);
   border-radius: 18px;
   padding: 16px 16px;
   box-shadow: 0 10px 22px rgba(0,0,0,0.08);
@@ -280,10 +273,9 @@ footer {visibility: hidden;}
 .kv { font-weight: 900; }
 .hr { height: 1px; background: rgba(120,100,180,0.18); margin: 12px 0; }
 
-/* 광고 카드 */
 .ad {
   background: rgba(255,255,255,0.65);
-  border: 1px solid rgba(140, 120, 200, 0.22);
+  border: 1px solid rgba(140,120,200,0.22);
   border-radius: 18px;
   padding: 14px 16px;
   box-shadow: 0 10px 22px rgba(0,0,0,0.06);
@@ -302,10 +294,9 @@ footer {visibility: hidden;}
   text-decoration: none;
 }
 
-/* 타로 */
 .tarot-wrap {
   background: rgba(255,255,255,0.6);
-  border: 1px solid rgba(140, 120, 200, 0.18);
+  border: 1px solid rgba(140,120,200,0.18);
   border-radius: 16px;
   padding: 14px 16px;
 }
@@ -313,7 +304,6 @@ footer {visibility: hidden;}
 .tarot-cardname { font-weight: 900; font-size: 22px; margin: 0 0 6px; color:#2b2b2b; }
 .tarot-meaning { margin: 0; color:#2b2b2b; }
 
-/* 모바일에서 글자 살짝 줄이기 */
 @media (max-width: 480px) {
   .ppt-title { font-size: 24px; margin-top: 12px; }
   .ppt-subtitle { font-size: 18px; }
@@ -336,13 +326,87 @@ if not st.session_state.result_shown:
         max_value=date(2030, 12, 31),
     )
 
-    st.session_state.mbti = st.selectbox("MBTI", sorted(MBTIS_KO.keys()), index=sorted(MBTIS_KO.keys()).index(st.session_state.mbti) if st.session_state.mbti in MBTIS_KO else 0)
+    mbti_mode = st.radio(
+        "MBTI는 어떻게 할까요?",
+        ["직접 선택(이미 알아요)", "간단 테스트(12문항)"],
+        horizontal=True
+    )
 
-    if st.button("2026년 운세 보기!", use_container_width=True):
-        st.session_state.result_shown = True
-        st.session_state.show_share = False
-        st.session_state.share_png = None
-        st.rerun()
+    if mbti_mode == "직접 선택(이미 알아요)":
+        st.session_state.mbti = st.selectbox(
+            "MBTI",
+            sorted(MBTIS_KO.keys()),
+            index=sorted(MBTIS_KO.keys()).index(st.session_state.mbti) if st.session_state.mbti in MBTIS_KO else 0
+        )
+
+        if st.button("2026년 운세 보기!", use_container_width=True):
+            st.session_state.result_shown = True
+            st.session_state.show_share = False
+            st.session_state.share_png = None
+            st.rerun()
+
+    else:
+        st.caption("총 12문항(약 30초) — 솔직하게 고르면 더 잘 맞아요 🙂")
+
+        q_ei = [
+            ("약속이 갑자기 잡히면?", "좋아! 나가자(E)", "음… 집이 좋아(I)"),
+            ("에너지 충전은?", "사람 만나면 충전(E)", "혼자 있어야 충전(I)"),
+            ("대화할 때 나는?", "말하면서 정리(E)", "생각 정리 후 말(I)"),
+        ]
+        q_sn = [
+            ("새로운 정보를 볼 때?", "현실/사실 위주(S)", "가능성/의미 위주(N)"),
+            ("설명 들을 때 더 편한 건?", "예시·디테일(S)", "전체 그림·핵심(N)"),
+            ("아이디어는 보통?", "검증된 방식(S)", "새로운 방식(N)"),
+        ]
+        q_tf = [
+            ("의견 충돌 시 나는?", "논리/원칙(T)", "배려/관계(F)"),
+            ("결정 기준은?", "효율/정확(T)", "마음/가치(F)"),
+            ("피드백할 때?", "직설적으로(T)", "부드럽게(F)"),
+        ]
+        q_jp = [
+            ("일정 스타일은?", "계획대로(J)", "즉흥적으로(P)"),
+            ("마감 앞두면?", "미리 끝냄(J)", "막판 몰아함(P)"),
+            ("정리정돈은?", "깔끔하게 유지(J)", "필요할 때만(P)"),
+        ]
+
+        ei = sn = tf = jp = 0
+
+        st.subheader("1) 에너지(E/I)")
+        for i, (q, a, b) in enumerate(q_ei):
+            ans = st.radio(q, [a, b], key=f"ei_{i}")
+            if ans == a:
+                ei += 1
+
+        st.subheader("2) 인식(S/N)")
+        for i, (q, a, b) in enumerate(q_sn):
+            ans = st.radio(q, [a, b], key=f"sn_{i}")
+            if ans == a:
+                sn += 1
+
+        st.subheader("3) 판단(T/F)")
+        for i, (q, a, b) in enumerate(q_tf):
+            ans = st.radio(q, [a, b], key=f"tf_{i}")
+            if ans == a:
+                tf += 1
+
+        st.subheader("4) 생활(J/P)")
+        for i, (q, a, b) in enumerate(q_jp):
+            ans = st.radio(q, [a, b], key=f"jp_{i}")
+            if ans == a:
+                jp += 1
+
+        if st.button("테스트 결과로 운세 보기!", use_container_width=True):
+            mbti = ""
+            mbti += "E" if ei >= 2 else "I"
+            mbti += "S" if sn >= 2 else "N"
+            mbti += "T" if tf >= 2 else "F"
+            mbti += "J" if jp >= 2 else "P"
+            st.session_state.mbti = mbti
+
+            st.session_state.result_shown = True
+            st.session_state.show_share = False
+            st.session_state.share_png = None
+            st.rerun()
 
 # =========================
 # 결과 화면
@@ -362,9 +426,8 @@ if st.session_state.result_shown:
 
     zodiac_emoji = ZODIAC_EMOJI_KO.get(zodiac, "")
     mbti_emoji = MBTI_EMOJI.get(mbti, "")
-
     zodiac_desc = ZODIACS_KO[zodiac]
-    mbti_desc = MBTIS_KO[mbti]
+    mbti_desc = MBTIS_KO.get(mbti, "MBTI")
     saju = get_saju_msg(y, m, d)
 
     today_msg = daily_fortune(zodiac, 0)
@@ -431,7 +494,7 @@ if st.session_state.result_shown:
             unsafe_allow_html=True
         )
 
-    # ===== 공유: 버튼 누르면 PNG 생성 + (가능하면) 모바일 공유창 =====
+    # ===== 공유 (PNG 생성 + 공유창 열기) =====
     title_lines = [
         "⭐ 2026년 운세 ⭐",
         f"🔮 {who}{zodiac_emoji} {zodiac}  {mbti_emoji} {mbti}",
@@ -459,9 +522,9 @@ if st.session_state.result_shown:
 
     if st.session_state.show_share and st.session_state.share_png:
         png_bytes = st.session_state.share_png
+
         st.image(png_bytes, caption="공유 이미지 미리보기", use_container_width=True)
 
-        # 1) 항상 되는 방법: 저장
         st.download_button(
             "이미지 저장하기(PNG)",
             data=png_bytes,
@@ -471,7 +534,6 @@ if st.session_state.result_shown:
         )
         st.caption("공유창이 안 열리면: 위 버튼으로 저장 → 카톡에서 사진 첨부로 보내면 돼요.")
 
-        # 2) 가능한 모바일 브라우저에서: 공유창 열기(Web Share API)
         b64 = base64.b64encode(png_bytes).decode("utf-8")
         components.html(f"""
         <div style="text-align:center; margin-top: 10px;">
