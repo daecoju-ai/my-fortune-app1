@@ -1,12 +1,23 @@
 import streamlit as st
 from datetime import datetime, timedelta, date
 import random
+import io
+import textwrap
+import base64
+from PIL import Image, ImageDraw, ImageFont
+import streamlit.components.v1 as components
 
 # =========================
-# 1) 데이터 (KO 중심 / 화면 PPT 스타일)
+# 설정
 # =========================
+APP_URL = "https://my-fortune.streamlit.app"  # 너 앱 주소
+AD_URL = "https://www.다나눔렌탈.com"
 
-# 띠/MBTI 이모지 (PPT처럼 시각 강조)
+# =========================
+# 데이터
+# =========================
+ZODIAC_LIST_KO = ["쥐띠","소띠","호랑이띠","토끼띠","용띠","뱀띠","말띠","양띠","원숭이띠","닭띠","개띠","돼지띠"]
+
 ZODIAC_EMOJI_KO = {
     "쥐띠":"🐭","소띠":"🐮","호랑이띠":"🐯","토끼띠":"🐰","용띠":"🐲","뱀띠":"🐍",
     "말띠":"🐴","양띠":"🐑","원숭이띠":"🐵","닭띠":"🐔","개띠":"🐶","돼지띠":"🐷"
@@ -17,8 +28,6 @@ MBTI_EMOJI = {
     "ISTJ":"📏","ISFJ":"🫶","ESTJ":"🧱","ESFJ":"🎉",
     "ISTP":"🔧","ISFP":"🌿","ESTP":"🏎️","ESFP":"🎭"
 }
-
-ZODIAC_LIST_KO = ["쥐띠","소띠","호랑이띠","토끼띠","용띠","뱀띠","말띠","양띠","원숭이띠","닭띠","개띠","돼지띠"]
 
 ZODIACS_KO = {
     "쥐띠": "안정 속 새로운 기회! 민첩한 판단으로 성공 잡아요",
@@ -115,13 +124,8 @@ TAROT_CARDS = {
     "The World": "세계 - 완성, 성취, 전체성"
 }
 
-# 배포 후 본인 앱 URL로 바꾸기
-APP_URL = "https://my-fortune.streamlit.app"
-AD_URL = "https://www.다나눔렌탈.com"
-
-
 # =========================
-# 2) 유틸 (결과 고정: seed 설계)
+# 유틸 (띠/운세/고정 랜덤)
 # =========================
 def get_zodiac_ko(year: int):
     if not (1900 <= year <= 2030):
@@ -129,28 +133,83 @@ def get_zodiac_ko(year: int):
     return ZODIAC_LIST_KO[(year - 4) % 12]
 
 def get_saju_msg(year: int, month: int, day: int):
-    total = year + month + day
-    return SAJU_MSGS_KO[total % 8]
+    return SAJU_MSGS_KO[(year + month + day) % 8]
 
 def daily_fortune(zodiac: str, offset_days: int):
-    """오늘/내일 운세: 날짜+띠로 고정 (전역 random 오염 X)"""
     d = datetime.now() + timedelta(days=offset_days)
     seed = int(d.strftime("%Y%m%d")) + ZODIAC_LIST_KO.index(zodiac)
     rng = random.Random(seed)
     return rng.choice(DAILY_MSGS_KO)
 
-def stable_result_rng(name: str, y: int, m: int, d: int, mbti: str):
-    """연간/럭키/팁/조합: 사용자 입력으로 고정"""
-    user_key = f"ko|{name}|{y:04d}-{m:02d}-{d:02d}|{mbti}"
-    seed = abs(hash(user_key)) % (10**9)
+def stable_rng(name: str, y: int, m: int, d: int, mbti: str):
+    key = f"ko|{name}|{y:04d}-{m:02d}-{d:02d}|{mbti}"
+    seed = abs(hash(key)) % (10**9)
     return random.Random(seed)
 
+# =========================
+# 공유 이미지 생성 (서버에서 PNG 생성)
+# =========================
+def make_share_image(title_lines, body_lines, footer_text=APP_URL):
+    W, H = 1080, 1920  # 9:16
+    bg = Image.new("RGB", (W, H), (239, 233, 255))
+    draw = ImageDraw.Draw(bg)
+
+    # 폰트(환경에 따라 없을 수 있어 fallback)
+    try:
+        font_title = ImageFont.truetype("DejaVuSans.ttf", 64)
+        font_sub = ImageFont.truetype("DejaVuSans.ttf", 44)
+        font_body = ImageFont.truetype("DejaVuSans.ttf", 38)
+        font_footer = ImageFont.truetype("DejaVuSans.ttf", 28)
+    except:
+        font_title = ImageFont.load_default()
+        font_sub = ImageFont.load_default()
+        font_body = ImageFont.load_default()
+        font_footer = ImageFont.load_default()
+
+    # 카드
+    card_margin = 60
+    card = (card_margin, 250, W - card_margin, H - 340)
+    draw.rounded_rectangle(card, radius=40, fill=(255, 255, 255), outline=(190, 180, 230), width=3)
+
+    # 제목 영역(상단)
+    y = 80
+    for i, line in enumerate(title_lines[:3]):
+        f = font_title if i == 0 else font_sub
+        draw.text((card_margin, y), line, fill=(40, 40, 40), font=f)
+        y += 78 if i == 0 else 60
+
+    # 본문
+    x = card[0] + 40
+    y = card[1] + 40
+
+    max_width_chars = 32  # 대략 줄바꿈 기준
+    for line in body_lines:
+        if line.strip() == "":
+            y += 20
+            continue
+
+        wrapped = textwrap.wrap(line, width=max_width_chars)
+        for wline in wrapped:
+            draw.text((x, y), wline, fill=(30, 30, 30), font=font_body)
+            y += 52
+        y += 8
+
+        if y > card[3] - 120:
+            break
+
+    # 푸터
+    draw.text((card_margin, H - 250), footer_text, fill=(110, 110, 110), font=font_footer)
+
+    buf = io.BytesIO()
+    bg.save(buf, format="PNG")
+    return buf.getvalue()
 
 # =========================
-# 3) Streamlit 설정/세션
+# Streamlit 페이지 설정
 # =========================
 st.set_page_config(page_title="2026년 운세", layout="centered")
 
+# 세션 상태
 if "result_shown" not in st.session_state:
     st.session_state.result_shown = False
 if "name" not in st.session_state:
@@ -159,47 +218,55 @@ if "birthdate" not in st.session_state:
     st.session_state.birthdate = date(2005, 1, 1)
 if "mbti" not in st.session_state:
     st.session_state.mbti = "ENFJ"
+if "share_png" not in st.session_state:
+    st.session_state.share_png = None
 if "show_share" not in st.session_state:
     st.session_state.show_share = False
 
-
 # =========================
-# 4) PPT 스타일 CSS (최대한 유사)
+# 모바일 최적화 CSS + 상단 잘림 해결
 # =========================
 st.markdown("""
 <style>
+/* Streamlit 상단 기본 UI 숨김 (모바일 안전영역 이슈 완화) */
+header {visibility: hidden;}
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+
 /* 전체 배경 */
-.stApp {
-  background: #efe9ff;
+.stApp { background: #efe9ff; }
+
+/* 컨테이너 여백 (모바일에서 상단 잘림 방지) */
+.block-container {
+  padding-top: 10px !important;
+  padding-bottom: 30px !important;
+  max-width: 720px;
 }
 
-/* 상단 여백 줄이기 */
-.block-container { padding-top: 20px; padding-bottom: 40px; max-width: 720px; }
-
-/* 상단 타이틀 */
+/* 타이틀 */
 .ppt-title {
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 900;
   color: #2b2b2b;
   text-align: center;
-  margin: 6px 0 10px;
+  margin: 14px 0 10px;
 }
 .ppt-subtitle {
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 900;
   color: #2b2b2b;
   text-align: center;
-  margin: 2px 0 6px;
+  margin: 4px 0 6px;
 }
 .ppt-combo {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 800;
   color: #2b2b2b;
   text-align: center;
   margin: 6px 0 14px;
 }
 
-/* 메인 카드 */
+/* 카드 */
 .card {
   background: rgba(255,255,255,0.75);
   border: 1px solid rgba(140, 120, 200, 0.25);
@@ -210,7 +277,7 @@ st.markdown("""
   text-align: left;
 }
 .card p { margin: 6px 0; line-height: 1.65; font-size: 14.5px; color:#2b2b2b; }
-.kv { font-weight: 800; }
+.kv { font-weight: 900; }
 .hr { height: 1px; background: rgba(120,100,180,0.18); margin: 12px 0; }
 
 /* 광고 카드 */
@@ -230,12 +297,12 @@ st.markdown("""
   border-radius: 10px;
   border: 1px solid rgba(80,80,180,0.25);
   background: rgba(255,255,255,0.7);
-  font-weight: 800;
+  font-weight: 900;
   color: #2b5bd7;
   text-decoration: none;
 }
 
-/* 타로 카드 박스 (expander 안) */
+/* 타로 */
 .tarot-wrap {
   background: rgba(255,255,255,0.6);
   border: 1px solid rgba(140, 120, 200, 0.18);
@@ -246,38 +313,16 @@ st.markdown("""
 .tarot-cardname { font-weight: 900; font-size: 22px; margin: 0 0 6px; color:#2b2b2b; }
 .tarot-meaning { margin: 0; color:#2b2b2b; }
 
-/* 공유 버튼 (보라색 pill) */
-div.stButton > button.ppt-share {
-  background: #7c3aed !important;
-  color: white !important;
-  border: none !important;
-  border-radius: 999px !important;
-  padding: 14px 18px !important;
-  font-size: 16px !important;
-  font-weight: 900 !important;
-  width: 100% !important;
-  box-shadow: 0 10px 26px rgba(124, 58, 237, 0.35) !important;
-}
-div.stButton > button.ppt-share:hover {
-  filter: brightness(1.03);
-}
-
-/* 다시하기 버튼: 텍스트 크게 */
-div.stButton > button.ppt-reset {
-  background: transparent !important;
-  border: none !important;
-  color: #111 !important;
-  font-size: 22px !important;
-  font-weight: 900 !important;
-  padding: 10px 0 !important;
-  width: 100% !important;
+/* 모바일에서 글자 살짝 줄이기 */
+@media (max-width: 480px) {
+  .ppt-title { font-size: 24px; margin-top: 12px; }
+  .ppt-subtitle { font-size: 18px; }
 }
 </style>
 """, unsafe_allow_html=True)
 
-
 # =========================
-# 5) 입력 화면
+# 입력 화면
 # =========================
 if not st.session_state.result_shown:
     st.markdown("<div class='ppt-title'>⭐ 2026년 운세 ⭐</div>", unsafe_allow_html=True)
@@ -293,15 +338,14 @@ if not st.session_state.result_shown:
 
     st.session_state.mbti = st.selectbox("MBTI", sorted(MBTIS_KO.keys()), index=sorted(MBTIS_KO.keys()).index(st.session_state.mbti) if st.session_state.mbti in MBTIS_KO else 0)
 
-    # PPT는 바로 결과화면이 나오게 보이는 구조라 버튼 1개만 둠
     if st.button("2026년 운세 보기!", use_container_width=True):
         st.session_state.result_shown = True
         st.session_state.show_share = False
+        st.session_state.share_png = None
         st.rerun()
 
-
 # =========================
-# 6) 결과 화면 (PPT 순서 최대한 동일)
+# 결과 화면
 # =========================
 if st.session_state.result_shown:
     y = st.session_state.birthdate.year
@@ -319,7 +363,6 @@ if st.session_state.result_shown:
     zodiac_emoji = ZODIAC_EMOJI_KO.get(zodiac, "")
     mbti_emoji = MBTI_EMOJI.get(mbti, "")
 
-    # 설명/문구
     zodiac_desc = ZODIACS_KO[zodiac]
     mbti_desc = MBTIS_KO[mbti]
     saju = get_saju_msg(y, m, d)
@@ -327,25 +370,19 @@ if st.session_state.result_shown:
     today_msg = daily_fortune(zodiac, 0)
     tomorrow_msg = daily_fortune(zodiac, 1)
 
-    rng = stable_result_rng(name, y, m, d, mbti)
+    rng = stable_rng(name, y, m, d, mbti)
     overall = rng.choice(OVERALL_FORTUNES_KO)
     combo_comment = rng.choice(COMBO_COMMENTS_KO).format(zodiac, mbti_desc)
     lucky_color = rng.choice(LUCKY_COLORS_KO)
     lucky_item = rng.choice(LUCKY_ITEMS_KO)
     tip = rng.choice(TIPS_KO)
 
-    # PPT 상단
-    st.markdown("<div class='ppt-title'>⭐ 2026년 운세 ⭐</div>", unsafe_allow_html=True)
-
-    # 이름 표기: "닭띠 + ENFJ" 형태에 가깝게
     who = f"{name} · " if name else ""
-    st.markdown(
-        f"<div class='ppt-subtitle'>🔮 {who}{zodiac_emoji} {zodiac}  {mbti_emoji} {mbti}</div>",
-        unsafe_allow_html=True
-    )
+
+    st.markdown("<div class='ppt-title'>⭐ 2026년 운세 ⭐</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='ppt-subtitle'>🔮 {who}{zodiac_emoji} {zodiac}  {mbti_emoji} {mbti}</div>", unsafe_allow_html=True)
     st.markdown("<div class='ppt-combo'>최고 조합!</div>", unsafe_allow_html=True)
 
-    # 메인 카드 (PPT 내용 순서)
     st.markdown(
         f"""
         <div class="card">
@@ -365,7 +402,6 @@ if st.session_state.result_shown:
         unsafe_allow_html=True
     )
 
-    # 광고 블록 (PPT의 "정수기 렌탈 대박!" 느낌)
     st.markdown(
         f"""
         <div class="ad">
@@ -380,12 +416,10 @@ if st.session_state.result_shown:
         unsafe_allow_html=True
     )
 
-    # 타로 (PPT처럼 expander)
     with st.expander("오늘의 타로 카드 보기", expanded=False):
         tarot_rng = random.Random(abs(hash(f"tarot|{datetime.now().strftime('%Y%m%d')}|{name}|{mbti}")) % (10**9))
         tarot_card = tarot_rng.choice(list(TAROT_CARDS.keys()))
         tarot_meaning = TAROT_CARDS[tarot_card]
-
         st.markdown(
             f"""
             <div class="tarot-wrap">
@@ -397,87 +431,102 @@ if st.session_state.result_shown:
             unsafe_allow_html=True
         )
 
-    # 공유 텍스트 (안 깨지게 안정형)
-    share_text = f"""⭐ 2026년 운세 ⭐
+    # ===== 공유: 버튼 누르면 PNG 생성 + (가능하면) 모바일 공유창 =====
+    title_lines = [
+        "⭐ 2026년 운세 ⭐",
+        f"🔮 {who}{zodiac_emoji} {zodiac}  {mbti_emoji} {mbti}",
+        "최고 조합!"
+    ]
+    body_lines = [
+        f"✨ 띠 운세: {zodiac_desc}",
+        f"🧠 MBTI 특징: {mbti_desc}",
+        f"🍀 사주 한 마디: {saju}",
+        "",
+        f"💗 오늘 운세: {today_msg}",
+        f"🌙 내일 운세: {tomorrow_msg}",
+        "",
+        f"💝 2026 전체 운세: {overall}",
+        f"💬 조합 한 마디: {combo_comment}",
+        f"🎨 럭키 컬러: {lucky_color} / 🧿 럭키 아이템: {lucky_item}",
+        f"✅ 팁: {tip}",
+    ]
 
-🔮 {who}{zodiac_emoji} {zodiac}  {mbti_emoji} {mbti}
-최고 조합!
-
-💗 오늘 운세: {today_msg}
-🌙 내일 운세: {tomorrow_msg}
-
-💝 2026 전체 운세: {overall}
-💬 조합 한 마디: {combo_comment}
-🎨 럭키 컬러: {lucky_color} | 🧿 럭키 아이템: {lucky_item}
-✅ 팁: {tip}
-
-나도 운세 보러 가기: {APP_URL}
-"""
-
-    # 공유 버튼(보라 pill) + 눌렀을 때 공유 텍스트 표시
-    st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
-    st.markdown("<style>div.stButton>button{}</style>", unsafe_allow_html=True)
-
-    # 버튼에 클래스 적용 (Streamlit 기본 버튼에 클래스 붙이기 위해 꼼수: key 기반 CSS 타겟은 불가 → 전체 버튼 스타일 대신 label별 2개만 쓴다고 가정)
-    # 그래서 아래는 버튼 직전에 한번 더 CSS를 덮어씌워 '다음 버튼'을 share 스타일로 보이게 함.
-    st.markdown("""
-    <style>
-    div.stButton > button { }
-    </style>
-    """, unsafe_allow_html=True)
-
-    share_clicked = st.button("친구에게 결과 공유", use_container_width=True, key="share_btn")
-    # share 버튼만 ppt-share처럼 보이게(간단 트릭: 버튼 생성 후 css로 첫 버튼 타겟이 어렵기 때문에 페이지 내 버튼이 2개뿐이게 구성)
-    st.markdown("""
-    <script>
-    </script>
-    """, unsafe_allow_html=True)
-
-    # 현실적으로 Streamlit은 버튼별 클래스 지정이 어려워서,
-    # 페이지에 버튼이 많아지면 스타일이 함께 먹을 수 있음.
-    # 여기선 결과화면에서 버튼을 2개만 유지해 최대한 PPT처럼 고정.
-    st.markdown("""
-    <style>
-    /* 결과 화면의 첫 번째 버튼(공유)을 pill로 보이게 */
-    div.stButton:nth-of-type(1) > button {
-      background: #7c3aed !important;
-      color: white !important;
-      border: none !important;
-      border-radius: 999px !important;
-      padding: 14px 18px !important;
-      font-size: 16px !important;
-      font-weight: 900 !important;
-      width: 100% !important;
-      box-shadow: 0 10px 26px rgba(124, 58, 237, 0.35) !important;
-    }
-    /* 결과 화면의 두 번째 버튼(리셋)을 큰 텍스트로 */
-    div.stButton:nth-of-type(2) > button {
-      background: transparent !important;
-      border: none !important;
-      color: #111 !important;
-      font-size: 22px !important;
-      font-weight: 900 !important;
-      padding: 10px 0 !important;
-      width: 100% !important;
-      box-shadow: none !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    if share_clicked:
+    if st.button("친구에게 결과 공유", use_container_width=True, key="share_btn"):
+        png_bytes = make_share_image(title_lines, body_lines, footer_text=APP_URL)
+        st.session_state.share_png = png_bytes
         st.session_state.show_share = True
-        st.toast("공유용 텍스트를 아래에서 복사해서 카톡/메시지에 붙여넣기 해주세요 🙂")
+        st.toast("공유용 이미지를 만들었어요! 아래에서 카톡 공유를 열어보세요 🙂")
 
-    if st.session_state.show_share:
-        st.text_area("공유 텍스트(복사해서 보내기)", value=share_text, height=220)
-        st.caption("전체 선택(Ctrl+A) → 복사(Ctrl+C) → 카톡/문자에 붙여넣기")
+    if st.session_state.show_share and st.session_state.share_png:
+        png_bytes = st.session_state.share_png
+        st.image(png_bytes, caption="공유 이미지 미리보기", use_container_width=True)
 
-    # URL 표시 (PPT처럼 카드 아래에 노출되는 느낌)
+        # 1) 항상 되는 방법: 저장
+        st.download_button(
+            "이미지 저장하기(PNG)",
+            data=png_bytes,
+            file_name="2026_fortune.png",
+            mime="image/png",
+            use_container_width=True
+        )
+        st.caption("공유창이 안 열리면: 위 버튼으로 저장 → 카톡에서 사진 첨부로 보내면 돼요.")
+
+        # 2) 가능한 모바일 브라우저에서: 공유창 열기(Web Share API)
+        b64 = base64.b64encode(png_bytes).decode("utf-8")
+        components.html(f"""
+        <div style="text-align:center; margin-top: 10px;">
+          <button id="shareBtn" style="
+            background:#7c3aed;color:white;border:none;border-radius:999px;
+            padding:14px 18px;font-size:16px;font-weight:900;width:100%;
+            box-shadow:0 10px 26px rgba(124,58,237,0.35);cursor:pointer;">
+            카톡으로 공유하기(공유창 열기)
+          </button>
+          <p style="font-size:12px;color:#666;margin-top:8px;">
+            * 휴대폰 Chrome/삼성인터넷 등에서 공유창이 열립니다. 카카오톡을 선택해 보내세요.
+          </p>
+        </div>
+        <script>
+          async function b64toBlob(b64Data, contentType='', sliceSize=512) {{
+            const byteCharacters = atob(b64Data);
+            const byteArrays = [];
+            for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {{
+              const slice = byteCharacters.slice(offset, offset + sliceSize);
+              const byteNumbers = new Array(slice.length);
+              for (let i = 0; i < slice.length; i++) {{
+                byteNumbers[i] = slice.charCodeAt(i);
+              }}
+              const byteArray = new Uint8Array(byteNumbers);
+              byteArrays.push(byteArray);
+            }}
+            return new Blob(byteArrays, {{type: contentType}});
+          }}
+
+          const btn = document.getElementById('shareBtn');
+          btn.addEventListener('click', async () => {{
+            try {{
+              const blob = await b64toBlob("{b64}", "image/png");
+              const file = new File([blob], "2026_fortune.png", {{ type: "image/png" }});
+
+              if (navigator.canShare && navigator.canShare({{ files: [file] }})) {{
+                await navigator.share({{
+                  title: "2026년 운세",
+                  text: "내 운세 결과 공유!",
+                  files: [file]
+                }});
+              }} else {{
+                alert("이 브라우저는 이미지 '직접 공유'를 지원하지 않아요. 위의 '이미지 저장하기'로 저장 후 카톡에서 보내주세요.");
+              }}
+            }} catch (e) {{
+              alert("공유가 실패했어요. 위의 '이미지 저장하기'로 저장 후 카톡에서 보내주세요.");
+            }}
+          }});
+        </script>
+        """, height=170)
+
     st.markdown(f"<div style='text-align:center; color:#6b6b6b; font-size:12px; margin-top:10px;'>{APP_URL}</div>", unsafe_allow_html=True)
 
-    # 다시하기(아래 큰 텍스트)
-    reset_clicked = st.button("처음부터 다시하기", use_container_width=True, key="reset_btn")
-    if reset_clicked:
+    if st.button("처음부터 다시하기", use_container_width=True, key="reset_btn"):
         st.session_state.result_shown = False
         st.session_state.show_share = False
+        st.session_state.share_png = None
         st.rerun()
