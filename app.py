@@ -2,17 +2,27 @@ import streamlit as st
 from datetime import datetime, timedelta, date
 import random
 import json
+from pathlib import Path
 import streamlit.components.v1 as components
 
 
-# =========================
-# 다국어 번역/데이터
-# =========================
-translations = {
+# =========================================
+# 0) 언어 설정 (6개)
+# =========================================
+LANG_OPTIONS = {
+    "ko": "한국어",
+    "en": "English",
+    "hi": "हिन्दी",
+    "zh": "中文(简体)",
+    "ru": "Русский",
+    "ja": "日本語"
+}
+
+UI = {
     "ko": {
-        "lang_label": "언어 / Language",
         "title": "⭐ 2026년 운세 ⭐",
         "subtitle": "띠 + MBTI + 사주 + 오늘/내일 운세",
+        "lang_label": "언어 / Language",
         "name_label": "이름 입력 (결과에 표시돼요)",
         "birth_label": "생년월일 입력",
         "mbti_mode": "MBTI는 어떻게 할까요?",
@@ -36,11 +46,6 @@ translations = {
         "share_btn": "친구에게 공유하기",
         "reset_btn": "처음부터 다시하기",
         "error_year": "생년은 1900~2030년 사이로 입력해주세요!",
-        "ad_badge": "광고",
-        "ad_title": "🔥 정수기 렌탈 대박!",
-        "ad_line1": "제휴카드면 월 0원부터!",
-        "ad_line2": "설치 당일 최대 50만원 지원 + 사은품 듬뿍 ✨",
-        "ad_link": "🔗 다나눔렌탈.com 바로가기",
         "test_caption": "총 12문항(약 30초) — 솔직하게 고르면 더 잘 맞아요 🙂",
         "sec_ei": "1) 에너지(E/I)",
         "sec_sn": "2) 인식(S/N)",
@@ -49,12 +54,16 @@ translations = {
         "share_title": "2026년 운세",
         "share_fail_copy": "공유 기능이 지원되지 않아 텍스트를 복사했어요!\n카톡에 붙여넣기 해주세요.",
         "share_manual_prompt": "아래 내용을 복사해서 카톡에 붙여넣기 해주세요:",
-        "share_cancel": "공유가 취소되었거나 지원되지 않아요.\n복사 후 붙여넣기 해주세요."
+        "share_cancel": "공유가 취소되었거나 지원되지 않아요.\n복사 후 붙여넣기 해주세요.",
+        "db_tools_title": "📦 (초보용) 운세 DB 파일 만들기/다운로드",
+        "db_tools_desc": "지금 보이는 결과 문장들을 'DB(JSON 파일)'로 저장해서 GitHub에 올릴 수 있어요.",
+        "download_db_btn": "이 언어 DB(JSON) 다운로드",
+        "db_path_hint": "다운받은 파일을 GitHub에 data/fortunes_{lang}.json 으로 업로드하면 '진짜 DB 기반'으로 동작해요."
     },
     "en": {
-        "lang_label": "Language / 언어",
         "title": "⭐ 2026 Fortune ⭐",
         "subtitle": "Zodiac + MBTI + Fortune + Today/Tomorrow Luck",
+        "lang_label": "Language / 언어",
         "name_label": "Name (shown in result)",
         "birth_label": "Birth date",
         "mbti_mode": "How to do MBTI?",
@@ -78,11 +87,6 @@ translations = {
         "share_btn": "Share with friends",
         "reset_btn": "Start over",
         "error_year": "Please enter a birth year between 1900 and 2030!",
-        "ad_badge": "Ad",
-        "ad_title": "🔥 Water purifier rental deal!",
-        "ad_line1": "From 0 won/month with partner card!",
-        "ad_line2": "Up to 500,000 won support + gifts ✨",
-        "ad_link": "🔗 Go to DananumRental.com",
         "test_caption": "12 questions (~30 sec) — answer honestly 🙂",
         "sec_ei": "1) Energy (E/I)",
         "sec_sn": "2) Perception (S/N)",
@@ -91,195 +95,468 @@ translations = {
         "share_title": "2026 Fortune",
         "share_fail_copy": "Sharing isn't supported here, so the text was copied.\nPaste it in KakaoTalk or message.",
         "share_manual_prompt": "Copy and paste this text to share:",
-        "share_cancel": "Sharing was canceled or not supported.\nPlease copy & paste."
+        "share_cancel": "Sharing was canceled or not supported.\nPlease copy & paste.",
+        "db_tools_title": "📦 DB generator/download",
+        "db_tools_desc": "You can download the fortune DB (JSON) and upload it to GitHub.",
+        "download_db_btn": "Download DB(JSON) for this language",
+        "db_path_hint": "Upload the file to GitHub as data/fortunes_{lang}.json to run with a real DB."
+    },
+    "hi": {
+        "title": "⭐ 2026 भाग्य ⭐",
+        "subtitle": "Zodiac + MBTI + Fortune + Today/Tomorrow Luck",
+        "lang_label": "Language / भाषा",
+        "name_label": "नाम (परिणाम में दिखेगा)",
+        "birth_label": "जन्म तिथि",
+        "mbti_mode": "MBTI कैसे करें?",
+        "mbti_direct": "सीधा चुनें",
+        "mbti_test": "त्वरित टेस्ट (12 प्रश्न)",
+        "btn_view": "2026 भाग्य देखें!",
+        "btn_view_test": "टेस्ट के साथ देखें!",
+        "combo": "Best Combo!",
+        "zodiac_title": "Zodiac fortune",
+        "mbti_title": "MBTI traits",
+        "saju_title": "Fortune comment",
+        "today_title": "Today's luck",
+        "tomorrow_title": "Tomorrow's luck",
+        "overall_title": "2026 annual luck",
+        "combo_title": "Combination meaning",
+        "lucky_color_title": "Lucky color",
+        "lucky_item_title": "Lucky item",
+        "tip_title": "Tip",
+        "tarot_btn": "आज का टैरो कार्ड",
+        "tarot_title": "आज का टैरो",
+        "share_btn": "Share with friends",
+        "reset_btn": "Start over",
+        "error_year": "1900–2030 के बीच जन्म वर्ष दर्ज करें!",
+        "test_caption": "12 प्रश्न (~30 सेकंड) — ईमानदारी से चुनें 🙂",
+        "sec_ei": "1) Energy (E/I)",
+        "sec_sn": "2) Perception (S/N)",
+        "sec_tf": "3) Decision (T/F)",
+        "sec_jp": "4) Lifestyle (J/P)",
+        "share_title": "2026 Fortune",
+        "share_fail_copy": "Sharing is not supported here, so the text was copied.\nPlease paste it in your messenger.",
+        "share_manual_prompt": "Copy and paste this text:",
+        "share_cancel": "Sharing canceled or not supported.\nPlease copy & paste.",
+        "db_tools_title": "📦 DB डाउनलोड",
+        "db_tools_desc": "DB(JSON) डाउनलोड करके GitHub पर अपलोड कर सकते हैं।",
+        "download_db_btn": "इस भाषा का DB(JSON) डाउनलोड",
+        "db_path_hint": "GitHub में data/fortunes_{lang}.json के रूप में अपलोड करें।"
+    },
+    "zh": {
+        "title": "⭐ 2026 运势 ⭐",
+        "subtitle": "生肖 + MBTI + 今日/明日运势",
+        "lang_label": "语言 / Language",
+        "name_label": "姓名（显示在结果）",
+        "birth_label": "出生日期",
+        "mbti_mode": "MBTI 怎么做？",
+        "mbti_direct": "直接选择",
+        "mbti_test": "快速测试（12题）",
+        "btn_view": "查看 2026 运势！",
+        "btn_view_test": "用测试结果查看！",
+        "combo": "最佳组合！",
+        "zodiac_title": "生肖运势",
+        "mbti_title": "MBTI 特点",
+        "saju_title": "一句话运势",
+        "today_title": "今日运势",
+        "tomorrow_title": "明日运势",
+        "overall_title": "2026 全年运势",
+        "combo_title": "组合一句话",
+        "lucky_color_title": "幸运颜色",
+        "lucky_item_title": "幸运物品",
+        "tip_title": "提示",
+        "tarot_btn": "抽今日塔罗牌",
+        "tarot_title": "今日塔罗",
+        "share_btn": "分享给朋友",
+        "reset_btn": "重新开始",
+        "error_year": "请输入 1900–2030 之间的出生年份！",
+        "test_caption": "12题（约30秒）— 真诚作答更准 🙂",
+        "sec_ei": "1) Energy (E/I)",
+        "sec_sn": "2) Perception (S/N)",
+        "sec_tf": "3) Decision (T/F)",
+        "sec_jp": "4) Lifestyle (J/P)",
+        "share_title": "2026 运势",
+        "share_fail_copy": "当前环境不支持分享，已复制文本。\n请粘贴到聊天软件发送。",
+        "share_manual_prompt": "复制并粘贴以下内容：",
+        "share_cancel": "分享取消或不支持。\n请复制并粘贴。",
+        "db_tools_title": "📦 生成/下载 DB",
+        "db_tools_desc": "可以下载 DB(JSON) 上传到 GitHub。",
+        "download_db_btn": "下载该语言 DB(JSON)",
+        "db_path_hint": "上传到 GitHub：data/fortunes_{lang}.json"
+    },
+    "ru": {
+        "title": "⭐ 2026 Удача ⭐",
+        "subtitle": "Zodiac + MBTI + Today/Tomorrow Luck",
+        "lang_label": "Язык / Language",
+        "name_label": "Имя (в результате)",
+        "birth_label": "Дата рождения",
+        "mbti_mode": "Как выбрать MBTI?",
+        "mbti_direct": "Выбрать напрямую",
+        "mbti_test": "Быстрый тест (12 вопросов)",
+        "btn_view": "Показать удачу 2026!",
+        "btn_view_test": "Показать по тесту!",
+        "combo": "Лучшее сочетание!",
+        "zodiac_title": "Zodiac",
+        "mbti_title": "MBTI",
+        "saju_title": "Комментарий",
+        "today_title": "Сегодня",
+        "tomorrow_title": "Завтра",
+        "overall_title": "2026 год",
+        "combo_title": "Сочетание",
+        "lucky_color_title": "Цвет",
+        "lucky_item_title": "Предмет",
+        "tip_title": "Совет",
+        "tarot_btn": "Таро дня",
+        "tarot_title": "Таро",
+        "share_btn": "Поделиться",
+        "reset_btn": "Сначала",
+        "error_year": "Введите год рождения 1900–2030!",
+        "test_caption": "12 вопросов (~30 сек) — отвечайте честно 🙂",
+        "sec_ei": "1) Energy (E/I)",
+        "sec_sn": "2) Perception (S/N)",
+        "sec_tf": "3) Decision (T/F)",
+        "sec_jp": "4) Lifestyle (J/P)",
+        "share_title": "2026 Fortune",
+        "share_fail_copy": "Sharing isn't supported here, so the text was copied.\nPlease paste it in messenger.",
+        "share_manual_prompt": "Copy and paste this text:",
+        "share_cancel": "Sharing canceled or not supported.\nPlease copy & paste.",
+        "db_tools_title": "📦 Скачать DB",
+        "db_tools_desc": "Скачайте DB(JSON) и загрузите в GitHub.",
+        "download_db_btn": "Скачать DB(JSON) для языка",
+        "db_path_hint": "Загрузите как data/fortunes_{lang}.json"
+    },
+    "ja": {
+        "title": "⭐ 2026 運勢 ⭐",
+        "subtitle": "干支 + MBTI + 今日/明日の運勢",
+        "lang_label": "言語 / Language",
+        "name_label": "名前（結果に表示）",
+        "birth_label": "生年月日",
+        "mbti_mode": "MBTI はどうする？",
+        "mbti_direct": "直接選ぶ",
+        "mbti_test": "クイックテスト（12問）",
+        "btn_view": "2026運勢を見る！",
+        "btn_view_test": "テスト結果で見る！",
+        "combo": "最高の組み合わせ！",
+        "zodiac_title": "干支運勢",
+        "mbti_title": "MBTI特徴",
+        "saju_title": "ひと言",
+        "today_title": "今日",
+        "tomorrow_title": "明日",
+        "overall_title": "2026全体運",
+        "combo_title": "組み合わせ",
+        "lucky_color_title": "ラッキーカラー",
+        "lucky_item_title": "ラッキーアイテム",
+        "tip_title": "ヒント",
+        "tarot_btn": "今日のタロット",
+        "tarot_title": "タロット",
+        "share_btn": "友達に共有",
+        "reset_btn": "最初から",
+        "error_year": "1900〜2030の年を入力してください！",
+        "test_caption": "12問（約30秒）— 素直に選ぶと当たりやすい🙂",
+        "sec_ei": "1) Energy (E/I)",
+        "sec_sn": "2) Perception (S/N)",
+        "sec_tf": "3) Decision (T/F)",
+        "sec_jp": "4) Lifestyle (J/P)",
+        "share_title": "2026運勢",
+        "share_fail_copy": "共有が使えないためテキストをコピーしました。\nメッセンジャーに貼り付けてください。",
+        "share_manual_prompt": "以下をコピーして貼り付けてください：",
+        "share_cancel": "共有がキャンセル/非対応です。\nコピーして貼り付けてください。",
+        "db_tools_title": "📦 DBダウンロード",
+        "db_tools_desc": "DB(JSON)をダウンロードしてGitHubにアップできます。",
+        "download_db_btn": "この言語のDB(JSON)をダウンロード",
+        "db_path_hint": "GitHubの data/fortunes_{lang}.json としてアップロード"
     }
 }
 
-# KO/EN 각각 띠/설명
-ZODIAC_LIST_KO = ["쥐띠", "소띠", "호랑이띠", "토끼띠", "용띠", "뱀띠", "말띠", "양띠", "원숭이띠", "닭띠", "개띠", "돼지띠"]
-ZODIAC_LIST_EN = ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"]
 
-ZODIACS = {
-    "ko": {
-        "쥐띠": "안정 속 새로운 기회! 민첩한 판단으로 성공 잡아요",
-        "소띠": "꾸준함의 결실! 안정된 성장과 행복한 가족운",
-        "호랑이띠": "대박 띠! 도전과 성공, 리더십 발휘로 큰 성과",
-        "토끼띠": "삼재 주의! 신중함으로 변화 대처, 안정 추구",
-        "용띠": "운기 상승! 리더십과 승진 기회 많음",
-        "뱀띠": "직감과 실속! 예상치 못한 재물운",
-        "말띠": "본띠 해! 추진력 강하지만 균형이 핵심",
-        "양띠": "대박 띠! 편안함과 최고 돈운, 가정 행복",
-        "원숭이띠": "변화와 재능 발휘! 창의력으로 성공",
-        "닭띠": "노력 결실! 인정과 승진 가능성 높음",
-        "개띠": "대박 띠! 귀인 도움과 네트워킹으로 상승",
-        "돼지띠": "여유와 재물 대박! 즐기는 최고의 해"
-    },
-    "en": {
-        "Rat": "New opportunities within stability! Quick judgment brings success",
-        "Ox": "Rewards of persistence! Stable growth and family happiness",
-        "Tiger": "Big luck! Challenge, success, and strong leadership",
-        "Rabbit": "Be cautious with changes! Stay steady and careful",
-        "Dragon": "Rising fortune! Leadership and promotion chances",
-        "Snake": "Intuition pays off! Unexpected wealth",
-        "Horse": "Your zodiac year! Strong drive, but balance is key",
-        "Goat": "Big luck! Comfort, money luck, happy home",
-        "Monkey": "Change and talent shine! Creativity leads to success",
-        "Rooster": "Effort rewarded! Recognition and promotion possible",
-        "Dog": "Big luck! Helpful people and networking boost",
-        "Pig": "Relaxation and wealth! Enjoy a great year"
-    }
+# =========================================
+# 1) 기본 데이터: 띠/MBTI/타로/사주
+# =========================================
+ZODIAC_LIST = {
+    "ko": ["쥐띠","소띠","호랑이띠","토끼띠","용띠","뱀띠","말띠","양띠","원숭이띠","닭띠","개띠","돼지띠"],
+    "en": ["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"],
+    "hi": ["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"],
+    "zh": ["鼠","牛","虎","兔","龙","蛇","马","羊","猴","鸡","狗","猪"],
+    "ru": ["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"],
+    "ja": ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"]
 }
 
 MBTIS = {
     "ko": {
-        "INTJ": "냉철 전략가", "INTP": "아이디어 천재", "ENTJ": "보스", "ENTP": "토론왕",
-        "INFJ": "마음 마스터", "INFP": "감성 예술가", "ENFJ": "모두 선생님", "ENFP": "인간 비타민",
-        "ISTJ": "규칙 지킴이", "ISFJ": "세상 따뜻함", "ESTJ": "리더", "ESFJ": "분위기 메이커",
-        "ISTP": "고치는 장인", "ISFP": "감성 힐러", "ESTP": "모험왕", "ESFP": "파티 주인공"
+        "INTJ":"냉철 전략가","INTP":"아이디어 천재","ENTJ":"보스","ENTP":"토론왕",
+        "INFJ":"마음 마스터","INFP":"감성 예술가","ENFJ":"모두 선생님","ENFP":"인간 비타민",
+        "ISTJ":"규칙 지킴이","ISFJ":"세상 따뜻함","ESTJ":"리더","ESFJ":"분위기 메이커",
+        "ISTP":"고치는 장인","ISFP":"감성 힐러","ESTP":"모험왕","ESFP":"파티 주인공"
     },
     "en": {
-        "INTJ": "Strategist", "INTP": "Thinker", "ENTJ": "Commander", "ENTP": "Debater",
-        "INFJ": "Advocate", "INFP": "Mediator", "ENFJ": "Protagonist", "ENFP": "Campaigner",
-        "ISTJ": "Logistician", "ISFJ": "Defender", "ESTJ": "Executive", "ESFJ": "Consul",
-        "ISTP": "Virtuoso", "ISFP": "Adventurer", "ESTP": "Entrepreneur", "ESFP": "Entertainer"
+        "INTJ":"Strategist","INTP":"Thinker","ENTJ":"Commander","ENTP":"Debater",
+        "INFJ":"Advocate","INFP":"Mediator","ENFJ":"Protagonist","ENFP":"Campaigner",
+        "ISTJ":"Logistician","ISFJ":"Defender","ESTJ":"Executive","ESFJ":"Consul",
+        "ISTP":"Virtuoso","ISFP":"Adventurer","ESTP":"Entrepreneur","ESFP":"Entertainer"
+    },
+    "hi": {
+        "INTJ":"Strategist","INTP":"Thinker","ENTJ":"Commander","ENTP":"Debater",
+        "INFJ":"Advocate","INFP":"Mediator","ENFJ":"Protagonist","ENFP":"Campaigner",
+        "ISTJ":"Logistician","ISFJ":"Defender","ESTJ":"Executive","ESFJ":"Consul",
+        "ISTP":"Virtuoso","ISFP":"Adventurer","ESTP":"Entrepreneur","ESFP":"Entertainer"
+    },
+    "zh": {
+        "INTJ":"战略家","INTP":"思考者","ENTJ":"指挥官","ENTP":"辩论家",
+        "INFJ":"提倡者","INFP":"调停者","ENFJ":"主人公","ENFP":"竞选者",
+        "ISTJ":"物流师","ISFJ":"守护者","ESTJ":"总经理","ESFJ":"执政官",
+        "ISTP":"鉴赏家","ISFP":"探险家","ESTP":"企业家","ESFP":"表演者"
+    },
+    "ru": {
+        "INTJ":"Strategist","INTP":"Thinker","ENTJ":"Commander","ENTP":"Debater",
+        "INFJ":"Advocate","INFP":"Mediator","ENFJ":"Protagonist","ENFP":"Campaigner",
+        "ISTJ":"Logistician","ISFJ":"Defender","ESTJ":"Executive","ESFJ":"Consul",
+        "ISTP":"Virtuoso","ISFP":"Adventurer","ESTP":"Entrepreneur","ESFP":"Entertainer"
+    },
+    "ja": {
+        "INTJ":"Strategist","INTP":"Thinker","ENTJ":"Commander","ENTP":"Debater",
+        "INFJ":"Advocate","INFP":"Mediator","ENFJ":"Protagonist","ENFP":"Campaigner",
+        "ISTJ":"Logistician","ISFJ":"Defender","ESTJ":"Executive","ESFJ":"Consul",
+        "ISTP":"Virtuoso","ISFP":"Adventurer","ESTP":"Entrepreneur","ESFP":"Entertainer"
     }
 }
 
 SAJU_MSGS = {
-    "ko": [
-        "목(木) 기운 강함 → 성장과 발전의 해!",
-        "화(火) 기운 강함 → 열정 폭발!",
-        "토(土) 기운 강함 → 안정과 재물운",
-        "금(金) 기운 강함 → 결단력 좋음!",
-        "수(水) 기운 강함 → 지혜와 흐름",
-        "오행 균형 → 행복한 한 해",
-        "양기 강함 → 도전 성공",
-        "음기 강함 → 내면 성찰"
-    ],
-    "en": [
-        "Strong Wood → A year of growth!",
-        "Strong Fire → Passion explodes!",
-        "Strong Earth → Stability & wealth",
-        "Strong Metal → Decisive energy!",
-        "Strong Water → Wisdom & flow",
-        "Balanced elements → Happy year",
-        "Strong Yang → Challenge & success",
-        "Strong Yin → Inner reflection"
-    ]
-}
-
-DAILY_MSGS = {
-    "ko": [
-        "재물운 좋음! 작은 투자도 이득 봐요",
-        "연애운 최고! 고백하거나 데이트 좋음",
-        "건강 주의! 과로 피하고 쉬세요",
-        "전체운 대박! 좋은 일만 생길 거예요",
-        "인간관계 운 좋음! 귀인 만남 가능",
-        "학업/일 운 최고! 집중력 최고",
-        "여행운 좋음! 갑자기 떠나도 괜찮아요",
-        "기분 좋은 하루! 웃음이 가득할 거예요"
-    ],
-    "en": [
-        "Money luck is great! Even small investments pay off",
-        "Love luck is high! Great day for dates/confessions",
-        "Health caution! Avoid overwork and rest well",
-        "Overall big luck! Good things are coming",
-        "Relationships are good! Helpful people may appear",
-        "Best for study/work! Your focus is strong",
-        "Travel luck is good! Spontaneous trips are okay",
-        "A happy day full of laughter"
-    ]
-}
-
-OVERALL_FORTUNES = {
-    "ko": [
-        "성장과 재물이 함께하는 최고의 해! 대박 기운 가득",
-        "안정과 행복이 넘치는 한 해! 가족과 함께하는 기쁨",
-        "도전과 성공의 해! 큰 성과를 이룰 거예요",
-        "사랑과 인연이 피어나는 로맨틱한 해",
-        "변화와 새로운 시작! 창의력이 빛나는 한 해"
-    ],
-    "en": [
-        "Growth and wealth together — your best year!",
-        "A stable and happy year with family joy",
-        "A year of challenge & success with big achievements",
-        "A romantic year where love blooms",
-        "A year of change and new beginnings — creativity shines"
-    ]
-}
-
-COMBO_COMMENTS = {
-    "ko": [
-        "{}의 노력과 {}의 따뜻함으로 모두를 이끄는 리더가 될 거예요!",
-        "{}의 리더십과 {}의 창의력이 완벽한 시너지!",
-        "{}의 직감과 {}의 논리로 무적 조합!",
-        "{}의 안정감과 {}의 열정으로 대박 성공!",
-        "{}의 유연함과 {}의 결단력으로 모든 일 해결!"
-    ],
-    "en": [
-        "With {}'s drive and {}'s warmth, you can lead people!",
-        "{}'s leadership + {}'s creativity = perfect synergy!",
-        "{}'s intuition + {}'s logic = an unbeatable combo!",
-        "{}'s stability + {}'s passion = big success!",
-        "{}'s flexibility + {}'s decisiveness = problem solver!"
-    ]
-}
-
-LUCKY_COLORS = {"ko": ["골드", "레드", "블루", "그린", "퍼플"], "en": ["Gold", "Red", "Blue", "Green", "Purple"]}
-LUCKY_ITEMS = {
-    "ko": ["황금 액세서리", "빨간 지갑", "파란 목걸이", "초록 식물", "보라색 펜"],
-    "en": ["Golden accessory", "Red wallet", "Blue necklace", "Green plant", "Purple pen"]
-}
-TIPS = {
-    "ko": [
-        "새로운 사람 만나는 기회 많아요. 적극적으로!",
-        "작은 투자에 집중하세요. 이득 볼 가능성 높음",
-        "건강 관리에 신경 쓰세요. 규칙적인 운동 추천",
-        "가족/친구와 시간 보내세요. 행복 충전!",
-        "창의적인 취미를 시작해보세요. 재능 발휘될 거예요"
-    ],
-    "en": [
-        "Many chances to meet new people. Be proactive!",
-        "Focus on small investments. Profit chance is high",
-        "Take care of health. Regular exercise helps",
-        "Spend time with family/friends. Recharge happiness",
-        "Start a creative hobby. Your talent will shine"
-    ]
+    "ko": ["목(木) 기운 강함 → 성장과 발전의 해!","화(火) 기운 강함 → 열정 폭발!","토(土) 기운 강함 → 안정과 재물운","금(金) 기운 강함 → 결단력 좋음!","수(水) 기운 강함 → 지혜와 흐름","오행 균형 → 행복한 한 해","양기 강함 → 도전 성공","음기 강함 → 내면 성찰"],
+    "en": ["Strong Wood → A year of growth!","Strong Fire → Passion explodes!","Strong Earth → Stability & wealth","Strong Metal → Decisive energy!","Strong Water → Wisdom & flow","Balanced elements → Happy year","Strong Yang → Challenge & success","Strong Yin → Inner reflection"],
+    "hi": ["Strong Wood → A year of growth!","Strong Fire → Passion explodes!","Strong Earth → Stability & wealth","Strong Metal → Decisive energy!","Strong Water → Wisdom & flow","Balanced elements → Happy year","Strong Yang → Challenge & success","Strong Yin → Inner reflection"],
+    "zh": ["木旺：成长之年","火旺：热情爆发","土旺：稳定与财运","金旺：果断有力","水旺：智慧与顺流","五行平衡：幸福之年","阳气强：挑战成功","阴气强：内省成长"],
+    "ru": ["Strong Wood → A year of growth!","Strong Fire → Passion explodes!","Strong Earth → Stability & wealth","Strong Metal → Decisive energy!","Strong Water → Wisdom & flow","Balanced elements → Happy year","Strong Yang → Challenge & success","Strong Yin → Inner reflection"],
+    "ja": ["木が強い→成長の年","火が強い→情熱の年","土が強い→安定と金運","金が強い→決断力","水が強い→知恵と流れ","バランス→幸福の年","陽が強い→挑戦成功","陰が強い→内省"]
 }
 
 TAROT_CARDS = {
-    "The Fool": {"ko": "바보 - 새로운 시작, 모험, 순수한 믿음", "en": "New beginnings, adventure, innocence"},
-    "The Magician": {"ko": "마법사 - 창조력, 능력 발휘, 집중", "en": "Skill, manifestation, focus"},
-    "The High Priestess": {"ko": "여사제 - 직감, 신비, 내면의 목소리", "en": "Intuition, mystery, inner voice"},
-    "The Empress": {"ko": "여제 - 풍요, 어머니의 사랑, 창작", "en": "Abundance, nurturing, creativity"},
-    "The Emperor": {"ko": "황제 - 안정, 권위, 구조", "en": "Stability, authority, structure"},
-    "The Lovers": {"ko": "연인 - 사랑, 조화, 선택", "en": "Love, harmony, choices"},
-    "The Chariot": {"ko": "전차 - 승리, 의지력, 방향", "en": "Victory, willpower, direction"},
-    "The Star": {"ko": "별 - 희망, 영감, 치유", "en": "Hope, inspiration, healing"},
-    "The Sun": {"ko": "태양 - 행복, 성공, 긍정 에너지", "en": "Happiness, success, positivity"},
-    "The World": {"ko": "세계 - 완성, 성취, 전체성", "en": "Completion, achievement, wholeness"}
+    "The Fool": {"ko":"바보 - 새로운 시작, 모험","en":"New beginnings, adventure","hi":"New beginnings, adventure","zh":"新的开始、冒险","ru":"New beginnings, adventure","ja":"新しい始まり・冒険"},
+    "The Magician": {"ko":"마법사 - 집중, 능력 발휘","en":"Skill, focus","hi":"Skill, focus","zh":"专注与能力","ru":"Skill, focus","ja":"集中と実現力"},
+    "The High Priestess": {"ko":"여사제 - 직감, 내면","en":"Intuition, inner voice","hi":"Intuition, inner voice","zh":"直觉与内在","ru":"Intuition, inner voice","ja":"直感と内面"},
+    "The Empress": {"ko":"여제 - 풍요, 창작","en":"Abundance, creativity","hi":"Abundance, creativity","zh":"丰盛与创造","ru":"Abundance, creativity","ja":"豊かさ・創造"},
+    "The Emperor": {"ko":"황제 - 안정, 구조","en":"Stability, structure","hi":"Stability, structure","zh":"稳定与秩序","ru":"Stability, structure","ja":"安定・秩序"},
+    "The Lovers": {"ko":"연인 - 사랑, 선택","en":"Love, choices","hi":"Love, choices","zh":"爱情与选择","ru":"Love, choices","ja":"愛と選択"},
+    "The Star": {"ko":"별 - 희망, 치유","en":"Hope, healing","hi":"Hope, healing","zh":"希望与疗愈","ru":"Hope, healing","ja":"希望・癒し"},
+    "The Sun": {"ko":"태양 - 행복, 성공","en":"Joy, success","hi":"Joy, success","zh":"快乐与成功","ru":"Joy, success","ja":"幸福・成功"},
+    "The World": {"ko":"세계 - 완성, 성취","en":"Completion, achievement","hi":"Completion, achievement","zh":"完成与成就","ru":"Completion, achievement","ja":"完成・達成"}
 }
 
 
-# =========================
-# 유틸
-# =========================
+# =========================================
+# 2) DB(JSON) 로드 / 없으면 자동 생성(대용량)
+# =========================================
+def _safe_read_json(fp: Path):
+    try:
+        with open(fp, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+@st.cache_data
+def load_fortune_db(lang: str):
+    fp = Path(__file__).parent / "data" / f"fortunes_{lang}.json"
+    if fp.exists():
+        db = _safe_read_json(fp)
+        if isinstance(db, dict) and "daily" in db:
+            return db, True  # True = external DB used
+    # 없으면 자동 생성
+    return generate_big_db(lang), False
+
+def generate_big_db(lang: str):
+    """
+    파일 없이도 '결과 수만 가지' 나오게 템플릿으로 대량 생성.
+    (10배 확장 요구 충족: 카테고리 8개 × 문장 20개 이상 수준)
+    """
+    # 공통 카테고리
+    categories = ["money","love","health","work","relationship","study","travel","mindset"]
+
+    # 언어별 문장 조각(짧고 자연스러운 톤)
+    # 조각을 조합해서 '매번 다른 문장'을 많이 만들 수 있음
+    bank = {
+        "ko": {
+            "open": ["오늘은", "지금은", "이번 흐름은", "오늘의 포인트는", "핵심은"],
+            "money_a": ["지출 정리", "고정비 점검", "비교 구매", "환불/정산", "작은 절약", "기록 습관", "충동 억제", "가치 소비"],
+            "money_b": ["가 유리해요.", "부터 하면 이득이에요.", "만 해도 흐름이 좋아져요.", "가 돈운을 살려줘요.", "로 손해를 막을 수 있어요."],
+            "love_a": ["한 줄 진심", "가벼운 칭찬", "타이밍 좋은 연락", "공감 먼저", "시간 약속", "부드러운 표현", "비교 줄이기", "웃는 표정"],
+            "love_b": ["이 관계운을 올려줘요.", "이 분위기를 바꿔요.", "이 오해를 줄여줘요.", "이 신뢰를 키워줘요.", "이 매력으로 보여요."],
+            "health_a": ["수면", "수분", "목/어깨 스트레칭", "가벼운 산책", "호흡", "체온 관리", "눈 휴식", "짧은 루틴"],
+            "health_b": ["이 컨디션을 좌우해요.", "을 챙기면 하루가 편해요.", "만 해도 피로가 줄어요.", "이 기운을 회복해줘요.", "이 운의 흐름을 바꿔요."],
+            "work_a": ["마감 정리", "기록 남기기", "우선순위 재정렬", "협업 요청", "검수 체크", "짧은 회의", "자동화 아이디어", "조건 확인"],
+            "work_b": ["가 성과로 이어져요.", "가 실수를 줄여줘요.", "가 인정받는 포인트예요.", "가 시간을 아껴줘요.", "가 스트레스를 낮춰줘요."],
+            "rel_a": ["질문하기", "인사 먼저", "오해 바로 풀기", "경계 정하기", "작은 배려", "칭찬 한 마디", "요약+공감", "함께 하기"],
+            "rel_b": ["가 관계를 부드럽게 해요.", "가 사람운을 올려줘요.", "가 도움을 불러와요.", "가 갈등을 줄여줘요.", "가 신뢰를 만들어요."],
+            "study_a": ["시작 5분", "개념도", "복습", "질문", "한 장 요약", "장소 전환", "방해 요소 제거", "작은 목표"],
+            "study_b": ["만 지켜도 충분해요.", "이 점수를 올려줘요.", "이 효율을 키워줘요.", "이 기억을 오래가게 해요.", "가 집중을 살려줘요."],
+            "travel_a": ["10분 버퍼", "가까운 외출", "새 루트", "사진 기록", "여유 있는 계획", "보조배터리", "우산", "대체 플랜"],
+            "travel_b": ["가 스트레스를 줄여줘요.", "가 만족도를 키워줘요.", "가 돌발 상황을 막아줘요.", "가 좋은 추억이 돼요.", "가 운을 살려줘요."],
+            "mind_a": ["완료", "정리", "작은 성공", "비교 줄이기", "통제 가능한 것", "도움 받기", "메모", "감사 1줄"],
+            "mind_b": ["를 선택하면 마음이 편해져요.", "만 해도 흐름이 좋아져요.", "가 자신감을 올려줘요.", "가 불안을 줄여줘요.", "가 내일을 가볍게 해요."]
+        },
+        "en": {
+            "open": ["Today,", "Right now,", "This vibe says", "Key point:", "Focus on"],
+            "money_a": ["tracking spending", "comparing prices", "cutting one fixed cost", "refund/settlement tasks", "small savings", "clear records", "avoiding impulse buys", "value-first choices"],
+            "money_b": ["will help you most.", "brings a safer flow.", "prevents regrets.", "creates breathing room.", "protects your money luck."],
+            "love_a": ["one sincere line", "a gentle compliment", "good message timing", "empathy first", "keeping small promises", "soft wording", "less comparison", "a warm smile"],
+            "love_b": ["boosts connection.", "reduces misunderstandings.", "builds trust.", "changes the mood.", "makes you more attractive."],
+            "health_a": ["sleep", "hydration", "neck/shoulder stretch", "a short walk", "deep breathing", "temperature balance", "eye breaks", "a 10-minute routine"],
+            "health_b": ["decides your condition.", "makes the day easier.", "cuts fatigue.", "restores energy.", "shifts the flow."],
+            "work_a": ["closing tasks", "documenting decisions", "reordering priorities", "asking for help", "using a checklist", "short meetings", "automation ideas", "checking conditions"],
+            "work_b": ["turns into results.", "reduces mistakes.", "gets recognition.", "saves time.", "lowers stress."],
+            "rel_a": ["asking questions", "greeting first", "clearing misunderstandings quickly", "setting boundaries", "small kindness", "one compliment", "summary + empathy", "doing it together"],
+            "rel_b": ["smooths relationships.", "boosts people luck.", "invites support.", "reduces conflict.", "builds trust."],
+            "study_a": ["the first 5 minutes", "concept mapping", "review", "asking questions", "one-page summary", "changing location", "removing distractions", "small goals"],
+            "study_b": ["is enough today.", "raises efficiency.", "improves recall.", "brings momentum.", "boosts focus."],
+            "travel_a": ["a 10-minute buffer", "a short outing", "a new route", "photo journaling", "flexible plans", "a power bank", "an umbrella", "a backup plan"],
+            "travel_b": ["reduces stress.", "raises satisfaction.", "prevents trouble.", "creates good memories.", "improves your luck."],
+            "mind_a": ["done over perfect", "tidying up", "small wins", "less comparison", "what you can control", "getting help", "writing it down", "one gratitude line"],
+            "mind_b": ["makes you calmer.", "improves your flow.", "builds confidence.", "reduces anxiety.", "helps tomorrow-you."]
+        },
+        "hi": {
+            "open": ["आज", "अभी", "आज का संकेत:", "मुख्य बात:", "फोकस करें"],
+            "money_a": ["खर्च का हिसाब", "कीमत तुलना", "एक स्थायी खर्च कम करना", "रिफंड/सेटलमेंट", "छोटी बचत", "स्पष्ट रिकॉर्ड", "इम्पल्स खरीद से बचना", "वैल्यू-आधारित खरीद"],
+            "money_b": ["आपके लिए लाभदायक होगा।", "फ्लो को सुरक्षित रखेगा।", "पछतावा कम करेगा।", "अधिक जगह बनाएगा।", "धन भाग्य बढ़ाएगा।"],
+            "love_a": ["एक सच्ची लाइन", "हल्की तारीफ", "मैसेज का सही समय", "पहले सहानुभूति", "छोटे वादे निभाना", "नरम शब्द", "कम तुलना", "गरम मुस्कान"],
+            "love_b": ["रिश्ते को मजबूत करती है।", "गलतफहमी घटाती है।", "विश्वास बढ़ाती है।", "माहौल बदलती है।", "आपको आकर्षक बनाती है।"],
+            "health_a": ["नींद", "पानी", "गर्दन/कंधे स्ट्रेच", "छोटी सैर", "गहरी सांस", "तापमान संतुलन", "आंखों का ब्रेक", "10 मिनट रूटीन"],
+            "health_b": ["कंडीशन तय करती है।", "दिन आसान बनाती है।", "थकान घटाती है।", "ऊर्जा लौटाती है।", "फ्लो बदल देती है।"],
+            "work_a": ["काम पूरा करना", "निर्णय लिखना", "प्राथमिकता बदलना", "मदद माँगना", "चेकलिस्ट", "छोटी मीटिंग", "ऑटोमेशन आइडिया", "शर्तें जांचना"],
+            "work_b": ["अच्छे परिणाम देता है।", "गलतियाँ कम करता है।", "सराहना दिलाता है।", "समय बचाता है।", "तनाव घटाता है।"],
+            "rel_a": ["सवाल पूछना", "पहले नमस्ते", "गलतफहमी जल्दी साफ", "सीमाएँ तय करना", "छोटी मदद", "एक तारीफ", "सार + सहानुभूति", "साथ मिलकर करना"],
+            "rel_b": ["रिश्ते बेहतर करता है।", "लोगों का समर्थन बढ़ाता है।", "मदद बुलाता है।", "टकराव घटाता है।", "विश्वास बनाता है।"],
+            "study_a": ["पहले 5 मिनट", "कॉनसेप्ट मैप", "रिविज़न", "प्रश्न पूछना", "एक पेज सार", "जगह बदलना", "डिस्ट्रैक्शन हटाना", "छोटे लक्ष्य"],
+            "study_b": ["आज पर्याप्त है।", "दक्षता बढ़ाता है।", "याददाश्त मजबूत करता है।", "गति बनाता है।", "फोकस बढ़ाता है।"],
+            "travel_a": ["10 मिनट बफर", "छोटी आउटिंग", "नया रास्ता", "फोटो नोट", "लचीली योजना", "पावर बैंक", "छाता", "बैकअप प्लान"],
+            "travel_b": ["तनाव घटाता है।", "संतोष बढ़ाता है।", "मुसीबत रोकता है।", "अच्छी यादें बनाता है।", "भाग्य बढ़ाता है।"],
+            "mind_a": ["परफेक्ट नहीं, पूरा", "सफाई", "छोटी जीत", "कम तुलना", "जो नियंत्रित हो", "मदद लेना", "लिखना", "एक लाइन धन्यवाद"],
+            "mind_b": ["मन हल्का करता है।", "फ्लो बेहतर करता है।", "आत्मविश्वास बढ़ाता है।", "चिंता घटाता है।", "कल को आसान बनाता है।"]
+        },
+        "zh": {
+            "open": ["今天", "现在", "关键是", "重点是", "建议你"],
+            "money_a": ["整理支出", "耐心比价", "降低一项固定成本", "处理退款/结算", "做小额节省", "留下记录", "避免冲动买", "重视价值而非低价"],
+            "money_b": ["会更划算。", "能让财运更稳。", "能减少后悔。", "会带来空间感。", "能保护你的现金流。"],
+            "love_a": ["一句真诚表达", "轻轻夸奖", "把握消息时机", "先共情", "守住小承诺", "语气柔和", "减少比较", "先微笑"],
+            "love_b": ["能升温关系。", "能减少误会。", "能建立信任。", "会改变氛围。", "会让你更有魅力。"],
+            "health_a": ["早点睡", "多喝水", "颈肩拉伸", "短步行", "深呼吸", "注意温差", "眼睛休息", "10分钟小运动"],
+            "health_b": ["决定你的状态。", "让一天更轻松。", "明显减轻疲劳。", "恢复能量。", "改变整体节奏。"],
+            "work_a": ["收尾与整理", "记录决定", "调整优先级", "主动协作", "用检查清单", "短会快决", "尝试自动化", "先看条件再答应"],
+            "work_b": ["更容易出成果。", "能减少错误。", "更容易被认可。", "能省时间。", "能降低压力。"],
+            "rel_a": ["多提问", "先打招呼", "及时澄清误会", "设置边界", "小小善意", "一句夸奖", "总结+共情", "一起完成"],
+            "rel_b": ["会让关系更顺。", "会提升人缘运。", "会引来帮助。", "会减少冲突。", "会建立信任。"],
+            "study_a": ["先开始5分钟", "画概念图", "复习", "勇敢提问", "一页总结", "换个地方", "减少干扰", "设小目标"],
+            "study_b": ["今天就够了。", "效率会更高。", "记得更牢。", "更容易进入状态。", "专注力更强。"],
+            "travel_a": ["留10分钟余量", "短途出门", "尝试新路线", "拍照记录", "计划留空", "带充电宝", "带伞", "准备备选方案"],
+            "travel_b": ["能减少焦虑。", "会提升满意度。", "能避免小麻烦。", "会变成好回忆。", "能提升好运。"],
+            "mind_a": ["先完成再完美", "整理一下", "承认小进步", "少比较", "关注可控的事", "接受帮助", "写下来", "睡前一行感恩"],
+            "mind_b": ["会更安心。", "会让节奏更顺。", "会提升自信。", "能减少焦虑。", "让明天更轻松。"]
+        },
+        "ru": {
+            "open": ["Сегодня", "Сейчас", "Ключ:", "Фокус:", "Главное —"],
+            "money_a": ["упорядочить расходы", "сравнить цены", "снизить один фиксированный платёж", "закрыть возвраты/расчёты", "сделать маленькую экономию", "оставлять записи", "избегать импульсивных покупок", "выбирать ценность, а не дешевизну"],
+            "money_b": ["даст больше выгоды.", "сделает поток стабильнее.", "уменьшит сожаления.", "даст больше свободы.", "защитит финансовую удачу."],
+            "love_a": ["одна искренняя фраза", "лёгкий комплимент", "удачный момент написать", "эмпатия прежде всего", "маленькие обещания", "мягкий тон", "меньше сравнений", "тёплая улыбка"],
+            "love_b": ["усилит близость.", "снизит недопонимание.", "построит доверие.", "изменит атмосферу.", "сделает вас привлекательнее."],
+            "health_a": ["сон", "вода", "растяжка шеи/плеч", "короткая прогулка", "глубокое дыхание", "баланс температуры", "отдых для глаз", "10-минутная рутина"],
+            "health_b": ["решает самочувствие.", "делает день легче.", "снимает усталость.", "возвращает энергию.", "меняет общий ритм."],
+            "work_a": ["закрывать задачи", "фиксировать решения", "перестроить приоритеты", "просить помощь", "чек-лист", "короткие встречи", "идеи автоматизации", "проверить условия перед согласием"],
+            "work_b": ["приводит к результату.", "уменьшает ошибки.", "даёт признание.", "экономит время.", "снижает стресс."],
+            "rel_a": ["задавать вопросы", "поздороваться первым", "сразу прояснять", "ставить границы", "маленькая доброта", "один комплимент", "кратко + с эмпатией", "делать вместе"],
+            "rel_b": ["делает отношения мягче.", "повышает удачу в людях.", "привлекает поддержку.", "уменьшает конфликты.", "строит доверие."],
+            "study_a": ["первые 5 минут", "карта понятий", "повторение", "задавать вопросы", "одна страница итогов", "сменить место", "убрать отвлечения", "маленькая цель"],
+            "study_b": ["на сегодня достаточно.", "повышает эффективность.", "улучшает память.", "даёт темп.", "усиливает концентрацию."],
+            "travel_a": ["10 минут запаса", "короткая вылазка", "новый маршрут", "фото-заметки", "гибкий план", "пауэрбанк", "зонт", "запасной план"],
+            "travel_b": ["снижает тревогу.", "повышает удовольствие.", "предотвращает мелкие проблемы.", "становится хорошей памятью.", "улучшает удачу."],
+            "mind_a": ["сделано важнее идеала", "немного порядка", "маленькие победы", "меньше сравнений", "то, что под контролем", "принимать помощь", "записать", "одна строка благодарности"],
+            "mind_b": ["делает спокойнее.", "улучшает поток.", "даёт уверенность.", "снижает тревожность.", "облегчает завтра."]
+        },
+        "ja": {
+            "open": ["今日は", "今は", "ポイントは", "コツは", "大事なのは"],
+            "money_a": ["支出の整理", "価格比較", "固定費を一つ減らす", "返金/精算の処理", "小さな節約", "記録を残す", "衝動買いを避ける", "安さより価値重視"],
+            "money_b": ["が得です。", "で流れが安定します。", "で後悔が減ります。", "で余裕が生まれます。", "で金運を守れます。"],
+            "love_a": ["一言の本音", "軽い褒め言葉", "連絡のタイミング", "共感を先に", "小さな約束", "やわらかい言い方", "比較を減らす", "笑顔"],
+            "love_b": ["が距離を縮めます。", "が誤解を減らします。", "が信頼を作ります。", "が空気を変えます。", "が魅力になります。"],
+            "health_a": ["睡眠", "水分", "首肩ストレッチ", "短い散歩", "深呼吸", "温度差対策", "目の休憩", "10分ルーティン"],
+            "health_b": ["が体調を左右します。", "で一日が楽になります。", "で疲れが減ります。", "で元気が戻ります。", "で流れが変わります。"],
+            "work_a": ["締め作業", "決定の記録", "優先順位の見直し", "協力を頼む", "チェックリスト", "短い会議", "自動化アイデア", "条件確認"],
+            "work_b": ["が成果につながります。", "がミスを減らします。", "が評価されます。", "が時間を節約します。", "がストレスを下げます。"],
+            "rel_a": ["質問を増やす", "先に挨拶", "誤解をすぐ解く", "境界線を決める", "小さな親切", "一言の称賛", "要約+共感", "一緒にやる"],
+            "rel_b": ["で関係がやわらぎます。", "で人運が上がります。", "で助けが来ます。", "で衝突が減ります。", "で信頼が増えます。"],
+            "study_a": ["最初の5分", "概念図", "復習", "質問", "1枚まとめ", "場所を変える", "邪魔を減らす", "小さな目標"],
+            "study_b": ["だけで十分です。", "で効率が上がります。", "で記憶が残ります。", "で勢いが出ます。", "で集中できます。"],
+            "travel_a": ["10分バッファ", "近場のお出かけ", "新ルート", "写真メモ", "余白の計画", "モバイルバッテリー", "傘", "代替案"],
+            "travel_b": ["で不安が減ります。", "で満足度が上がります。", "で小トラブルを防げます。", "で良い思い出になります。", "で運が整います。"],
+            "mind_a": ["完璧より完了", "整理", "小さな成功", "比較を減らす", "自分が制御できること", "助けをもらう", "書き出す", "感謝を一行"],
+            "mind_b": ["で心が軽くなります。", "で流れが良くなります。", "で自信が増えます。", "で不安が減ります。", "で明日が楽になります。"]
+        }
+    }
+
+    # fallback: 없으면 영어 bank 사용
+    if lang not in bank:
+        lang = "en"
+
+    b = bank[lang]
+    rng = random.Random(20260101 + len(lang))  # 고정 생성(파일 다운로드시 매번 같은 DB)
+
+    def build_list(kind_a, kind_b, count=24):
+        out = []
+        for _ in range(count):
+            s = f"{rng.choice(b['open'])} {rng.choice(b[kind_a])}{rng.choice(b[kind_b])}"
+            out.append(s)
+        # 중복 줄이기
+        out = list(dict.fromkeys(out))
+        while len(out) < count:
+            out.append(f"{rng.choice(b['open'])} {rng.choice(b[kind_a])}{rng.choice(b[kind_b])}")
+            out = list(dict.fromkeys(out))
+        return out[:count]
+
+    daily = {
+        "money": build_list("money_a", "money_b"),
+        "love": build_list("love_a", "love_b"),
+        "health": build_list("health_a", "health_b"),
+        "work": build_list("work_a", "work_b"),
+        "relationship": build_list("rel_a", "rel_b"),
+        "study": build_list("study_a", "study_b"),
+        "travel": build_list("travel_a", "travel_b"),
+        "mindset": build_list("mind_a", "mind_b")
+    }
+
+    yearly = {
+        "general": daily["mindset"][:12],
+        "career": daily["work"][:12],
+        "money": daily["money"][:12],
+        "love": daily["love"][:12]
+    }
+
+    combo = {
+        "zodiac_mbti": [
+            "{zodiac} + {mbti_desc} 조합은 ‘정리→실행’이 강해요." if lang == "ko" else
+            "{zodiac} + {mbti_desc} combo: organize → execute." if lang == "en" else
+            "{zodiac} + {mbti_desc} combo: organize → execute."
+        ] * 25
+    }
+
+    lucky = {
+        "colors": ["Gold","Red","Blue","Green","Purple","Silver","Navy","Mint","Pink","Off-white"],
+        "items": [
+            "Small notebook","Card wallet","Mini perfume","Power bank","Keychain",
+            "Tumbler","Wristwatch","Wireless earbuds","Umbrella","Lip balm"
+        ],
+        "tips": daily["mindset"][:20]
+    }
+
+    return {"daily": daily, "yearly": yearly, "combo": combo, "lucky": lucky}
+
+
+# =========================================
+# 3) 유틸
+# =========================================
 def get_zodiac(year: int, lang: str):
     if not (1900 <= year <= 2030):
         return None
     idx = (year - 4) % 12
-    return (ZODIAC_LIST_EN[idx] if lang == "en" else ZODIAC_LIST_KO[idx])
+    return ZODIAC_LIST.get(lang, ZODIAC_LIST["en"])[idx]
 
-def get_saju(year: int, month: int, day: int, lang: str):
-    return SAJU_MSGS[lang][(year + month + day) % 8]
-
-def daily_fortune(zodiac: str, lang: str, offset=0):
-    # 오늘/내일: 날짜+띠로 고정
-    today = datetime.now() + timedelta(days=offset)
-    z_list = ZODIAC_LIST_EN if lang == "en" else ZODIAC_LIST_KO
-    seed = int(today.strftime("%Y%m%d")) + z_list.index(zodiac)
-    rng = random.Random(seed)
-    return rng.choice(DAILY_MSGS[lang])
+def get_saju(y: int, m: int, d: int, lang: str):
+    arr = SAJU_MSGS.get(lang, SAJU_MSGS["en"])
+    return arr[(y + m + d) % len(arr)]
 
 def stable_rng(name: str, y: int, m: int, d: int, mbti: str, lang: str):
     key = f"{lang}|{name}|{y:04d}-{m:02d}-{d:02d}|{mbti}"
@@ -287,12 +564,11 @@ def stable_rng(name: str, y: int, m: int, d: int, mbti: str, lang: str):
     return random.Random(seed)
 
 
-# =========================
-# Streamlit 기본
-# =========================
+# =========================================
+# 4) Streamlit 기본/UI
+# =========================================
 st.set_page_config(page_title="2026 Fortune", layout="centered")
 
-# 세션
 if "lang" not in st.session_state:
     st.session_state.lang = "ko"
 if "result" not in st.session_state:
@@ -304,19 +580,7 @@ if "birthdate" not in st.session_state:
 if "mbti" not in st.session_state:
     st.session_state.mbti = "ENFJ"
 
-# 언어 선택
-st.session_state.lang = st.radio(
-    translations[st.session_state.lang]["lang_label"],
-    ["ko", "en"],
-    index=0 if st.session_state.lang == "ko" else 1,
-    horizontal=True
-)
-lang = st.session_state.lang
-t = translations[lang]
-
-# =========================
-# 모바일 최적화 CSS (상단 잘림 방지)
-# =========================
+# 모바일 최적화 CSS (상단 잘림/여백)
 st.markdown(
     """
     <style>
@@ -324,79 +588,48 @@ st.markdown(
       #MainMenu {visibility: hidden;}
       footer {visibility: hidden;}
       .stApp { background: #efe9ff; }
-
       .block-container {
         padding-top: 10px !important;
         padding-bottom: 30px !important;
         max-width: 760px;
       }
-
-      .title {
-        font-size: 28px; font-weight: 900; color:#2b2b2b; text-align:center;
-        margin: 14px 0 4px;
-      }
-      .subtitle {
-        font-size: 14px; font-weight: 700; color:#555; text-align:center;
-        margin: 0 0 14px;
-      }
-
+      .title { font-size: 28px; font-weight: 900; color:#2b2b2b; text-align:center; margin: 14px 0 4px;}
+      .subtitle { font-size: 14px; font-weight: 700; color:#555; text-align:center; margin: 0 0 14px;}
       .card {
-        background: rgba(255,255,255,0.75);
+        background: rgba(255,255,255,0.78);
         border: 1px solid rgba(140,120,200,0.25);
         border-radius: 18px;
-        padding: 16px 16px;
+        padding: 16px;
         box-shadow: 0 10px 22px rgba(0,0,0,0.08);
         margin: 10px 0 16px;
       }
       .card p { margin: 6px 0; line-height: 1.65; font-size: 14.5px; color:#2b2b2b; }
       .kv { font-weight: 900; }
-
-      .ad {
-        background: rgba(255,255,255,0.65);
-        border: 1px solid rgba(140,120,200,0.22);
-        border-radius: 18px;
-        padding: 14px 16px;
-        box-shadow: 0 10px 22px rgba(0,0,0,0.06);
-        margin: 10px 0 18px;
-      }
-      .ad-badge { font-size:12px; font-weight:900; color:#e11d48; }
-      .ad-title { font-weight: 900; font-size: 15px; margin-top:4px; }
-      .ad-link {
-        display: inline-block;
-        margin-top: 10px;
-        padding: 7px 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(80,80,180,0.25);
-        background: rgba(255,255,255,0.7);
-        font-weight: 900;
-        color: #2b5bd7;
-        text-decoration: none;
-      }
-
-      .bigline {
-        font-size: 20px;
-        font-weight: 900;
-        text-align: center;
-        color: #2b2b2b;
-        margin: 8px 0 4px;
-      }
-
-      @media (max-width: 480px) {
-        .title { font-size: 24px; }
-        .bigline { font-size: 18px; }
-      }
+      .bigline { font-size: 20px; font-weight: 900; text-align: center; color: #2b2b2b; margin: 8px 0 4px;}
+      @media (max-width: 480px) {.title { font-size: 24px; } .bigline { font-size: 18px; }}
     </style>
     """,
     unsafe_allow_html=True
 )
 
-APP_URL = "https://my-fortune.streamlit.app"   # 네 배포 URL
-AD_URL = "https://www.다나눔렌탈.com"
+# 언어 선택
+st.session_state.lang = st.radio(
+    UI.get(st.session_state.lang, UI["en"])["lang_label"],
+    list(LANG_OPTIONS.keys()),
+    format_func=lambda k: LANG_OPTIONS[k],
+    horizontal=True
+)
+lang = st.session_state.lang
+t = UI.get(lang, UI["en"])
 
 
-# =========================
-# 입력 화면
-# =========================
+# 앱 URL(배포 후 바꾸기)
+APP_URL = "https://my-fortune.streamlit.app"
+
+
+# =========================================
+# 5) 입력 화면
+# =========================================
 if not st.session_state.result:
     st.markdown(f"<div class='title'>{t['title']}</div>", unsafe_allow_html=True)
     st.markdown(f"<div class='subtitle'>{t['subtitle']}</div>", unsafe_allow_html=True)
@@ -413,7 +646,7 @@ if not st.session_state.result:
     mbti_mode = st.radio(t["mbti_mode"], [t["mbti_direct"], t["mbti_test"]], horizontal=True)
 
     if mbti_mode == t["mbti_direct"]:
-        st.session_state.mbti = st.selectbox("MBTI", sorted(MBTIS[lang].keys()))
+        st.session_state.mbti = st.selectbox("MBTI", sorted(MBTIS.get(lang, MBTIS["en"]).keys()))
         if st.button(t["btn_view"], use_container_width=True):
             st.session_state.result = True
             st.rerun()
@@ -421,49 +654,27 @@ if not st.session_state.result:
     else:
         st.caption(t["test_caption"])
 
-        # 12문항(각 축 3문항)
-        if lang == "ko":
-            q_ei = [
-                ("약속이 갑자기 잡히면?", "좋아! 나가자(E)", "음… 집이 좋아(I)"),
-                ("에너지 충전은?", "사람 만나면 충전(E)", "혼자 있어야 충전(I)"),
-                ("대화할 때 나는?", "말하면서 정리(E)", "생각 정리 후 말(I)"),
-            ]
-            q_sn = [
-                ("새 정보를 볼 때?", "현실/사실 위주(S)", "가능성/의미 위주(N)"),
-                ("설명 들을 때?", "예시·디테일(S)", "전체 그림·핵심(N)"),
-                ("아이디어는 보통?", "검증된 방식(S)", "새로운 방식(N)"),
-            ]
-            q_tf = [
-                ("의견 충돌 시?", "논리/원칙(T)", "배려/관계(F)"),
-                ("결정 기준은?", "효율/정확(T)", "마음/가치(F)"),
-                ("피드백할 때?", "직설적으로(T)", "부드럽게(F)"),
-            ]
-            q_jp = [
-                ("일정 스타일?", "계획대로(J)", "즉흥적으로(P)"),
-                ("마감 앞두면?", "미리 끝냄(J)", "막판 몰아함(P)"),
-                ("정리정돈은?", "깔끔하게 유지(J)", "필요할 때만(P)"),
-            ]
-        else:
-            q_ei = [
-                ("If plans come up suddenly?", "Awesome! Let's go (E)", "I'd rather stay home (I)"),
-                ("You recharge by…", "Meeting people (E)", "Being alone (I)"),
-                ("When talking, you…", "Think while speaking (E)", "Think first, then speak (I)"),
-            ]
-            q_sn = [
-                ("When seeing new info?", "Facts & details (S)", "Possibilities & meaning (N)"),
-                ("You prefer explanations with…", "Examples & specifics (S)", "Big picture (N)"),
-                ("Your ideas are usually…", "Proven methods (S)", "New approaches (N)"),
-            ]
-            q_tf = [
-                ("In conflict, you choose…", "Logic & principles (T)", "Care & harmony (F)"),
-                ("Your decision 기준 is…", "Efficiency & accuracy (T)", "Values & feelings (F)"),
-                ("When giving feedback…", "Direct & clear (T)", "Gentle & considerate (F)"),
-            ]
-            q_jp = [
-                ("Your schedule style?", "Planned (J)", "Spontaneous (P)"),
-                ("Before a deadline…", "Finish early (J)", "Rush at the end (P)"),
-                ("Tidying up is…", "Keep it neat (J)", "Only when needed (P)"),
-            ]
+        # 12문항(각 축 3문항) - 간단/언어에 무관하게 영어 문항 사용 (초보용 안정)
+        q_ei = [
+            ("If plans come up suddenly?", "Awesome! Let's go (E)", "I'd rather stay home (I)"),
+            ("You recharge by…", "Meeting people (E)", "Being alone (I)"),
+            ("When talking, you…", "Think while speaking (E)", "Think first, then speak (I)")
+        ]
+        q_sn = [
+            ("When seeing new info?", "Facts & details (S)", "Possibilities & meaning (N)"),
+            ("You prefer explanations with…", "Examples & specifics (S)", "Big picture (N)"),
+            ("Your ideas are usually…", "Proven methods (S)", "New approaches (N)")
+        ]
+        q_tf = [
+            ("In conflict, you choose…", "Logic & principles (T)", "Care & harmony (F)"),
+            ("Your decision base is…", "Efficiency & accuracy (T)", "Values & feelings (F)"),
+            ("When giving feedback…", "Direct & clear (T)", "Gentle & considerate (F)")
+        ]
+        q_jp = [
+            ("Your schedule style?", "Planned (J)", "Spontaneous (P)"),
+            ("Before a deadline…", "Finish early (J)", "Rush at the end (P)"),
+            ("Tidying up is…", "Keep it neat (J)", "Only when needed (P)")
+        ]
 
         ei = sn = tf = jp = 0
 
@@ -498,9 +709,9 @@ if not st.session_state.result:
             st.rerun()
 
 
-# =========================
-# 결과 화면
-# =========================
+# =========================================
+# 6) 결과 화면
+# =========================================
 if st.session_state.result:
     y = st.session_state.birthdate.year
     m = st.session_state.birthdate.month
@@ -516,20 +727,31 @@ if st.session_state.result:
             st.rerun()
         st.stop()
 
-    zodiac_desc = ZODIACS[lang][zodiac]
-    mbti_desc = MBTIS[lang].get(mbti, "MBTI")
+    mbti_desc = MBTIS.get(lang, MBTIS["en"]).get(mbti, mbti)
     saju = get_saju(y, m, d, lang)
-    today_msg = daily_fortune(zodiac, lang, 0)
-    tomorrow_msg = daily_fortune(zodiac, lang, 1)
+
+    # DB 로드 (외부 JSON 있으면 우선 사용)
+    db, used_external = load_fortune_db(lang)
 
     rng = stable_rng(name, y, m, d, mbti, lang)
-    overall = rng.choice(OVERALL_FORTUNES[lang])
-    combo_comment = rng.choice(COMBO_COMMENTS[lang]).format(zodiac, mbti_desc)
-    lucky_color = rng.choice(LUCKY_COLORS[lang])
-    lucky_item = rng.choice(LUCKY_ITEMS[lang])
-    tip = rng.choice(TIPS[lang])
 
-    name_display = (f"{name}" + ("님의" if lang == "ko" else "") ) if name else ""
+    # 오늘/내일은 카테고리 랜덤(개인화 seed 기반)
+    daily_categories = list(db["daily"].keys())
+    cat_today = rng.choice(daily_categories)
+    cat_tomorrow = rng.choice(daily_categories)
+
+    today_msg = rng.choice(db["daily"][cat_today])
+    tomorrow_msg = rng.choice(db["daily"][cat_tomorrow])
+
+    overall = rng.choice(db["yearly"]["general"]) if "yearly" in db and "general" in db["yearly"] else rng.choice(db["daily"]["mindset"])
+    combo_template = rng.choice(db["combo"]["zodiac_mbti"]) if "combo" in db and "zodiac_mbti" in db["combo"] else "{zodiac} + {mbti_desc}"
+    combo_comment = combo_template.format(zodiac=zodiac, mbti=mbti, mbti_desc=mbti_desc)
+
+    lucky_color = rng.choice(db["lucky"]["colors"]) if "lucky" in db and "colors" in db["lucky"] else "Gold"
+    lucky_item = rng.choice(db["lucky"]["items"]) if "lucky" in db and "items" in db["lucky"] else "Notebook"
+    tip = rng.choice(db["lucky"]["tips"]) if "lucky" in db and "tips" in db["lucky"] else rng.choice(db["daily"]["mindset"])
+
+    name_display = (f"{name}" + ("님의" if lang == "ko" else "")) if name else ""
     line_head = f"{name_display} {zodiac} · {mbti}" if name_display else f"{zodiac} · {mbti}"
 
     st.markdown(f"<div class='title'>{t['title']}</div>", unsafe_allow_html=True)
@@ -539,8 +761,8 @@ if st.session_state.result:
     st.markdown(
         f"""
         <div class="card">
-          <p><span class="kv">✨ {t['zodiac_title']}</span>: {zodiac_desc}</p>
-          <p><span class="kv">🧠 {t['mbti_title']}</span>: {mbti_desc}</p>
+          <p><span class="kv">✨ {t['zodiac_title']}</span>: {zodiac}</p>
+          <p><span class="kv">🧠 {t['mbti_title']}</span>: {mbti_desc} ({mbti})</p>
           <p><span class="kv">🍀 {t['saju_title']}</span>: {saju}</p>
           <hr style="border:none;height:1px;background:rgba(120,100,180,0.18);margin:12px 0;">
           <p><span class="kv">💗 {t['today_title']}</span>: {today_msg}</p>
@@ -556,27 +778,11 @@ if st.session_state.result:
         unsafe_allow_html=True
     )
 
-    # 광고 카드
-    st.markdown(
-        f"""
-        <div class="ad">
-          <div class="ad-badge">{t['ad_badge']}</div>
-          <div class="ad-title">{t['ad_title']}</div>
-          <div style="margin-top:6px; color:#2b2b2b; font-size:14px; line-height:1.6;">
-            {t['ad_line1']}<br/>
-            {t['ad_line2']}
-          </div>
-          <a class="ad-link" href="{AD_URL}" target="_blank">{t['ad_link']}</a>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # 타로(Expander)
+    # 타로
     with st.expander(t["tarot_btn"], expanded=False):
         tarot_rng = random.Random(abs(hash(f"tarot|{datetime.now().strftime('%Y%m%d')}|{name}|{mbti}|{lang}")) % (10**9))
         tarot_card = tarot_rng.choice(list(TAROT_CARDS.keys()))
-        tarot_meaning = TAROT_CARDS[tarot_card][lang]
+        tarot_meaning = TAROT_CARDS[tarot_card].get(lang, TAROT_CARDS[tarot_card]["en"])
         st.markdown(
             f"""
             <div class="card" style="text-align:center;">
@@ -588,9 +794,7 @@ if st.session_state.result:
             unsafe_allow_html=True
         )
 
-    # =========================
     # 공유(텍스트만): Web Share API → 실패 시 자동 복사
-    # =========================
     share_text = (
         f"{line_head}\n"
         f"{t['combo']}\n\n"
@@ -657,6 +861,20 @@ if st.session_state.result:
     )
 
     st.markdown(f"<div style='text-align:center; color:#6b6b6b; font-size:12px; margin-top:6px;'>{APP_URL}</div>", unsafe_allow_html=True)
+
+    # ---- 초보용: DB JSON 다운로드 (이걸 GitHub에 업로드하면 진짜 DB 방식 됨)
+    with st.expander(t["db_tools_title"], expanded=False):
+        st.write(t["db_tools_desc"])
+        # 현재 언어의 DB를 JSON으로 다운로드
+        db_json_bytes = json.dumps(db, ensure_ascii=False, indent=2).encode("utf-8")
+        st.download_button(
+            t["download_db_btn"],
+            data=db_json_bytes,
+            file_name=f"fortunes_{lang}.json",
+            mime="application/json"
+        )
+        st.caption(t["db_path_hint"].format(lang=lang))
+        st.caption(f"현재 상태: {'✅ 외부 DB 사용 중' if used_external else '⚠️ 파일이 없어서 앱이 자동 생성 DB를 사용 중'}")
 
     if st.button(t["reset_btn"], use_container_width=True):
         st.session_state.result = False
