@@ -3,12 +3,12 @@ from datetime import datetime, timedelta
 import random
 from streamlit.components.v1 import html as st_html
 
-# 다국어 사전
+# 다국어 사전 (한국어 + 영어)
 translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 + 오늘/내일 운세 🌟",
         "caption": "완전 무료 😄",
-        "ad_title": "💳다나눔 렌탈 궁금할 때?",
+        "ad_title": "💳 렌탈 궁금할 때?",
         "ad_text": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>현금 페이백</b>!",
         "ad_btn": "🔗 보러가기",
         "birth": "### 생년월일 입력",
@@ -32,6 +32,11 @@ translations = {
         "tomorrow_title": "내일 운세",
         "combo": "최고 조합!",
         "your_fortune": "님의 2026년 운세",
+        "overall_title": "2026 전체 운세",
+        "combo_title": "조합 한 마디",
+        "lucky_color_title": "럭키 컬러",
+        "lucky_item_title": "럭키 아이템",
+        "tip_title": "팁",
         "footer": "재미로만 봐주세요 😊",
         "overall_fortunes": [
             "성장과 재물이 함께하는 최고의 해! 대박 기운 가득 ✨",
@@ -116,6 +121,11 @@ translations = {
         "tomorrow_title": "Tomorrow's Luck",
         "combo": "Best Combo!",
         "your_fortune": "'s 2026 Fortune",
+        "overall_title": "2026 Annual Luck",
+        "combo_title": "Combination Meaning",
+        "lucky_color_title": "Lucky Color",
+        "lucky_item_title": "Lucky Item",
+        "tip_title": "Tip",
         "footer": "For fun only 😊",
         "overall_fortunes": [
             "Growth and wealth together – the best year! Big luck ✨",
@@ -258,7 +268,7 @@ if not st.session_state.result_shown:
         st.markdown(f"<h3 style='text-align:center; color:#3498db;'>{t['test_start']}</h3>", unsafe_allow_html=True)
         e_i = s_n = t_f = j_p = 0
 
-        # (테스트 질문 생략 - 이전과 동일)
+        # 테스트 질문들 (생략 - 이전 코드와 동일)
 
         if st.button(t["result_btn"], use_container_width=True):
             ei = "E" if e_i >= 3 else "I"
@@ -294,35 +304,37 @@ if st.session_state.result_shown:
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
         <div style="background:linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
                      width:100vw; height:100vh; margin:-80px -20px 0 -20px; padding:8px;
-                     box-sizing:border-box; color:white; text-align:center; overflow:hidden;
+                     box-sizing:border-box; text-align:center; overflow:hidden;
                      font-family:'Noto Sans KR', sans-serif; font-size:0.85em; line-height:1.2;">
-          <h1 style="font-size:1.1em; margin:5px 0; opacity:0.9;">{name_display}</h1>
-          <h2 style="font-size:1.2em; margin:8px 0;">
-            <span style="font-size:1.4em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:1.4em;">{mbti_emoji}</span> {mbti}
-          </h2>
-          <h3 style="font-size:0.9em; margin:4px 0; opacity:0.9;">{t['combo']}</h3>
+          <div style="color:#000000;">
+            <h1 style="font-size:1.1em; margin:5px 0; opacity:0.9;">{name_display}</h1>
+            <h2 style="font-size:1.2em; margin:8px 0;">
+              <span style="font-size:1.4em;">{zodiac_emoji}</span> {zodiac} + <span style="font-size:1.4em;">{mbti_emoji}</span> {mbti}
+            </h2>
+            <h3 style="font-size:0.9em; margin:4px 0; opacity:0.9;">{t['combo']}</h3>
 
-          <div style="background:#ffffff40; border-radius:18px; padding:10px; margin:10px 8px; backdrop-filter: blur(10px); line-height:1.4; font-size:1.0em;">
-            <b>{t['zodiac_title']}</b>: {zodiac_desc}<br>
-            <b>{t['mbti_title']}</b>: {mbti_desc}<br>
-            <b>{t['saju_title']}</b>: {saju}<br><br>
-            <b>{t['today_title']}</b>: {today}<br>
-            <b>{t['tomorrow_title']}</b>: {tomorrow}<br><br>
-            <b>2026 전체 운세</b>: {overall}<br>
-            <b>조합 한 마디</b>: {combo_comment}<br>
-            <b>럭키 컬러</b>: {lucky_color} | <b>럭키 아이템</b>: {lucky_item}<br>
-            <b>팁</b>: {tip}
+            <div style="background:#ffffff40; border-radius:18px; padding:10px; margin:10px 8px; backdrop-filter: blur(10px); line-height:1.4; font-size:1.0em;">
+              <b>{t['zodiac_title']}</b>: {zodiac_desc}<br>
+              <b>{t['mbti_title']}</b>: {mbti_desc}<br>
+              <b>{t['saju_title']}</b>: {saju}<br><br>
+              <b>{t['today_title']}</b>: {today}<br>
+              <b>{t['tomorrow_title']}</b>: {tomorrow}<br><br>
+              <b>{t['overall_title']}</b>: {overall}<br>
+              <b>{t['combo_title']}</b>: {combo_comment}<br>
+              <b>{t['lucky_color_title']}</b>: {lucky_color} | <b>{t['lucky_item_title']}</b>: {lucky_item}<br>
+              <b>{t['tip_title']}</b>: {tip}
+            </div>
+
+            <div style="background:#ffffff40; border-radius:15px; padding:8px; margin:8px 8px; backdrop-filter: blur(5px); font-size:0.85em;">
+              <small style="color:#ff4444; font-weight:bold;">광고</small><br>
+              💧 <b>정수기 렌탈 대박!</b><br>
+              제휴카드면 <b>월 0원부터</b>!<br>
+              설치 당일 <b>최대 50만원 지원</b> + 사은품 듬뿍 ✨<br>
+              <a href="https://www.다나눔렌탈.com" target="_blank" style="color:#00bfff; text-decoration:underline;">🔗 다나눔렌탈.com 바로가기</a>
+            </div>
+
+            <p style="font-size:0.6em; opacity:0.8; margin:4px 0;">{app_url}</p>
           </div>
-
-          <div style="background:#ffffff40; border-radius:15px; padding:8px; margin:8px 8px; backdrop-filter: blur(5px); font-size:0.85em;">
-            <small style="color:#ff4444; font-weight:bold;">광고</small><br>
-            💧 <b>정수기 렌탈 대박!</b><br>
-            제휴카드면 <b>월 0원부터</b>!<br>
-            설치 당일 <b>최대 50만원 지원</b> + 사은품 듬뿍 ✨<br>
-            <a href="https://www.다나눔렌탈.com" target="_blank" style="color:#00bfff; text-decoration:underline;">🔗 다나눔렌탈.com 바로가기</a>
-          </div>
-
-          <p style="font-size:0.6em; opacity:0.8; margin:4px 0;">{app_url}</p>
         </div>
         """, unsafe_allow_html=True)
 
