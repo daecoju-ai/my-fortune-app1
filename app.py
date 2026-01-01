@@ -2,10 +2,15 @@ import streamlit as st
 import streamlit.components.v1 as components
 from datetime import datetime, timedelta
 import random
+import html
 
-# =========================
-# 1) 언어 목록 (id 제거)
-# =========================
+# ----------------------------
+# 기본 설정
+# ----------------------------
+st.set_page_config(page_title="2026 Fortune", layout="centered")
+
+APP_URL = "https://my-fortune.streamlit.app"
+
 LANGS = [
     ("ko", "한국어"),
     ("en", "English"),
@@ -15,16 +20,13 @@ LANGS = [
     ("hi", "हिन्दी"),
 ]
 
-# =========================
-# 2) UI 텍스트 i18n (부족하면 EN fallback)
-# =========================
 I18N = {
     "ko": {
         "lang_label": "언어 / Language",
         "title": "2026 띠 + MBTI + 사주 + 오늘/내일 운세",
         "caption": "완전 무료",
         "name_placeholder": "이름 입력 (결과에 표시돼요)",
-        "birth_title": "### 생년월일 입력",
+        "birth_title": "생년월일 입력",
         "mbti_mode": "MBTI 어떻게 할까?",
         "direct": "직접 입력",
         "test16": "상세 테스트 (16문제)",
@@ -68,7 +70,7 @@ I18N = {
         "title": "2026 Zodiac + MBTI + Fortune (Today/Tomorrow)",
         "caption": "Completely Free",
         "name_placeholder": "Enter name (shown in result)",
-        "birth_title": "### Enter Birth Date",
+        "birth_title": "Birth date",
         "mbti_mode": "How to do MBTI?",
         "direct": "Direct input",
         "test16": "Detailed test (16 questions)",
@@ -107,35 +109,35 @@ I18N = {
         "title": "2026 干支 + MBTI + 運勢（今日/明日）",
         "caption": "完全無料",
         "name_placeholder": "名前（結果に表示）",
-        "birth_title": "### 生年月日",
+        "birth_title": "生年月日",
         "mbti_mode": "MBTI は？",
         "direct": "直接選択",
         "test16": "詳細テスト（16問）",
         "test_start": "詳細テスト開始！順番に答えてください",
-        "energy": "エネルギーの方向",
-        "info": "情報の集め方",
+        "energy": "エネルギー",
+        "info": "情報収集",
         "decision": "意思決定",
         "life": "生活スタイル",
         "result_btn": "結果を見る！",
         "fortune_btn": "2026年の運勢を見る！",
         "reset": "最初から",
-        "share_btn": "友達に結果を共有",
-        "share_hint": "モバイルでは共有画面が開きます。PCはコピーになる場合があります。",
-        "tarot_btn": "今日のタロットを見る",
+        "share_btn": "友達に共有",
+        "share_hint": "スマホは共有画面が開きます。PCはコピーになる場合があります。",
+        "tarot_btn": "今日のタロット",
         "tarot_title": "今日のタロット",
         "today_title": "今日の運勢",
         "tomorrow_title": "明日の運勢",
         "year": "年", "month": "月", "day": "日",
         "invalid_year": "1900〜2030の間で入力してください。",
         "mbti_select": "MBTI を選択",
-        "copy_fallback": "共有できない場合は、下のテキストをコピーして送ってください。",
+        "copy_fallback": "共有できない場合は下のテキストをコピーしてください。",
     },
     "zh": {
         "lang_label": "语言 / Language",
         "title": "2026 生肖 + MBTI + 运势（今天/明天）",
         "caption": "完全免费",
         "name_placeholder": "输入姓名（显示在结果中）",
-        "birth_title": "### 输入生日",
+        "birth_title": "生日",
         "mbti_mode": "MBTI 怎么做？",
         "direct": "直接选择",
         "test16": "详细测试（16题）",
@@ -163,24 +165,24 @@ I18N = {
         "title": "2026 Зодиак + MBTI + Удача (Сегодня/Завтра)",
         "caption": "Бесплатно",
         "name_placeholder": "Имя (в результате)",
-        "birth_title": "### Дата рождения",
+        "birth_title": "Дата рождения",
         "mbti_mode": "Как выбрать MBTI?",
         "direct": "Выбрать вручную",
         "test16": "Тест (16 вопросов)",
         "test_start": "Начинаем тест! Ответьте по порядку",
-        "energy": "Направление энергии",
-        "info": "Сбор информации",
-        "decision": "Принятие решений",
+        "energy": "Энергия",
+        "info": "Информация",
+        "decision": "Решения",
         "life": "Стиль жизни",
         "result_btn": "Показать результат!",
         "fortune_btn": "Показать удачу 2026!",
         "reset": "Сначала",
-        "share_btn": "Поделиться с друзьями",
+        "share_btn": "Поделиться",
         "share_hint": "На телефоне откроется панель «Поделиться». На ПК может копировать.",
         "tarot_btn": "Таро на сегодня",
         "tarot_title": "Таро на сегодня",
-        "today_title": "Удача сегодня",
-        "tomorrow_title": "Удача завтра",
+        "today_title": "Сегодня",
+        "tomorrow_title": "Завтра",
         "year": "Год", "month": "Месяц", "day": "День",
         "invalid_year": "Введите год рождения от 1900 до 2030.",
         "mbti_select": "Выберите MBTI",
@@ -191,38 +193,41 @@ I18N = {
         "title": "2026 राशि + MBTI + भाग्य (आज/कल)",
         "caption": "पूरी तरह मुफ्त",
         "name_placeholder": "नाम (परिणाम में दिखेगा)",
-        "birth_title": "### जन्म तिथि",
+        "birth_title": "जन्म तिथि",
         "mbti_mode": "MBTI कैसे?",
         "direct": "सीधे चुनें",
         "test16": "टेस्ट (16 प्रश्न)",
         "test_start": "टेस्ट शुरू! एक-एक करके जवाब दें",
-        "energy": "ऊर्जा दिशा",
-        "info": "जानकारी जुटाना",
-        "decision": "निर्णय तरीका",
+        "energy": "ऊर्जा",
+        "info": "जानकारी",
+        "decision": "निर्णय",
         "life": "जीवन शैली",
         "result_btn": "परिणाम देखें!",
         "fortune_btn": "2026 भाग्य देखें!",
         "reset": "फिर से शुरू",
-        "share_btn": "दोस्तों को साझा करें",
+        "share_btn": "साझा करें",
         "share_hint": "मोबाइल पर शेयर स्क्रीन खुलेगी; PC पर कॉपी हो सकता है।",
         "tarot_btn": "आज का टैरो",
         "tarot_title": "आज का टैरो",
-        "today_title": "आज का भाग्य",
-        "tomorrow_title": "कल का भाग्य",
+        "today_title": "आज",
+        "tomorrow_title": "कल",
         "year": "वर्ष", "month": "महीना", "day": "दिन",
         "invalid_year": "कृपया 1900 से 2030 के बीच वर्ष दर्ज करें।",
         "mbti_select": "MBTI चुनें",
-        "copy_fallback": "यदि शेयर न चले, नीचे का टेक्स्ट कॉपी करके भेजें।",
+        "copy_fallback": "यदि शेयर न चले, नीचे का टेक्स्ट कॉपी करें।",
     },
 }
 
 def T(lang: str, key: str) -> str:
     return I18N.get(lang, {}).get(key) or I18N["en"].get(key) or key
 
+def pick_lang(dct, lang):
+    return dct.get(lang) or dct.get("en")
 
-# =========================
-# 3) 데이터 (HTML 태그 없음: plain text)
-# =========================
+
+# ----------------------------
+# 데이터
+# ----------------------------
 ZODIAC_LIST = {
     "ko": ["쥐띠", "소띠", "호랑이띠", "토끼띠", "용띠", "뱀띠", "말띠", "양띠", "원숭이띠", "닭띠", "개띠", "돼지띠"],
     "en": ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"],
@@ -275,30 +280,6 @@ MBTI_DESC = {
         "INFJ": "Advocate", "INFP": "Mediator", "ENFJ": "Protagonist", "ENFP": "Campaigner",
         "ISTJ": "Logistician", "ISFJ": "Defender", "ESTJ": "Executive", "ESFJ": "Consul",
         "ISTP": "Virtuoso", "ISFP": "Adventurer", "ESTP": "Entrepreneur", "ESFP": "Entertainer",
-    },
-    "ja": {
-        "INTJ": "戦略家", "INTP": "論理学者", "ENTJ": "指揮官", "ENTP": "討論者",
-        "INFJ": "提唱者", "INFP": "仲介者", "ENFJ": "主人公", "ENFP": "運動家",
-        "ISTJ": "管理者", "ISFJ": "擁護者", "ESTJ": "幹部", "ESFJ": "領事",
-        "ISTP": "巨匠", "ISFP": "冒険家", "ESTP": "起業家", "ESFP": "エンターテイナー",
-    },
-    "zh": {
-        "INTJ": "策划者", "INTP": "逻辑学家", "ENTJ": "指挥官", "ENTP": "辩论家",
-        "INFJ": "倡导者", "INFP": "调停者", "ENFJ": "主人公", "ENFP": "竞选者",
-        "ISTJ": "物流师", "ISFJ": "守护者", "ESTJ": "总经理", "ESFJ": "执政官",
-        "ISTP": "鉴赏家", "ISFP": "探险家", "ESTP": "企业家", "ESFP": "表演者",
-    },
-    "ru": {
-        "INTJ": "Стратег", "INTP": "Логик", "ENTJ": "Командир", "ENTP": "Полемист",
-        "INFJ": "Защитник", "INFP": "Посредник", "ENFJ": "Протагонист", "ENFP": "Активист",
-        "ISTJ": "Логист", "ISFJ": "Опора", "ESTJ": "Администратор", "ESFJ": "Консул",
-        "ISTP": "Виртуоз", "ISFP": "Авантюрист", "ESTP": "Предприниматель", "ESFP": "Артист",
-    },
-    "hi": {
-        "INTJ": "रणनीतिक", "INTP": "तार्किक", "ENTJ": "कमांडर", "ENTP": "बहसकर्ता",
-        "INFJ": "समर्थक", "INFP": "मध्यस्थ", "ENFJ": "नायक", "ENFP": "अभियानकर्ता",
-        "ISTJ": "व्यवस्थापक", "ISFJ": "रक्षक", "ESTJ": "कार्यकारी", "ESFJ": "सलाहकार",
-        "ISTP": "कुशल", "ISFP": "साहसी", "ESTP": "उद्यमी", "ESFP": "मनोरंजक",
     },
 }
 
@@ -411,10 +392,7 @@ TAROT = {
     "The World": {"ko": "세계 - 완성, 성취", "en": "Completion, fulfillment"},
 }
 
-# =========================
-# 4) MBTI 상세 16문항 (여기서는 ko/en만 충분히 유지)
-#    (필요하면 ja/zh/ru/hi도 추가로 확장 가능)
-# =========================
+# 16문항: ko/en만 제공 (다른 언어는 en으로 자동 fallback)
 Q16 = {
     "ko": {
         "q_energy": ["주말에 친구들이 갑자기 '놀자!' 하면?", "모임에서 처음 본 사람들과 대화하는 거?", "하루 종일 사람 만난 후에?", "생각이 떠오르면?"],
@@ -446,14 +424,9 @@ Q16 = {
     },
 }
 
-def pick_lang(dct, lang):
-    return dct.get(lang) or dct.get("en")
-
-# =========================
-# 5) 설정 + 세션
-# =========================
-st.set_page_config(page_title="2026 Fortune", layout="centered")
-
+# ----------------------------
+# 세션
+# ----------------------------
 if "lang" not in st.session_state:
     st.session_state.lang = "ko"
 if "mbti" not in st.session_state:
@@ -469,11 +442,9 @@ if "month" not in st.session_state:
 if "day" not in st.session_state:
     st.session_state.day = 1
 
-APP_URL = "https://my-fortune.streamlit.app"
-
-# =========================
-# 6) CSS (라디오 가림 + 모바일)
-# =========================
+# ----------------------------
+# CSS (라디오 가림/모바일 패딩)
+# ----------------------------
 st.markdown("""
 <style>
 .block-container{
@@ -495,28 +466,32 @@ html, body, [class*="css"]{
 </style>
 """, unsafe_allow_html=True)
 
-# =========================
-# 7) 유틸
-# =========================
+# ----------------------------
+# 유틸
+# ----------------------------
 def get_zodiac_index(year: int) -> int:
     return (year - 4) % 12
 
-def get_zodiac_name(lang: str, idx: int) -> str:
+def zodiac_name(lang: str, idx: int) -> str:
     return ZODIAC_LIST.get(lang, ZODIAC_LIST["en"])[idx]
+
+def zodiac_desc(lang: str, idx: int) -> str:
+    arr = ZODIAC_DESC.get(lang) or ZODIAC_DESC["en"]
+    return arr[idx]
 
 def saju_message(lang: str, y: int, m: int, d: int) -> str:
     msgs = pick_lang(SAJU_MSG, lang)
     return msgs[(y + m + d) % len(msgs)]
 
-def daily_fortune(lang: str, zodiac_idx: int, offset_days: int) -> str:
+def daily_fortune(lang: str, idx: int, offset_days: int) -> str:
     msgs = pick_lang(DAILY_MSG, lang)
     base = datetime.now() + timedelta(days=offset_days)
-    seed = int(base.strftime("%Y%m%d")) * 100 + zodiac_idx
+    seed = int(base.strftime("%Y%m%d")) * 100 + idx
     random.seed(seed)
     return random.choice(msgs)
 
 def render_ad_placeholder(lang: str):
-    st.markdown(f"""
+    components.html(f"""
     <div style="
         margin: 16px 6px 10px 6px;
         padding: 14px 14px;
@@ -524,20 +499,21 @@ def render_ad_placeholder(lang: str):
         border-radius: 18px;
         background: rgba(255,255,255,0.55);
         text-align: center;
+        font-family: -apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;
     ">
         <div style="font-size:0.82em; color:#6f42c1; font-weight:900; letter-spacing:1px; margin-bottom:4px;">
-            {T(lang, "ad_slot_label")}
+            {html.escape(T(lang, "ad_slot_label"))}
         </div>
         <div style="font-size:0.9em; color:#888;">
-            {T(lang, "ad_slot_sub")}
+            {html.escape(T(lang, "ad_slot_sub"))}
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """, height=90)
 
 def render_dananum_ad_ko_only(lang: str):
     if lang != "ko":
         return
-    st.markdown(f"""
+    components.html(f"""
     <div style="
         margin: 16px 6px 10px 6px;
         padding: 16px 14px;
@@ -546,6 +522,7 @@ def render_dananum_ad_ko_only(lang: str):
         background: rgba(255,255,255,0.75);
         text-align: center;
         box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+        font-family: -apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;
     ">
         <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:8px;">
             <span style="
@@ -553,15 +530,15 @@ def render_dananum_ad_ko_only(lang: str):
                 background: rgba(231,76,60,0.10);
                 border: 1px solid rgba(231,76,60,0.25);
                 color:#e74c3c; font-weight:900;">
-                {T(lang, "ad_badge")}
+                {html.escape(T(lang, "ad_badge"))}
             </span>
-            <span style="font-weight:900; color:#d35400;">{T(lang, "dananum_title")}</span>
+            <span style="font-weight:900; color:#d35400;">{html.escape(T(lang, "dananum_title"))}</span>
         </div>
         <div style="font-size:1.0em; color:#333; line-height:1.6; margin:6px 0 4px 0;">
-            {T(lang, "dananum_line1")}
+            {html.escape(T(lang, "dananum_line1"))}
         </div>
         <div style="font-size:1.0em; color:#333; line-height:1.6; margin:0 0 14px 0;">
-            {T(lang, "dananum_line2")}
+            {html.escape(T(lang, "dananum_line2"))}
         </div>
         <a href="https://www.다나눔렌탈.com" target="_blank" style="text-decoration:none;">
             <button style="
@@ -574,28 +551,26 @@ def render_dananum_ad_ko_only(lang: str):
                 font-size: 1.0em;
                 cursor: pointer;
                 box-shadow: 0 6px 18px rgba(230,126,34,0.18);
-            ">{T(lang, "dananum_btn")}</button>
+            ">{html.escape(T(lang, "dananum_btn"))}</button>
         </a>
     </div>
-    """, unsafe_allow_html=True)
+    """, height=175)
 
-def share_button_component(button_label: str, share_text: str, share_url: str, hint_text: str):
-    # navigator.share(텍스트+URL) → 모바일 공유 시트(카톡/문자/기타 앱)
-    # 미지원이면 클립보드 복사로 대체
+def share_button_component(lang: str, button_label: str, share_text: str, share_url: str):
     safe_text = share_text.replace("\\", "\\\\").replace("`", "\\`")
     safe_url = share_url.replace("\\", "\\\\").replace("`", "\\`")
-    safe_hint = hint_text.replace("\\", "\\\\").replace("`", "\\`")
+    hint = T(lang, "share_hint").replace("\\", "\\\\").replace("`", "\\`")
 
     components.html(
         f"""
-        <div style="text-align:center; margin: 10px 0 14px 0;">
+        <div style="text-align:center; margin: 10px 0 14px 0; font-family:-apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;">
             <button id="shareBtn" style="
                 background:#6f42c1; color:white; padding:16px 22px;
                 border:none; border-radius:999px; font-size:1.05em; font-weight:900;
                 box-shadow: 0 10px 24px rgba(111,66,193,0.25); cursor:pointer;
                 width: min(520px, 92%);
-            ">{button_label}</button>
-            <div style="margin-top:10px; font-size:0.92em; color:#666;">{safe_hint}</div>
+            ">{html.escape(button_label)}</button>
+            <div style="margin-top:10px; font-size:0.92em; color:#666;">{html.escape(hint)}</div>
         </div>
 
         <script>
@@ -613,63 +588,107 @@ def share_button_component(button_label: str, share_text: str, share_url: str, h
                         }});
                         return;
                     }}
-                }} catch (e) {{
-                    // user cancelled or error
-                }}
+                }} catch (e) {{}}
 
-                // fallback: clipboard copy
                 try {{
                     if (navigator.clipboard && navigator.clipboard.writeText) {{
                         await navigator.clipboard.writeText(text + "\\n" + url);
                         alert("Copied! Paste it to share.");
                     }} else {{
-                        alert("Share not supported on this browser. Copy text manually below.");
+                        alert("Share not supported. Copy text below.");
                     }}
                 }} catch (e) {{
-                    alert("Share not supported. Copy text manually below.");
+                    alert("Share not supported. Copy text below.");
                 }}
             }});
         }})();
         </script>
         """,
-        height=110,
+        height=120,
     )
 
-# =========================
-# 8) 언어 선택
-# =========================
+def render_result_card_html(lang: str, name_line: str, zodiac: str, mbti: str, z_desc: str, m_desc: str,
+                           saju: str, today: str, tomorrow: str, overall: str, combo: str,
+                           lucky_color: str, lucky_item: str, tip: str):
+    # 모든 값 escape 처리 (안전 + 깨짐 방지)
+    def e(s): return html.escape(s)
+
+    title_2026 = f"{name_line}2026"
+    # 결과 카드 HTML을 components.html로 렌더링 → 태그가 문자로 보일 수 없음
+    card_html = f"""
+    <div style="
+        margin: 10px 6px 10px 6px;
+        padding: 16px 14px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(161,140,209,0.30), rgba(251,194,235,0.28), rgba(142,197,252,0.28));
+        border: 1px solid rgba(142,68,173,0.18);
+        text-align: center;
+        font-family: -apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;
+    ">
+        <div style="font-size:1.55em; font-weight:900; color:#5e2b97;">
+            {e(title_2026)}
+        </div>
+        <div style="font-size:1.15em; font-weight:900; color:#222; margin-top:6px;">
+            {e(zodiac)} · {e(mbti)}
+        </div>
+        <div style="font-size:1.05em; font-weight:900; color:#6f42c1; margin-top:8px;">
+            {e(T(lang, "combo"))}
+        </div>
+    </div>
+
+    <div style="
+        margin: 12px 6px 12px 6px;
+        padding: 18px 16px;
+        border-radius: 18px;
+        background: rgba(255,255,255,0.92);
+        border: 1.6px solid rgba(142,68,173,0.22);
+        box-shadow: 0 10px 26px rgba(0,0,0,0.10);
+        font-family: -apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;
+    ">
+        <div style="font-size:1.02em; line-height:1.95; color:#111; text-align:left;">
+            <b>{e(T(lang,'zodiac_title'))}</b>: {e(z_desc)}<br>
+            <b>{e(T(lang,'mbti_title'))}</b>: {e(m_desc)}<br>
+            <b>{e(T(lang,'saju_title'))}</b>: {e(saju)}<br><br>
+
+            <b>{e(T(lang,'today_title'))}</b>: {e(today)}<br>
+            <b>{e(T(lang,'tomorrow_title'))}</b>: {e(tomorrow)}<br><br>
+
+            <b>{e(T(lang,'overall_title'))}</b>: {e(overall)}<br>
+            <b>{e(T(lang,'combo_title'))}</b>: {e(combo)}<br>
+            <b>{e(T(lang,'lucky_color_title'))}</b>: {e(lucky_color)} &nbsp; | &nbsp;
+            <b>{e(T(lang,'lucky_item_title'))}</b>: {e(lucky_item)}<br>
+            <b>{e(T(lang,'tip_title'))}</b>: {e(tip)}
+        </div>
+    </div>
+    """
+    # 높이는 대충 넉넉하게
+    components.html(card_html, height=520)
+
+
+# ----------------------------
+# 언어 선택
+# ----------------------------
 lang_codes = [c for c, _ in LANGS]
 lang_labels = [f"{name} ({code})" for code, name in LANGS]
 default_idx = lang_codes.index(st.session_state.lang) if st.session_state.lang in lang_codes else 0
 
-selected_label = st.radio(
-    T(st.session_state.lang, "lang_label"),
-    lang_labels,
-    index=default_idx,
-    horizontal=True
-)
-st.session_state.lang = lang_codes[lang_labels.index(selected_label)]
+selected = st.radio(T(st.session_state.lang, "lang_label"), lang_labels, index=default_idx, horizontal=True)
+st.session_state.lang = lang_codes[lang_labels.index(selected)]
 lang = st.session_state.lang
 
-# =========================
-# 9) 입력 화면
-# =========================
+# ----------------------------
+# 입력 화면
+# ----------------------------
 if not st.session_state.result_shown:
-    st.markdown(
-        f"<h1 style='text-align:center; color:#6f42c1; margin:10px 0 6px 0;'>{T(lang,'title')}</h1>",
-        unsafe_allow_html=True
-    )
-    st.markdown(
-        f"<p style='text-align:center; color:#777; margin:0 0 14px 0;'>{T(lang,'caption')}</p>",
-        unsafe_allow_html=True
-    )
+    st.markdown(f"<h1 style='text-align:center; color:#6f42c1; margin:10px 0 6px 0;'>{html.escape(T(lang,'title'))}</h1>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align:center; color:#777; margin:0 0 14px 0;'>{html.escape(T(lang,'caption'))}</p>", unsafe_allow_html=True)
 
     render_dananum_ad_ko_only(lang)
     render_ad_placeholder(lang)
 
     st.session_state.name = st.text_input(T(lang, "name_placeholder"), value=st.session_state.name)
 
-    st.markdown(f"<h3 style='text-align:center; margin:10px 0 8px 0;'>{T(lang,'birth_title')}</h3>", unsafe_allow_html=True)
+    st.markdown(f"### {T(lang,'birth_title')}")
     c1, c2, c3 = st.columns(3)
     st.session_state.year = c1.number_input(T(lang, "year"), min_value=1900, max_value=2030, value=st.session_state.year, step=1)
     st.session_state.month = c2.number_input(T(lang, "month"), min_value=1, max_value=12, value=st.session_state.month, step=1)
@@ -684,11 +703,7 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
     else:
-        st.markdown(
-            f"<h3 style='text-align:center; color:#3498db; margin-top:10px;'>{T(lang,'test_start')}</h3>",
-            unsafe_allow_html=True
-        )
-
+        st.markdown(f"#### {T(lang,'test_start')}")
         qpack = Q16.get(lang) or Q16["en"]
 
         e_i = s_n = t_f = j_p = 0
@@ -722,9 +737,9 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# =========================
-# 10) 결과 화면
-# =========================
+# ----------------------------
+# 결과 화면
+# ----------------------------
 if st.session_state.result_shown:
     if not (1900 <= st.session_state.year <= 2030):
         st.error(T(lang, "invalid_year"))
@@ -733,19 +748,19 @@ if st.session_state.result_shown:
             st.rerun()
         st.stop()
 
-    zodiac_idx = get_zodiac_index(st.session_state.year)
-    zodiac_name = get_zodiac_name(lang, zodiac_idx)
-    zodiac_desc = (ZODIAC_DESC.get(lang) or ZODIAC_DESC["en"])[zodiac_idx]
+    idx = get_zodiac_index(st.session_state.year)
+    z_name = zodiac_name(lang, idx)
+    z_desc = zodiac_desc(lang, idx)
 
     mbti = st.session_state.mbti
-    mbti_desc = (MBTI_DESC.get(lang) or MBTI_DESC["en"]).get(mbti, mbti)
+    m_desc = (MBTI_DESC.get(lang) or MBTI_DESC["en"]).get(mbti, mbti)
 
     saju = saju_message(lang, st.session_state.year, st.session_state.month, st.session_state.day)
-    today = daily_fortune(lang, zodiac_idx, 0)
-    tomorrow = daily_fortune(lang, zodiac_idx, 1)
+    today = daily_fortune(lang, idx, 0)
+    tomorrow = daily_fortune(lang, idx, 1)
 
     overall = random.choice(pick_lang(OVERALL_2026, lang))
-    combo = random.choice(pick_lang(COMBO_COMMENTS, lang)).format(zodiac_name, mbti_desc)
+    combo = random.choice(pick_lang(COMBO_COMMENTS, lang)).format(z_name, m_desc)
     lucky_color = random.choice(pick_lang(LUCKY_COLORS, lang))
     lucky_item = random.choice(pick_lang(LUCKY_ITEMS, lang))
     tip = random.choice(pick_lang(TIPS, lang))
@@ -753,84 +768,36 @@ if st.session_state.result_shown:
     name_display = st.session_state.name.strip()
     name_line = f"{name_display} " if name_display else ""
 
-    st.markdown(f"""
-    <div style="
-        margin: 10px 6px 10px 6px;
-        padding: 16px 14px;
-        border-radius: 18px;
-        background: linear-gradient(135deg, rgba(161,140,209,0.30), rgba(251,194,235,0.28), rgba(142,197,252,0.28));
-        border: 1px solid rgba(142,68,173,0.18);
-        text-align: center;
-    ">
-        <div style="font-size:1.55em; font-weight:900; color:#5e2b97;">
-            {name_line}2026
-        </div>
-        <div style="font-size:1.15em; font-weight:900; color:#222; margin-top:6px;">
-            {zodiac_name} · {mbti}
-        </div>
-        <div style="font-size:1.05em; font-weight:900; color:#6f42c1; margin-top:8px;">
-            {T(lang, "combo")}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # ✅ 여기서부터는 components.html로 카드 렌더링 (태그 문자화 100% 방지)
+    render_result_card_html(
+        lang=lang,
+        name_line=name_line,
+        zodiac=z_name,
+        mbti=mbti,
+        z_desc=z_desc,
+        m_desc=m_desc,
+        saju=saju,
+        today=today,
+        tomorrow=tomorrow,
+        overall=overall,
+        combo=combo,
+        lucky_color=lucky_color,
+        lucky_item=lucky_item,
+        tip=tip
+    )
 
     render_ad_placeholder(lang)
-
-    st.markdown(f"""
-    <div style="
-        margin: 12px 6px 12px 6px;
-        padding: 18px 16px;
-        border-radius: 18px;
-        background: rgba(255,255,255,0.92);
-        border: 1.6px solid rgba(142,68,173,0.22);
-        box-shadow: 0 10px 26px rgba(0,0,0,0.10);
-    ">
-        <div style="font-size:1.02em; line-height:1.95; color:#111;">
-            <b>{T(lang,'zodiac_title')}</b>: {zodiac_desc}<br>
-            <b>{T(lang,'mbti_title')}</b>: {mbti_desc}<br>
-            <b>{T(lang,'saju_title')}</b>: {saju}<br><br>
-
-            <b>{T(lang,'today_title')}</b>: {today}<br>
-            <b>{T(lang,'tomorrow_title')}</b>: {tomorrow}<br><br>
-
-            <b>{T(lang,'overall_title')}</b>: {overall}<br>
-            <b>{T(lang,'combo_title')}</b>: {combo}<br>
-            <b>{T(lang,'lucky_color_title')}</b>: {lucky_color} &nbsp; | &nbsp; <b>{T(lang,'lucky_item_title')}</b>: {lucky_item}<br>
-            <b>{T(lang,'tip_title')}</b>: {tip}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
     render_dananum_ad_ko_only(lang)
 
     with st.expander(T(lang, "tarot_btn"), expanded=False):
         card = random.choice(list(TAROT.keys()))
         meaning = TAROT[card].get(lang) or TAROT[card].get("en")
-        st.markdown(f"""
-        <div style="
-            margin: 6px 2px 8px 2px;
-            padding: 16px 14px;
-            border-radius: 18px;
-            background: rgba(255,255,255,0.90);
-            border: 1.6px solid rgba(155,89,182,0.22);
-            text-align:center;
-        ">
-            <div style="font-size:1.0em; font-weight:900; color:#9b59b6; margin-bottom:6px;">
-                {T(lang, "tarot_title")}
-            </div>
-            <div style="font-size:1.6em; font-weight:900; color:#333;">
-                {card}
-            </div>
-            <div style="font-size:1.05em; color:#111; line-height:1.65; margin-top:8px;">
-                {meaning}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.success(f"{T(lang,'tarot_title')}: {card} - {meaning}")
 
-    # 공유용 텍스트(순수 텍스트)
+    # 공유 텍스트 (순수 텍스트)
     share_text = (
         f"{name_line}2026\n"
-        f"{zodiac_name} · {mbti}\n"
+        f"{z_name} · {mbti}\n"
         f"{T(lang,'combo')}\n\n"
         f"{T(lang,'today_title')}: {today}\n"
         f"{T(lang,'tomorrow_title')}: {tomorrow}\n\n"
@@ -840,13 +807,8 @@ if st.session_state.result_shown:
         f"{T(lang,'tip_title')}: {tip}\n"
     )
 
-    # ✅ 핵심: 모바일 공유시트 열기 (navigator.share)
-    share_button_component(
-        button_label=T(lang, "share_btn"),
-        share_text=share_text,
-        share_url=APP_URL,
-        hint_text=T(lang, "share_hint"),
-    )
+    # ✅ 모바일 공유 시트
+    share_button_component(lang, T(lang, "share_btn"), share_text, APP_URL)
 
     st.caption(T(lang, "copy_fallback"))
     st.text_area("Share Text", share_text + "\n" + APP_URL, height=200)
