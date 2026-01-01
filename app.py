@@ -7,7 +7,7 @@ import streamlit.components.v1 as components
 
 
 # =========================================
-# 0) 언어 옵션
+# 0) Language options
 # =========================================
 LANG_OPTIONS = {
     "ko": "한국어",
@@ -18,7 +18,6 @@ LANG_OPTIONS = {
     "ja": "日本語"
 }
 LANG_KEYS = list(LANG_OPTIONS.keys())
-
 
 UI = {
     "ko": {
@@ -57,15 +56,11 @@ UI = {
         "share_fail_copy": "공유 기능이 지원되지 않아 텍스트를 복사했어요!\n카톡에 붙여넣기 해주세요.",
         "share_manual_prompt": "아래 내용을 복사해서 카톡에 붙여넣기 해주세요:",
         "share_cancel": "공유가 취소되었거나 지원되지 않아요.\n복사 후 붙여넣기 해주세요.",
-        "db_tools_title": "📦 (초보용) 운세 DB 파일 만들기/다운로드",
-        "db_tools_desc": "지금 보이는 문장들을 'DB(JSON 파일)'로 저장해 GitHub에 올리면 더 다양하게 운영할 수 있어요.",
-        "download_db_btn": "이 언어 DB(JSON) 다운로드",
-        "db_path_hint": "다운받은 파일을 GitHub에 data/fortunes_{lang}.json 으로 업로드하면 DB 기반으로 동작해요."
     },
     "en": {
         "title": "⭐ 2026 Fortune ⭐",
         "subtitle": "Zodiac + MBTI + Today/Tomorrow Luck",
-        "lang_label": "Language / 언어",
+        "lang_label": "Language",
         "name_label": "Name (shown in result)",
         "birth_label": "Birth date",
         "mbti_mode": "How to do MBTI?",
@@ -98,15 +93,11 @@ UI = {
         "share_fail_copy": "Sharing isn't supported here, so the text was copied.\nPaste it in KakaoTalk or message.",
         "share_manual_prompt": "Copy and paste this text to share:",
         "share_cancel": "Sharing was canceled or not supported.\nPlease copy & paste.",
-        "db_tools_title": "📦 DB generator/download",
-        "db_tools_desc": "Download DB(JSON) and upload to GitHub to run with a real DB.",
-        "download_db_btn": "Download DB(JSON) for this language",
-        "db_path_hint": "Upload as data/fortunes_{lang}.json"
     },
     "hi": {
         "title": "⭐ 2026 भाग्य ⭐",
         "subtitle": "Zodiac + MBTI + Today/Tomorrow Luck",
-        "lang_label": "Language / भाषा",
+        "lang_label": "भाषा / Language",
         "name_label": "नाम (परिणाम में दिखेगा)",
         "birth_label": "जन्म तिथि",
         "mbti_mode": "MBTI कैसे करें?",
@@ -139,10 +130,6 @@ UI = {
         "share_fail_copy": "Sharing is not supported here, so the text was copied.\nPlease paste it in your messenger.",
         "share_manual_prompt": "Copy and paste this text:",
         "share_cancel": "Sharing canceled or not supported.\nPlease copy & paste.",
-        "db_tools_title": "📦 DB डाउनलोड",
-        "db_tools_desc": "DB(JSON) डाउनलोड करके GitHub पर अपलोड कर सकते हैं।",
-        "download_db_btn": "इस भाषा का DB(JSON) डाउनलोड",
-        "db_path_hint": "GitHub में data/fortunes_{lang}.json के रूप में अपलोड करें।"
     },
     "zh": {
         "title": "⭐ 2026 运势 ⭐",
@@ -180,10 +167,6 @@ UI = {
         "share_fail_copy": "当前环境不支持分享，已复制文本。\n请粘贴到聊天软件发送。",
         "share_manual_prompt": "复制并粘贴以下内容：",
         "share_cancel": "分享取消或不支持。\n请复制并粘贴。",
-        "db_tools_title": "📦 生成/下载 DB",
-        "db_tools_desc": "可以下载 DB(JSON) 上传到 GitHub。",
-        "download_db_btn": "下载该语言 DB(JSON)",
-        "db_path_hint": "上传到 GitHub：data/fortunes_{lang}.json"
     },
     "ru": {
         "title": "⭐ 2026 Удача ⭐",
@@ -221,10 +204,6 @@ UI = {
         "share_fail_copy": "Sharing isn't supported here, so the text was copied.\nPlease paste it in messenger.",
         "share_manual_prompt": "Copy and paste this text:",
         "share_cancel": "Sharing canceled or not supported.\nPlease copy & paste.",
-        "db_tools_title": "📦 Скачать DB",
-        "db_tools_desc": "Скачайте DB(JSON) и загрузите в GitHub.",
-        "download_db_btn": "Скачать DB(JSON) для языка",
-        "db_path_hint": "Загрузите как data/fortunes_{lang}.json"
     },
     "ja": {
         "title": "⭐ 2026 運勢 ⭐",
@@ -262,16 +241,152 @@ UI = {
         "share_fail_copy": "共有が使えないためテキストをコピーしました。\nメッセンジャーに貼り付けてください。",
         "share_manual_prompt": "以下をコピーして貼り付けてください：",
         "share_cancel": "共有がキャンセル/非対応です。\nコピーして貼り付けてください。",
-        "db_tools_title": "📦 DBダウンロード",
-        "db_tools_desc": "DB(JSON)をダウンロードしてGitHubにアップできます。",
-        "download_db_btn": "この言語のDB(JSON)をダウンロード",
-        "db_path_hint": "GitHubの data/fortunes_{lang}.json としてアップロード"
     }
 }
 
 
 # =========================================
-# 1) 기본 데이터
+# 1) 12-question MBTI test (PER LANGUAGE)
+#    ✅ This is the 핵심: language별 질문/선택지
+# =========================================
+TEST_Q = {
+    "ko": {
+        "EI": [
+            ("주말에 갑자기 약속 생기면?", "좋아! 바로 나가자 (E)", "집에서 쉬고 싶어 (I)"),
+            ("에너지는 어디서 충전돼?", "사람 만나면서 (E)", "혼자 있을 때 (I)"),
+            ("생각이 떠오르면?", "말하면서 정리 (E)", "머릿속에서 정리 (I)"),
+        ],
+        "SN": [
+            ("새로운 걸 볼 때 먼저 보는 건?", "사실/디테일 (S)", "의미/가능성 (N)"),
+            ("설명 들을 때 더 좋은 건?", "예시와 구체 (S)", "큰 그림과 방향 (N)"),
+            ("아이디어 스타일은?", "검증된 방법 (S)", "새로운 방식 (N)"),
+        ],
+        "TF": [
+            ("갈등이 생기면?", "원칙/논리 (T)", "배려/조화 (F)"),
+            ("결정 기준은?", "효율/정확 (T)", "가치/감정 (F)"),
+            ("피드백할 때?", "직설적/명확 (T)", "부드럽게/상처 최소 (F)"),
+        ],
+        "JP": [
+            ("일정 스타일은?", "미리 계획 (J)", "즉흥/유동 (P)"),
+            ("마감 앞두면?", "미리 끝냄 (J)", "막판 몰아 (P)"),
+            ("정리정돈은?", "깔끔 유지 (J)", "필요할 때만 (P)"),
+        ],
+    },
+    "en": {
+        "EI": [
+            ("If a plan comes up suddenly on weekend?", "Awesome! Let's go (E)", "I'd rather rest at home (I)"),
+            ("You recharge by…", "Meeting people (E)", "Being alone (I)"),
+            ("When a thought appears, you…", "Sort it while talking (E)", "Sort it in your head first (I)"),
+        ],
+        "SN": [
+            ("When you see something new, you notice…", "Facts & details (S)", "Meaning & possibilities (N)"),
+            ("You prefer explanations with…", "Examples & specifics (S)", "Big picture & direction (N)"),
+            ("Your idea style is…", "Proven methods (S)", "New approaches (N)"),
+        ],
+        "TF": [
+            ("In conflict, you choose…", "Logic & principles (T)", "Care & harmony (F)"),
+            ("Your decision base is…", "Efficiency & accuracy (T)", "Values & feelings (F)"),
+            ("When giving feedback…", "Direct & clear (T)", "Gentle & considerate (F)"),
+        ],
+        "JP": [
+            ("Your schedule style?", "Planned (J)", "Spontaneous (P)"),
+            ("Before a deadline…", "Finish early (J)", "Rush at the end (P)"),
+            ("Tidying up is…", "Keep it neat (J)", "Only when needed (P)"),
+        ],
+    },
+    "hi": {
+        "EI": [
+            ("वीकेंड पर अचानक प्लान बन जाए?", "चलो! तुरंत (E)", "घर पर आराम (I)"),
+            ("आप ऊर्जा कैसे भरते हैं?", "लोगों से मिलकर (E)", "अकेले रहकर (I)"),
+            ("जब विचार आए तो?", "बोलते हुए सुलझाता/सुलझाती हूँ (E)", "पहले मन में सुलझाता/सुलझाती हूँ (I)"),
+        ],
+        "SN": [
+            ("नई चीज़ में आप पहले देखते हैं…", "तथ्य/डिटेल (S)", "अर्थ/संभावना (N)"),
+            ("समझाने का पसंदीदा तरीका…", "उदाहरण/विशेष (S)", "बड़ी तस्वीर (N)"),
+            ("आपके आइडिया आमतौर पर…", "आजमाए हुए (S)", "नए तरीके (N)"),
+        ],
+        "TF": [
+            ("टकराव में आप चुनते हैं…", "तर्क/सिद्धांत (T)", "देखभाल/सामंजस्य (F)"),
+            ("निर्णय का आधार…", "कुशलता/सटीकता (T)", "मूल्य/भावना (F)"),
+            ("फीडबैक देते समय…", "सीधा/स्पष्ट (T)", "नरम/विचारशील (F)"),
+        ],
+        "JP": [
+            ("आपकी योजना शैली…", "पहले से तय (J)", "तुरंत/लचीला (P)"),
+            ("डेडलाइन से पहले…", "पहले खत्म (J)", "आख़िर में तेज़ (P)"),
+            ("सफाई/व्यवस्था…", "हमेशा साफ (J)", "ज़रूरत पर (P)"),
+        ],
+    },
+    "zh": {
+        "EI": [
+            ("周末突然有人约你？", "太好了！马上走 (E)", "更想在家休息 (I)"),
+            ("你如何充电？", "和人相处 (E)", "独处 (I)"),
+            ("有想法时你会？", "边说边整理 (E)", "先在脑中整理 (I)"),
+        ],
+        "SN": [
+            ("看到新事物你先注意？", "事实/细节 (S)", "意义/可能性 (N)"),
+            ("你更喜欢的说明方式？", "例子与具体 (S)", "大局与方向 (N)"),
+            ("你的点子通常是？", "成熟方法 (S)", "新思路 (N)"),
+        ],
+        "TF": [
+            ("发生冲突时你更倾向？", "逻辑/原则 (T)", "体贴/和谐 (F)"),
+            ("做决定更看重？", "效率/准确 (T)", "价值/感受 (F)"),
+            ("给反馈时你更常？", "直接清晰 (T)", "委婉体贴 (F)"),
+        ],
+        "JP": [
+            ("你的行程风格？", "提前规划 (J)", "随性灵活 (P)"),
+            ("临近截止日期？", "提前完成 (J)", "最后冲刺 (P)"),
+            ("整理房间？", "保持整洁 (J)", "需要时才整理 (P)"),
+        ],
+    },
+    "ru": {
+        "EI": [
+            ("Если планы внезапно появляются на выходных?", "Отлично! Пошли (E)", "Лучше отдохнуть дома (I)"),
+            ("Вы восстанавливаетесь благодаря…", "общению (E)", "одиночеству (I)"),
+            ("Когда появляется мысль, вы…", "проясняете её в разговоре (E)", "сначала обдумываете (I)"),
+        ],
+        "SN": [
+            ("В новом вы замечаете…", "факты и детали (S)", "смысл и возможности (N)"),
+            ("Вы любите объяснения через…", "примеры и конкретику (S)", "общую картину (N)"),
+            ("Ваши идеи обычно…", "проверенные (S)", "новые подходы (N)"),
+        ],
+        "TF": [
+            ("В конфликте вы выбираете…", "логику и принципы (T)", "заботу и гармонию (F)"),
+            ("Основа решения…", "эффективность/точность (T)", "ценности/чувства (F)"),
+            ("Обратная связь у вас…", "прямая и ясная (T)", "мягкая и деликатная (F)"),
+        ],
+        "JP": [
+            ("Ваш стиль планирования?", "по плану (J)", "спонтанно (P)"),
+            ("Перед дедлайном…", "закончить заранее (J)", "в последний момент (P)"),
+            ("Уборка — это…", "держать в порядке (J)", "по необходимости (P)"),
+        ],
+    },
+    "ja": {
+        "EI": [
+            ("週末に突然誘われたら？", "いいね！すぐ行く (E)", "家で休みたい (I)"),
+            ("充電方法は？", "人と会う (E)", "一人の時間 (I)"),
+            ("思いついたら？", "話しながら整理 (E)", "頭の中で整理 (I)"),
+        ],
+        "SN": [
+            ("新しいものを見るとき？", "事実/細部 (S)", "意味/可能性 (N)"),
+            ("説明はどちらが好き？", "具体例 (S)", "全体像 (N)"),
+            ("アイデアの傾向は？", "実績ある方法 (S)", "新しい方法 (N)"),
+        ],
+        "TF": [
+            ("対立が起きたら？", "論理/原則 (T)", "配慮/調和 (F)"),
+            ("判断基準は？", "効率/正確 (T)", "価値観/気持ち (F)"),
+            ("フィードバックは？", "率直/明確 (T)", "やさしく/丁寧 (F)"),
+        ],
+        "JP": [
+            ("予定の立て方？", "計画的 (J)", "その場で (P)"),
+            ("締切前は？", "早めに終える (J)", "直前に追い込む (P)"),
+            ("片付けは？", "常に整える (J)", "必要な時だけ (P)"),
+        ],
+    }
+}
+
+
+# =========================================
+# 2) Other data
 # =========================================
 ZODIAC_LIST = {
     "ko": ["쥐띠","소띠","호랑이띠","토끼띠","용띠","뱀띠","말띠","양띠","원숭이띠","닭띠","개띠","돼지띠"],
@@ -344,7 +459,7 @@ TAROT_CARDS = {
 
 
 # =========================================
-# 2) DB(JSON) 로드 / 없으면 자동 생성
+# 3) Fortune DB load (optional)
 # =========================================
 def _safe_read_json(fp: Path):
     try:
@@ -363,75 +478,59 @@ def load_fortune_db(lang: str):
     return generate_big_db(lang), False
 
 def generate_big_db(lang: str):
-    bank = {
-        "ko": {
-            "open": ["오늘은", "지금은", "이번 흐름은", "오늘의 포인트는", "핵심은"],
-            "money_a": ["지출 정리", "고정비 점검", "비교 구매", "환불/정산", "작은 절약", "기록 습관", "충동 억제", "가치 소비"],
-            "money_b": ["가 유리해요.", "부터 하면 이득이에요.", "만 해도 흐름이 좋아져요.", "가 돈운을 살려줘요.", "로 손해를 막을 수 있어요."],
-            "love_a": ["한 줄 진심", "가벼운 칭찬", "타이밍 좋은 연락", "공감 먼저", "시간 약속", "부드러운 표현", "비교 줄이기", "웃는 표정"],
-            "love_b": ["이 관계운을 올려줘요.", "이 분위기를 바꿔요.", "이 오해를 줄여줘요.", "이 신뢰를 키워줘요.", "이 매력으로 보여요."],
-            "health_a": ["수면", "수분", "목/어깨 스트레칭", "가벼운 산책", "호흡", "체온 관리", "눈 휴식", "짧은 루틴"],
-            "health_b": ["이 컨디션을 좌우해요.", "을 챙기면 하루가 편해요.", "만 해도 피로가 줄어요.", "이 기운을 회복해줘요.", "이 운의 흐름을 바꿔요."],
-            "work_a": ["마감 정리", "기록 남기기", "우선순위 재정렬", "협업 요청", "검수 체크", "짧은 회의", "자동화 아이디어", "조건 확인"],
-            "work_b": ["가 성과로 이어져요.", "가 실수를 줄여줘요.", "가 인정받는 포인트예요.", "가 시간을 아껴줘요.", "가 스트레스를 낮춰줘요."],
-            "rel_a": ["질문하기", "인사 먼저", "오해 바로 풀기", "경계 정하기", "작은 배려", "칭찬 한 마디", "요약+공감", "함께 하기"],
-            "rel_b": ["가 관계를 부드럽게 해요.", "가 사람운을 올려줘요.", "가 도움을 불러와요.", "가 갈등을 줄여줘요.", "가 신뢰를 만들어요."],
-            "study_a": ["시작 5분", "개념도", "복습", "질문", "한 장 요약", "장소 전환", "방해 요소 제거", "작은 목표"],
-            "study_b": ["만 지켜도 충분해요.", "이 효율을 키워줘요.", "이 기억을 오래가게 해요.", "가 집중을 살려줘요.", "이 점수를 올려줘요."],
-            "travel_a": ["10분 버퍼", "가까운 외출", "새 루트", "사진 기록", "여유 있는 계획", "보조배터리", "우산", "대체 플랜"],
-            "travel_b": ["가 스트레스를 줄여줘요.", "가 만족도를 키워줘요.", "가 돌발 상황을 막아줘요.", "가 좋은 추억이 돼요.", "가 운을 살려줘요."],
-            "mind_a": ["완료", "정리", "작은 성공", "비교 줄이기", "통제 가능한 것", "도움 받기", "메모", "감사 1줄"],
-            "mind_b": ["를 선택하면 마음이 편해져요.", "만 해도 흐름이 좋아져요.", "가 자신감을 올려줘요.", "가 불안을 줄여줘요.", "가 내일을 가볍게 해요."]
-        }
-    }
-
-    # 다른 언어는 영어 템플릿을 쓰도록(키에러 방지)
-    if lang != "ko":
-        bank[lang] = bank["ko"]
-
-    b = bank[lang]
+    # 기본은 간단 템플릿(나중에 언어별 DB 파일로 교체 권장)
     rng = random.Random(20260101 + len(lang))
-
-    def build_list(kind_a, kind_b, count=24):
-        out = []
-        for _ in range(count * 2):
-            s = f"{rng.choice(b['open'])} {rng.choice(b[kind_a])}{rng.choice(b[kind_b])}"
-            out.append(s)
-        out = list(dict.fromkeys(out))
-        while len(out) < count:
-            out.append(f"{rng.choice(b['open'])} {rng.choice(b[kind_a])}{rng.choice(b[kind_b])}")
-            out = list(dict.fromkeys(out))
-        return out[:count]
-
+    daily_pool = [
+        "Today is a good day to organize your plans.",
+        "Small kindness brings big luck.",
+        "Focus on one thing and finish it.",
+        "Rest is also productivity.",
+        "A message you send first can change the flow.",
+        "Avoid impulsive spending today.",
+        "Take a short walk to refresh your mind.",
+        "Your consistency will be rewarded."
+    ]
     daily = {
-        "money": build_list("money_a", "money_b"),
-        "love": build_list("love_a", "love_b"),
-        "health": build_list("health_a", "health_b"),
-        "work": build_list("work_a", "work_b"),
-        "relationship": build_list("rel_a", "rel_b"),
-        "study": build_list("study_a", "study_b"),
-        "travel": build_list("travel_a", "travel_b"),
-        "mindset": build_list("mind_a", "mind_b")
+        "money": daily_pool[:],
+        "love": daily_pool[:],
+        "health": daily_pool[:],
+        "work": daily_pool[:],
+        "relationship": daily_pool[:],
+        "study": daily_pool[:],
+        "travel": daily_pool[:],
+        "mindset": daily_pool[:]
     }
+    yearly = {"general": daily_pool[:]}
 
-    yearly = {
-        "general": daily["mindset"][:12],
-        "career": daily["work"][:12],
-        "money": daily["money"][:12],
-        "love": daily["love"][:12]
-    }
-
-    combo = {"zodiac_mbti": ["{zodiac} + {mbti_desc} 조합은 ‘정리→실행’이 강해요."] * 40}
+    combo = {"zodiac_mbti": ["{zodiac} + {mbti_desc}: Today, try 'plan → execute' in one shot!"] * 40}
     lucky = {
-        "colors": ["Gold","Red","Blue","Green","Purple","Silver","Navy","Mint","Pink","Off-white"],
-        "items": ["Small notebook","Card wallet","Mini perfume","Power bank","Keychain","Tumbler","Wristwatch","Earbuds","Umbrella","Lip balm"],
-        "tips": daily["mindset"][:20]
+        "colors": ["Gold", "Red", "Blue", "Green", "Purple"],
+        "items": ["Notebook", "Card wallet", "Perfume", "Power bank", "Umbrella"],
+        "tips": daily_pool[:]
     }
+    # 한국어만 살짝 자연스럽게
+    if lang == "ko":
+        daily_ko = [
+            "오늘은 계획을 정리하면 운이 더 좋아져요.",
+            "작은 친절이 큰 행운을 불러와요.",
+            "한 가지에 집중해서 끝내보세요.",
+            "휴식도 생산성이에요.",
+            "먼저 보내는 연락이 흐름을 바꿔요.",
+            "충동구매만 피하면 돈운이 좋아요.",
+            "가벼운 산책으로 머리를 환기해요.",
+            "꾸준함이 보상으로 돌아와요."
+        ]
+        for k in daily:
+            daily[k] = daily_ko[:]
+        yearly["general"] = daily_ko[:]
+        combo["zodiac_mbti"] = ["{zodiac} + {mbti_desc}: 오늘은 ‘정리→실행’이 핵심!"] * 40
+        lucky["items"] = ["작은 노트", "카드지갑", "미니 향수", "보조배터리", "우산"]
+
     return {"daily": daily, "yearly": yearly, "combo": combo, "lucky": lucky}
 
 
 # =========================================
-# 3) 유틸
+# 4) Utils
 # =========================================
 def get_zodiac(year: int, lang: str):
     if not (1900 <= year <= 2030):
@@ -450,11 +549,11 @@ def stable_rng(name: str, y: int, m: int, d: int, mbti: str, lang: str):
 
 
 # =========================================
-# 4) Streamlit 기본/UI
+# 5) Streamlit setup
 # =========================================
 st.set_page_config(page_title="2026 Fortune", layout="centered")
 
-# ---- 세션 기본값 (중요: 여기서 lang을 강제로 덮어쓰지 않음)
+# session defaults
 if "lang" not in st.session_state:
     st.session_state.lang = "ko"
 if "result" not in st.session_state:
@@ -466,7 +565,7 @@ if "birthdate" not in st.session_state:
 if "mbti" not in st.session_state:
     st.session_state.mbti = "ENFJ"
 
-# 모바일 최적화 CSS
+# mobile CSS
 st.markdown(
     """
     <style>
@@ -482,7 +581,7 @@ st.markdown(
       .title { font-size: 28px; font-weight: 900; color:#2b2b2b; text-align:center; margin: 14px 0 4px;}
       .subtitle { font-size: 14px; font-weight: 700; color:#555; text-align:center; margin: 0 0 14px;}
       .card {
-        background: rgba(255,255,255,0.78);
+        background: rgba(255,255,255,0.80);
         border: 1px solid rgba(140,120,200,0.25);
         border-radius: 18px;
         padding: 16px;
@@ -498,7 +597,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ✅ 언어 선택 (중요: key로만 관리, session_state에 직접 대입 금지)
+# Language selector (IMPORTANT: no overwrite assignment)
 st.radio(
     UI.get(st.session_state.lang, UI["en"])["lang_label"],
     LANG_KEYS,
@@ -508,12 +607,11 @@ st.radio(
 )
 lang = st.session_state.lang
 t = UI.get(lang, UI["en"])
-
 APP_URL = "https://my-fortune.streamlit.app"
 
 
 # =========================================
-# 5) 입력 화면
+# 6) Input screen
 # =========================================
 if not st.session_state.result:
     st.markdown(f"<div class='title'>{t['title']}</div>", unsafe_allow_html=True)
@@ -530,71 +628,54 @@ if not st.session_state.result:
 
     mbti_mode = st.radio(t["mbti_mode"], [t["mbti_direct"], t["mbti_test"]], horizontal=True)
 
+    # Direct MBTI
     if mbti_mode == t["mbti_direct"]:
         st.session_state.mbti = st.selectbox("MBTI", sorted(MBTIS.get(lang, MBTIS["en"]).keys()))
         if st.button(t["btn_view"], use_container_width=True):
             st.session_state.result = True
             st.rerun()
 
+    # 12-question Test (✅ language 적용)
     else:
         st.caption(t["test_caption"])
 
-        q_ei = [
-            ("If plans come up suddenly?", "Awesome! Let's go (E)", "I'd rather stay home (I)"),
-            ("You recharge by…", "Meeting people (E)", "Being alone (I)"),
-            ("When talking, you…", "Think while speaking (E)", "Think first, then speak (I)")
-        ]
-        q_sn = [
-            ("When seeing new info?", "Facts & details (S)", "Possibilities & meaning (N)"),
-            ("You prefer explanations with…", "Examples & specifics (S)", "Big picture (N)"),
-            ("Your ideas are usually…", "Proven methods (S)", "New approaches (N)")
-        ]
-        q_tf = [
-            ("In conflict, you choose…", "Logic & principles (T)", "Care & harmony (F)"),
-            ("Your decision base is…", "Efficiency & accuracy (T)", "Values & feelings (F)"),
-            ("When giving feedback…", "Direct & clear (T)", "Gentle & considerate (F)")
-        ]
-        q_jp = [
-            ("Your schedule style?", "Planned (J)", "Spontaneous (P)"),
-            ("Before a deadline…", "Finish early (J)", "Rush at the end (P)"),
-            ("Tidying up is…", "Keep it neat (J)", "Only when needed (P)")
-        ]
+        tq = TEST_Q.get(lang, TEST_Q["en"])  # ✅ 핵심: 언어별 문항 사용
 
-        ei = sn = tf = jp = 0
+        score_ei = score_sn = score_tf = score_jp = 0
 
         st.subheader(t["sec_ei"])
-        for i, (q, a, b) in enumerate(q_ei):
+        for i, (q, a, b) in enumerate(tq["EI"]):
             if st.radio(q, [a, b], key=f"ei_{lang}_{i}") == a:
-                ei += 1
+                score_ei += 1
 
         st.subheader(t["sec_sn"])
-        for i, (q, a, b) in enumerate(q_sn):
+        for i, (q, a, b) in enumerate(tq["SN"]):
             if st.radio(q, [a, b], key=f"sn_{lang}_{i}") == a:
-                sn += 1
+                score_sn += 1
 
         st.subheader(t["sec_tf"])
-        for i, (q, a, b) in enumerate(q_tf):
+        for i, (q, a, b) in enumerate(tq["TF"]):
             if st.radio(q, [a, b], key=f"tf_{lang}_{i}") == a:
-                tf += 1
+                score_tf += 1
 
         st.subheader(t["sec_jp"])
-        for i, (q, a, b) in enumerate(q_jp):
+        for i, (q, a, b) in enumerate(tq["JP"]):
             if st.radio(q, [a, b], key=f"jp_{lang}_{i}") == a:
-                jp += 1
+                score_jp += 1
 
         if st.button(t["btn_view_test"], use_container_width=True):
             mbti = ""
-            mbti += "E" if ei >= 2 else "I"
-            mbti += "S" if sn >= 2 else "N"
-            mbti += "T" if tf >= 2 else "F"
-            mbti += "J" if jp >= 2 else "P"
+            mbti += "E" if score_ei >= 2 else "I"
+            mbti += "S" if score_sn >= 2 else "N"
+            mbti += "T" if score_tf >= 2 else "F"
+            mbti += "J" if score_jp >= 2 else "P"
             st.session_state.mbti = mbti
             st.session_state.result = True
             st.rerun()
 
 
 # =========================================
-# 6) 결과 화면
+# 7) Result screen
 # =========================================
 if st.session_state.result:
     y = st.session_state.birthdate.year
@@ -614,23 +695,17 @@ if st.session_state.result:
     mbti_desc = MBTIS.get(lang, MBTIS["en"]).get(mbti, mbti)
     saju = get_saju(y, m, d, lang)
 
-    db, used_external = load_fortune_db(lang)
+    db, _ = load_fortune_db(lang)
     rng = stable_rng(name, y, m, d, mbti, lang)
 
     daily_categories = list(db["daily"].keys())
-    cat_today = rng.choice(daily_categories)
-    cat_tomorrow = rng.choice(daily_categories)
-
-    today_msg = rng.choice(db["daily"][cat_today])
-    tomorrow_msg = rng.choice(db["daily"][cat_tomorrow])
-
-    overall = rng.choice(db["yearly"]["general"]) if "yearly" in db and "general" in db["yearly"] else rng.choice(db["daily"]["mindset"])
-    combo_template = rng.choice(db["combo"]["zodiac_mbti"]) if "combo" in db and "zodiac_mbti" in db["combo"] else "{zodiac} + {mbti_desc}"
-    combo_comment = combo_template.format(zodiac=zodiac, mbti=mbti, mbti_desc=mbti_desc)
-
-    lucky_color = rng.choice(db["lucky"]["colors"]) if "lucky" in db and "colors" in db["lucky"] else "Gold"
-    lucky_item = rng.choice(db["lucky"]["items"]) if "lucky" in db and "items" in db["lucky"] else "Notebook"
-    tip = rng.choice(db["lucky"]["tips"]) if "lucky" in db and "tips" in db["lucky"] else rng.choice(db["daily"]["mindset"])
+    today_msg = rng.choice(db["daily"][rng.choice(daily_categories)])
+    tomorrow_msg = rng.choice(db["daily"][rng.choice(daily_categories)])
+    overall = rng.choice(db["yearly"]["general"])
+    combo_comment = rng.choice(db["combo"]["zodiac_mbti"]).format(zodiac=zodiac, mbti_desc=mbti_desc, mbti=mbti)
+    lucky_color = rng.choice(db["lucky"]["colors"])
+    lucky_item = rng.choice(db["lucky"]["items"])
+    tip = rng.choice(db["lucky"]["tips"])
 
     name_display = (f"{name}" + ("님의" if lang == "ko" else "")) if name else ""
     line_head = f"{name_display} {zodiac} · {mbti}" if name_display else f"{zodiac} · {mbti}"
@@ -659,7 +734,7 @@ if st.session_state.result:
         unsafe_allow_html=True
     )
 
-    # 타로
+    # tarot
     with st.expander(t["tarot_btn"], expanded=False):
         tarot_rng = random.Random(abs(hash(f"tarot|{datetime.now().strftime('%Y%m%d')}|{name}|{mbti}|{lang}")) % (10**9))
         tarot_card = tarot_rng.choice(list(TAROT_CARDS.keys()))
@@ -667,7 +742,7 @@ if st.session_state.result:
         st.markdown(
             f"""
             <div class="card" style="text-align:center;">
-              <p style="font-weight:900; color:#7c3aed;">{t['tarot_title']}</p>
+              <p style="font-weight:900; color:#7c3aed;">{t["tarot_title"]}</p>
               <p style="font-size:22px; font-weight:900; margin-top:6px;">{tarot_card}</p>
               <p style="margin-top:8px;">{tarot_meaning}</p>
             </div>
@@ -675,7 +750,7 @@ if st.session_state.result:
             unsafe_allow_html=True
         )
 
-    # 공유(텍스트)
+    # share text
     share_text = (
         f"{line_head}\n"
         f"{t['combo']}\n\n"
@@ -688,11 +763,11 @@ if st.session_state.result:
         f"{APP_URL}"
     )
 
-    share_payload = json.dumps(share_text)
-    share_title_payload = json.dumps(t["share_title"])
-    fail_copy_payload = json.dumps(t["share_fail_copy"])
-    manual_prompt_payload = json.dumps(t["share_manual_prompt"])
-    cancel_payload = json.dumps(t["share_cancel"])
+    share_payload = json.dumps(share_text, ensure_ascii=False)
+    share_title_payload = json.dumps(t["share_title"], ensure_ascii=False)
+    fail_copy_payload = json.dumps(t["share_fail_copy"], ensure_ascii=False)
+    manual_prompt_payload = json.dumps(t["share_manual_prompt"], ensure_ascii=False)
+    cancel_payload = json.dumps(t["share_cancel"], ensure_ascii=False)
 
     components.html(
         f"""
@@ -712,10 +787,7 @@ if st.session_state.result:
 
           try {{
             if (navigator.share) {{
-              await navigator.share({{
-                title: title,
-                text: text
-              }});
+              await navigator.share({{ title: title, text: text }});
               return;
             }}
 
@@ -741,22 +813,6 @@ if st.session_state.result:
         height=110
     )
 
-    st.markdown(f"<div style='text-align:center; color:#6b6b6b; font-size:12px; margin-top:6px;'>{APP_URL}</div>", unsafe_allow_html=True)
-
-    # DB 다운로드 도구
-    with st.expander(t["db_tools_title"], expanded=False):
-        st.write(t["db_tools_desc"])
-        db_json_bytes = json.dumps(db, ensure_ascii=False, indent=2).encode("utf-8")
-        st.download_button(
-            t["download_db_btn"],
-            data=db_json_bytes,
-            file_name=f"fortunes_{lang}.json",
-            mime="application/json"
-        )
-        st.caption(t["db_path_hint"].format(lang=lang))
-        st.caption(f"현재 상태: {'✅ 외부 DB 사용 중' if used_external else '⚠️ 파일이 없어서 자동 생성 DB 사용 중'}")
-
-    # reset (clear() 금지)
     if st.button(t["reset_btn"], use_container_width=True):
         st.session_state.result = False
         st.rerun()
