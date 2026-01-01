@@ -1,9 +1,11 @@
-import streamlit as st
+아래는 영어 완벽 지원 + 모든 기능(공유 복사, 다시하기, 타로, 가운데 정렬 등) 포함된 최종 통합 코드예요!
+이걸 그대로 하나의 app.py 파일로 저장하고 실행하거나 Streamlit에 배포하면 됩니다.
+생략 없이 전체 코드로 드려요. 복사해서 바로 사용하세요! 🚀
+Pythonimport streamlit as st
 from datetime import datetime, timedelta
 import random
-from streamlit.components.v1 import html as st_html
 
-# 다국어 사전 (한국어 + 영어, 완전 전체)
+# 다국어 사전 (한국어 + 영어 완벽 지원)
 translations = {
     "ko": {
         "title": "🌟 2026 띠 + MBTI + 사주 + 오늘/내일 운세 🌟",
@@ -39,7 +41,6 @@ translations = {
         "lucky_color_title": "럭키 컬러",
         "lucky_item_title": "럭키 아이템",
         "tip_title": "팁",
-        "footer": "재미로만 봐주세요 😊",
         "overall_fortunes": [
             "성장과 재물이 함께하는 최고의 해! 대박 기운 가득 ✨",
             "안정과 행복이 넘치는 한 해! 가족과 함께하는 기쁨 🏡",
@@ -119,30 +120,10 @@ translations = {
             "인간관계 운 좋음! 귀인 만남 가능 🤝", "학업/일 운 최고! 집중력 최고 📚",
             "여행운 좋음! 갑자기 떠나도 괜찮아요 ✈️", "기분 좋은 하루! 웃음이 가득할 거예요 😄"
         ],
-        "q_energy": [
-            "주말에 친구들이 갑자기 '놀자!' 하면?",
-            "모임에서 처음 본 사람들과 대화하는 거?",
-            "하루 종일 사람 만난 후에?",
-            "생각이 떠오르면?"
-        ],
-        "q_info": [
-            "새로운 카페 가면 뭐가 먼저 눈에 들어?",
-            "친구가 고민 상담하면?",
-            "책이나 영화 볼 때?",
-            "쇼핑할 때?"
-        ],
-        "q_decision": [
-            "친구가 늦어서 화날 때?",
-            "팀 프로젝트에서 의견 충돌 시?",
-            "누가 울면서 상담하면?",
-            "거짓말 탐지 시?"
-        ],
-        "q_life": [
-            "여행 갈 때?",
-            "숙제나 과제 마감 앞두고?",
-            "방 정리할 때?",
-            "선택해야 할 때?"
-        ],
+        "q_energy": ["주말에 친구들이 갑자기 '놀자!' 하면?", "모임에서 처음 본 사람들과 대화하는 거?", "하루 종일 사람 만난 후에?", "생각이 떠오르면?"],
+        "q_info": ["새로운 카페 가면 뭐가 먼저 눈에 들어?", "친구가 고민 상담하면?", "책이나 영화 볼 때?", "쇼핑할 때?"],
+        "q_decision": ["친구가 늦어서 화날 때?", "팀 프로젝트에서 의견 충돌 시?", "누가 울면서 상담하면?", "거짓말 탐지 시?"],
+        "q_life": ["여행 갈 때?", "숙제나 과제 마감 앞두고?", "방 정리할 때?", "선택해야 할 때?"],
         "options_e": ["와 좋아! 바로 나감 (E)", "재밌고 신나! (E)", "아직 에너지 넘쳐! (E)", "바로 말로 풀어냄 (E)"],
         "options_i": ["집에서 쉬고 싶어... (I)", "조금 피곤하고 부담스러워 (I)", "완전 지쳐서 혼자 있고 싶어 (I)", "머릿속에서 먼저 정리함 (I)"],
         "options_s": ["메뉴판 가격과 메뉴 (S)", "지금 상황과 사실 위주로 들어줌 (S)", "스토리와 디테일에 집중 (S)", "필요한 거 보고 바로 사 (S)"],
@@ -155,8 +136,8 @@ translations = {
     "en": {
         "title": "🌟 2026 Zodiac + MBTI + Fortune + Today/Tomorrow Luck 🌟",
         "caption": "Completely Free 😄",
-        "ad_title": "💳 Curious about rental?",
-        "ad_text": "<b>Dananum Rental</b> with partner card: <b>From 0 won/month</b> + <b>Cashback</b>!",
+        "ad_title": "💳 Curious about water purifier rental?",
+        "ad_text": "<b>Dananum Rental</b>: <b>From 0 won/month</b> with partner card + <b>up to 500,000 won cashback</b>!",
         "ad_btn": "🔗 Check it out",
         "birth": "### Enter Birth Date",
         "name_placeholder": "Enter name (shown in result)",
@@ -186,7 +167,6 @@ translations = {
         "lucky_color_title": "Lucky Color",
         "lucky_item_title": "Lucky Item",
         "tip_title": "Tip",
-        "footer": "For fun only 😊",
         "overall_fortunes": [
             "Growth and wealth together – the best year! Big luck ✨",
             "A year full of stability and happiness! Family joy 🏡",
@@ -237,19 +217,19 @@ translations = {
         "zodiacs": {
             "Rat": "🐭 New opportunities in stability! Success with quick judgment 💰",
             "Ox": "🐮 Fruits of perseverance! Stable growth and happy family 🏡",
-            "Tiger": "🐯 Big luck sign! Challenge and success with leadership 🚀",
-            "Rabbit": "🐰 Caution with change! Seek stability ❤️",
-            "Dragon": "🐲 Rising fortune! Leadership and promotion opportunities 👑",
+            "Tiger": "🐯 Big luck! Challenge and success with leadership 🚀",
+            "Rabbit": "🐰 Caution with changes! Seek stability ❤️",
+            "Dragon": "🐲 Rising fortune! Leadership and promotion 👑",
             "Snake": "🐍 Intuition and gain! Unexpected wealth 🤑",
             "Horse": "🐴 Year of the Horse! Strong drive but balance is key ✈️",
-            "Goat": "🐑 Big luck sign! Comfort and best money luck, happy home 🏠",
+            "Goat": "🐑 Big luck! Comfort and best money luck, happy home 🏠",
             "Monkey": "🐵 Change and talent shine! Success with creativity 🎨",
             "Rooster": "🐔 Effort rewarded! Recognition and promotion 🏆",
-            "Dog": "🐶 Big luck sign! Helpful people and networking rise 🤝",
+            "Dog": "🐶 Big luck! Helpful people and networking rise 🤝",
             "Pig": "🐷 Relaxation and wealth jackpot! Enjoy the best year 🐷"
         },
         "mbtis": {
-            "INTJ": "🧠 Strategist", "INTP": "💡 Genius Thinker", "ENTJ": "👑 Commander", "ENTP": "⚡ Debater",
+            "INTJ": "🧠 Strategist", "INTP": "💡 Thinker", "ENTJ": "👑 Commander", "ENTP": "⚡ Debater",
             "INFJ": "🔮 Advocate", "INFP": "🎨 Mediator", "ENFJ": "🤗 Protagonist", "ENFP": "🎉 Campaigner",
             "ISTJ": "📋 Logistician", "ISFJ": "🛡️ Defender", "ESTJ": "📢 Executive", "ESFJ": "💕 Consul",
             "ISTP": "🔧 Virtuoso", "ISFP": "🌸 Adventurer", "ESTP": "🏄 Entrepreneur", "ESFP": "🎭 Entertainer"
@@ -261,35 +241,15 @@ translations = {
             "Strong Yang → Challenge success 🚀", "Strong Yin → Inner reflection 😌"
         ],
         "daily_msgs": [
-            "Good wealth luck! 💰", "Best love luck! ❤️",
-            "Health caution 😴", "Overall big luck! 🌟",
-            "Good relationships 🤝", "Best for study/work 📚",
-            "Good travel luck ✈️", "Happy day full of laughter 😄"
+            "Good wealth luck! Small investments pay off 💰", "Best love luck! Great for dates or confessions ❤️",
+            "Health caution! Rest well 😴", "Overall big luck! Only good things ahead 🌟",
+            "Good relationships! Meet helpful people 🤝", "Best for study/work! High focus 📚",
+            "Good travel luck! Spontaneous trips OK ✈️", "Happy day full of laughter 😄"
         ],
-        "q_energy": [
-            "Friends suddenly say 'Let's hang out!' on weekend?",
-            "Talking to strangers at a gathering?",
-            "After meeting people all day?",
-            "When a thought comes to mind?"
-        ],
-        "q_info": [
-            "What catches your eye first in a new cafe?",
-            "When friend shares worries?",
-            "When reading book or watching movie?",
-            "When shopping?"
-        ],
-        "q_decision": [
-            "When friend is late and you're angry?",
-            "In team project when opinions clash?",
-            "When someone cries while consulting?",
-            "When detecting a lie?"
-        ],
-        "q_life": [
-            "When planning a trip?",
-            "Before assignment deadline?",
-            "When cleaning room?",
-            "When needing to choose?"
-        ],
+        "q_energy": ["Friends suddenly say 'Let's hang out!' on weekend?", "Talking to strangers at a gathering?", "After meeting people all day?", "When a thought comes to mind?"],
+        "q_info": ["What catches your eye first in a new cafe?", "When friend shares worries?", "When reading book or watching movie?", "When shopping?"],
+        "q_decision": ["When friend is late and you're angry?", "In team project when opinions clash?", "When someone cries while consulting?", "When detecting a lie?"],
+        "q_life": ["When planning a trip?", "Before assignment deadline?", "When cleaning room?", "When needing to choose?"],
         "options_e": ["Yes! Go out right away (E)", "Fun and exciting! (E)", "Still full of energy! (E)", "Express thoughts out loud (E)"],
         "options_i": ["Want to stay home... (I)", "A bit tiring and burdensome (I)", "Totally exhausted, want to be alone (I)", "Organize in head first (I)"],
         "options_s": ["Menu prices and items (S)", "Listen to current facts (S)", "Focus on story and details (S)", "Buy what I need right away (S)"],
@@ -301,37 +261,12 @@ translations = {
     }
 }
 
+# 페이지 설정
+st.set_page_config(page_title="2026 Fortune", layout="centered")
+
 # 세션 상태 초기화
 if "lang" not in st.session_state:
     st.session_state.lang = "ko"
-
-st.session_state.lang = st.radio("언어 / Language", ["ko", "en"], index=["ko", "en"].index(st.session_state.lang), horizontal=True)
-
-t = translations[st.session_state.lang]
-
-Z = t["zodiacs"]
-M = t["mbtis"]
-saju_msg = t["saju_msgs"]
-daily_msgs = t["daily_msgs"]
-
-def get_zodiac(y):
-    z_list = list(Z.keys())
-    return z_list[(y - 4) % 12] if 1900 <= y <= 2030 else None
-
-def get_saju(year, month, day):
-    total = year + month + day
-    index = total % 8
-    return saju_msg[index]
-
-def get_daily_fortune(zodiac, offset=0):
-    today = datetime.now() + timedelta(days=offset)
-    seed = int(today.strftime("%Y%m%d")) + list(Z.keys()).index(zodiac)
-    random.seed(seed)
-    return random.choice(daily_msgs)
-
-st.set_page_config(page_title=t["title"], layout="centered")
-
-# 세션 상태 초기화
 if "mbti" not in st.session_state:
     st.session_state.mbti = None
 if "result_shown" not in st.session_state:
@@ -345,14 +280,36 @@ if "month" not in st.session_state:
 if "day" not in st.session_state:
     st.session_state.day = 1
 
+# 언어 선택 (상단에 표시)
+st.session_state.lang = st.radio("언어 / Language", ["ko", "en"], index=0 if st.session_state.lang == "ko" else 1, horizontal=True)
+t = translations[st.session_state.lang]
+Z = t["zodiacs"]
+M = t["mbtis"]
+
+# 배포 후 자신의 앱 URL로 변경하세요!
 app_url = "https://my-fortune.streamlit.app"
 
-# 초기 화면
+def get_zodiac(y):
+    if st.session_state.lang == "en":
+        z_list = ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"]
+    else:
+        z_list = ["쥐띠", "소띠", "호랑이띠", "토끼띠", "용띠", "뱀띠", "말띠", "양띠", "원숭이띠", "닭띠", "개띠", "돼지띠"]
+    return z_list[(y - 4) % 12] if 1900 <= y <= 2030 else None
+
+def get_saju(year, month, day):
+    total = year + month + day
+    return t["saju_msgs"][total % 8]
+
+def get_daily_fortune(zodiac, offset=0):
+    today = datetime.now() + timedelta(days=offset)
+    seed = int(today.strftime("%Y%m%d")) + list(Z.keys()).index(zodiac)
+    random.seed(seed)
+    return random.choice(t["daily_msgs"])
+
+# 초기 입력 화면
 if not st.session_state.result_shown:
     st.markdown(f"<h1 style='text-align:center; color:#ff6b6b;'>{t['title']}</h1>", unsafe_allow_html=True)
     st.markdown(f"<p style='text-align:center; color:#666;'>{t['caption']}</p>", unsafe_allow_html=True)
-
-    st.image("frame.png", use_column_width=True)
 
     st.markdown(f"""
     <div style="background:#fffbe6;padding:20px;border-radius:20px;text-align:center;margin:30px 0;">
@@ -368,9 +325,9 @@ if not st.session_state.result_shown:
 
     st.markdown(f"<h3 style='text-align:center;'>{t['birth']}</h3>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
-    st.session_state.year = col1.number_input("Year" if st.session_state.lang == "en" else "년", 1900, 2030, st.session_state.year, step=1)
-    st.session_state.month = col2.number_input("Month" if st.session_state.lang == "en" else "월", 1, 12, st.session_state.month, step=1)
-    st.session_state.day = col3.number_input("Day" if st.session_state.lang == "en" else "일", 1, 31, st.session_state.day, step=1)
+    st.session_state.year = col1.number_input("Year" if st.session_state.lang == "en" else "년", min_value=1900, max_value=2030, value=st.session_state.year, step=1)
+    st.session_state.month = col2.number_input("Month" if st.session_state.lang == "en" else "월", min_value=1, max_value=12, value=st.session_state.month, step=1)
+    st.session_state.day = col3.number_input("Day" if st.session_state.lang == "en" else "일", min_value=1, max_value=31, value=st.session_state.day, step=1)
 
     choice = st.radio(t["mbti_mode"], [t["direct"], t["test"]])
 
@@ -386,34 +343,22 @@ if not st.session_state.result_shown:
 
         st.subheader(t["energy"])
         for i in range(4):
-            q = t["q_energy"][i]
-            opt1 = t["options_e"][i]
-            opt2 = t["options_i"][i]
-            if st.radio(q, [opt1, opt2], key=f"q{i+1}") == opt1:
+            if st.radio(t["q_energy"][i], [t["options_e"][i], t["options_i"][i]], key=f"energy_{i}") == t["options_e"][i]:
                 e_i += 1
 
         st.subheader(t["info"])
         for i in range(4):
-            q = t["q_info"][i]
-            opt1 = t["options_s"][i]
-            opt2 = t["options_n"][i]
-            if st.radio(q, [opt1, opt2], key=f"q{i+5}") == opt1:
+            if st.radio(t["q_info"][i], [t["options_s"][i], t["options_n"][i]], key=f"info_{i}") == t["options_s"][i]:
                 s_n += 1
 
         st.subheader(t["decision"])
         for i in range(4):
-            q = t["q_decision"][i]
-            opt1 = t["options_t"][i]
-            opt2 = t["options_f"][i]
-            if st.radio(q, [opt1, opt2], key=f"q{i+9}") == opt1:
+            if st.radio(t["q_decision"][i], [t["options_t"][i], t["options_f"][i]], key=f"decision_{i}") == t["options_t"][i]:
                 t_f += 1
 
         st.subheader(t["life"])
         for i in range(4):
-            q = t["q_life"][i]
-            opt1 = t["options_j"][i]
-            opt2 = t["options_p"][i]
-            if st.radio(q, [opt1, opt2], key=f"q{i+13}") == opt1:
+            if st.radio(t["q_life"][i], [t["options_j"][i], t["options_p"][i]], key=f"life_{i}") == t["options_j"][i]:
                 j_p += 1
 
         if st.button(t["result_btn"], use_container_width=True):
@@ -425,19 +370,18 @@ if not st.session_state.result_shown:
             st.session_state.result_shown = True
             st.rerun()
 
-# 결과 화면 - 하나의 큰 HTML 블록으로 (태그 안 보이게 보장)
+# 결과 화면
 if st.session_state.result_shown:
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year)
-    
+
     if zodiac is None:
-        st.error("생년이 1900~2030년 사이로 입력해주세요!")
+        st.error("Please enter a birth year between 1900 and 2030!" if st.session_state.lang == "en" else "생년은 1900~2030년 사이로 입력해주세요!")
         if st.button(t["reset"], use_container_width=True):
             st.session_state.clear()
             st.rerun()
-        st.stop()  # 여기서 멈춤
+        st.stop()
 
-    # 운세 계산 (한 번만!)
     saju = get_saju(st.session_state.year, st.session_state.month, st.session_state.day)
     today = get_daily_fortune(zodiac, 0)
     tomorrow = get_daily_fortune(zodiac, 1)
@@ -445,38 +389,56 @@ if st.session_state.result_shown:
     zodiac_desc = Z[zodiac].split(' ', 1)[1] if ' ' in Z[zodiac] else Z[zodiac]
     mbti_emoji = M[mbti].split(' ', 1)[0]
     mbti_desc = M[mbti].split(' ', 1)[1] if ' ' in M[mbti] else M[mbti]
-    name_display = f"{st.session_state.name}님의" if st.session_state.name else ""
+    name_display = f"{st.session_state.name}{'님의' if st.session_state.lang == 'ko' else ''}" if st.session_state.name else ""
+
     overall = random.choice(t["overall_fortunes"])
-    combo_comment = random.choice(t["combo_comments"]).format(zodiac, mbti_desc)
+    combo_comment = random.choice(t["combo_comments"]).format(zodiac if st.session_state.lang == "ko" else zodiac, mbti_desc)
     lucky_color = random.choice(t["lucky_colors"])
     lucky_item = random.choice(t["lucky_items"])
     tip = random.choice(t["tips"])
 
-    # CSS (한 번만 정의)
+    # CSS 스타일 (가운데 정렬 완벽)
     st.markdown("""
     <style>
-    .gradient-bg {background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
-        min-height: 100vh; padding: 20px 10px; text-align: center; box-sizing: border-box;}
-    .main-card {background: rgba(255,255,255,0.95); border-radius: 25px; padding: 30px; margin: 20px auto;
-        max-width: 800px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); backdrop-filter: blur(10px);}
-    .title-text {font-size: 2.2em; color: white; text-shadow: 3px 3px 8px rgba(0,0,0,0.7); margin: 20px 0;}
-    .combo-text {font-size: 1.8em; color: white; text-shadow: 2px 2px 6px rgba(0,0,0,0.6);}
-    .content-text {font-size: 1.2em; line-height: 2; color: #000;}
-    .ad-card {background: rgba(255,255,255,0.9); border-radius: 20px; padding: 20px; margin: 30px auto;
-        max-width: 700px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);}
-    .tarot-card {background: rgba(255,255,255,0.95); border-radius: 20px; padding: 20px; margin: 20px auto;
-        max-width: 600px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);}
+        html, body, [class*="css"] {font-family: 'Noto Sans KR', sans-serif;}
+        .gradient-bg {
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
+            min-height: 100vh;
+            padding: 20px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .main-card, .ad-card, .tarot-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 25px;
+            padding: 30px;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+        .ad-card {padding: 20px; max-width: 700px;}
+        .tarot-card {max-width: 600px;}
+        .title-text {font-size: 2.4em; color: white; text-shadow: 3px 3px 8px rgba(0,0,0,0.7); margin: 30px 0 10px;}
+        .combo-text {font-size: 2em; color: white; text-shadow: 2px 2px 6px rgba(0,0,0,0.6); margin: 10px 0;}
+        .content-text {font-size: 1.25em; line-height: 2.2; color: #000;}
+        .stButton>button {margin: 20px auto; display: block;}
+        .streamlit-expanderHeader {text-align: center; font-size: 1.3em;}
     </style>
     """, unsafe_allow_html=True)
 
     st.markdown('<div class="gradient-bg">', unsafe_allow_html=True)
 
-    st.markdown(f"<h1 class='title-text'>⭐ {name_display} 2026년 운세 ⭐</h1>", unsafe_allow_html=True)
+    st.markdown(f"<h1 class='title-text'>⭐ {name_display} 2026{'년' if st.session_state.lang == 'ko' else ''} Fortune ⭐</h1>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='font-size:2.8em; color:white; text-shadow:3px 3px 8px rgba(0,0,0,0.7);'>"
                 f"{zodiac_emoji} {zodiac} + {mbti_emoji} {mbti}</h2>", unsafe_allow_html=True)
-    st.markdown("<h3 class='combo-text'>최고 조합!</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 class='combo-text'>{t['combo']}</h3>", unsafe_allow_html=True)
 
-    # 메인 운세 카드 (한 번만!)
     st.markdown('<div class="main-card">', unsafe_allow_html=True)
     st.markdown(f"""
     <div class="content-text">
@@ -493,20 +455,18 @@ if st.session_state.result_shown:
     """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # 광고 카드 (한 번만)
     st.markdown('<div class="ad-card">', unsafe_allow_html=True)
-    st.markdown("""
-    <small style="color:#e74c3c; font-weight:bold;">광고</small><br>
-    💧 <b style="font-size:1.3em;">정수기 렌탈 대박!</b><br>
-    제휴카드면 <b>월 0원부터</b>!<br>
-    설치 당일 <b>최대 50만원 지원</b> + 사은품 듬뿍 ✨<br><br>
+    st.markdown(f"""
+    <small style="color:#e74c3c; font-weight:bold;">{'Ad' if st.session_state.lang == 'en' else '광고'}</small><br>
+    💧 <b style="font-size:1.3em;">{'Water Purifier Rental Deal!' if st.session_state.lang == 'en' else '정수기 렌탈 대박!'}</b><br>
+    {'Partner card: From 0 won/month!' if st.session_state.lang == 'en' else '제휴카드면 <b>월 0원부터</b>!'}<br>
+    {'Up to 500,000 won support on installation day + lots of gifts ✨' if st.session_state.lang == 'en' else '설치 당일 <b>최대 50만원 지원</b> + 사은품 듬뿍 ✨'}<br><br>
     <a href="https://www.다나눔렌탈.com" target="_blank" 
        style="color:#3498db; text-decoration:underline; font-weight:bold; font-size:1.2em;">
-       🔗 다나눔렌탈.com 바로가기</a>
+       🔗 {'DananumRental.com' if st.session_state.lang == 'en' else '다나눔렌탈.com 바로가기'}</a>
     """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # 타로 카드 (버튼 클릭 시 expander로 표시 → 중복 방지)
     with st.expander(t["tarot_btn"], expanded=False):
         tarot_card = random.choice(list(t["tarot_cards"].keys()))
         tarot_meaning = t["tarot_cards"][tarot_card]
@@ -518,34 +478,44 @@ if st.session_state.result_shown:
         </div>
         """, unsafe_allow_html=True)
 
-    # 공유 버튼
-    share_text = f"{name_display} 2026 운세\n{zodiac} + {mbti}\n오늘: {today}\n내일: {tomorrow}\n\n{app_url}"
+    # 공유 버튼 - 클립보드 복사
+    share_text = f"""🌟 {name_display} 2026{'년' if st.session_state.lang == 'ko' else ''} Fortune 🌟
+
+{zodiac_emoji} {zodiac} + {mbti_emoji} {mbti}
+{t['combo']}!
+
+{t['today_title']}: {today}
+{t['tomorrow_title']}: {tomorrow}
+
+{overall}
+
+{t['combo_title']}: {combo_comment}
+{t['lucky_color_title']}: {lucky_color} | {t['lucky_item_title']}: {lucky_item}
+{t['tip_title']}: {tip}
+
+🔮 {'Check your fortune too' if st.session_state.lang == 'en' else '나도 운세 보러 가기'}: {app_url}"""
+
     st.markdown(f"""
-    <div style="text-align:center; margin:40px 0;">
-        <button onclick="shareResult()" style="background:#8e44ad; color:white; padding:18px 80px; 
+    <div style="text-align:center; margin:50px 0;">
+        <button onclick="copyResult()" style="background:#8e44ad; color:white; padding:18px 80px; 
                  border:none; border-radius:50px; font-size:1.4em; font-weight:bold;
                  box-shadow: 0 8px 25px rgba(142,68,173,0.5); cursor:pointer;">
-          {t["share_btn"]}
+          📋 {t["share_btn"]}
         </button>
     </div>
+
     <script>
-    function shareResult() {{
-        if (navigator.share) {{
-            navigator.share({{title: '2026 운세', text: `{share_text}`, url: '{app_url}'}});
-        }} else {{
-            navigator.clipboard.writeText(`{share_text}`);
-            alert('결과가 복사됐어요! 친구에게 공유해주세요 😊');
-        }}
+    function copyResult() {{
+        navigator.clipboard.writeText(`{share_text.replace("`", "\\`")}`);
+        alert('{'Result copied! Paste it in chat to share 😊' if st.session_state.lang == 'en' else '결과가 복사됐어요!\\n카톡이나 메시지에 붙여넣기 해서 친구에게 공유해주세요 😊'}');
     }}
     </script>
     """, unsafe_allow_html=True)
 
-    # 앱 URL
     st.markdown(f"<p style='color:white; text-shadow:1px 1px 3px black; margin:30px 0;'>{app_url}</p>", unsafe_allow_html=True)
 
-    # 다시 하기 버튼
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
         st.rerun()
 
-    st.markdown('</div>', unsafe_allow_html=True)  # gradient-bg 끝
+    st.markdown('</div>', unsafe_allow_html=True)
