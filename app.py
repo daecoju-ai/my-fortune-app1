@@ -1,6 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
-from datetime import datetime, timedelta, date
+from datetime import datetime, date
 import random
 import hashlib
 
@@ -161,6 +161,14 @@ T = {
         "lucky_num": "럭키 넘버",
         "mbti_influence": "MBTI가 운세에 미치는 영향",
         "combo_advice": "띠 + MBTI 조합 조언",
+        "influence_love": "연애에 미치는 영향",
+        "influence_money": "재물에 미치는 영향",
+        "influence_work": "일/학업에 미치는 영향",
+        "influence_health": "건강에 미치는 영향",
+        "test12_title": "MBTI – 12",
+        "test12_desc": "제출하면 바로 결과로 넘어갑니다.",
+        "test16_title": "MBTI – 16",
+        "test16_desc": "각 축 4문항씩(총 16). 제출하면 결과로 넘어갑니다.",
         "err_year": "생년은 1900~2030년 사이로 입력해주세요!",
         "err_birth": "생년월일이 올바르지 않아요. 날짜를 다시 확인해 주세요!",
         "ad_badge": "광고",
@@ -169,6 +177,10 @@ T = {
         "ad_btn": "다나눔렌탈.com 바로가기",
         "ad_url": "https://www.다나눔렌탈.com",
         "ad_reserved": "AD (승인 후 이 위치에 광고가 표시됩니다)",
+        "axis_e": "에너지 방식(E/I)",
+        "axis_s": "정보 처리(S/N)",
+        "axis_t": "판단 기준(T/F)",
+        "axis_j": "생활 스타일(J/P)",
     },
     "en": {
         "lang_label": "Language",
@@ -212,9 +224,21 @@ T = {
         "lucky_num": "Lucky number",
         "mbti_influence": "How MBTI affects your fortune",
         "combo_advice": "Zodiac + MBTI combo advice",
+        "influence_love": "Impact on love",
+        "influence_money": "Impact on money",
+        "influence_work": "Impact on work/study",
+        "influence_health": "Impact on health",
+        "test12_title": "MBTI – 12",
+        "test12_desc": "Submit and you’ll jump to results.",
+        "test16_title": "MBTI – 16",
+        "test16_desc": "4 questions per axis (16 total). Submit to see results.",
         "err_year": "Birth year must be 1900–2030!",
         "err_birth": "Invalid birth date. Please check again!",
         "ad_reserved": "AD (Ads will appear here after approval)",
+        "axis_e": "Energy (E/I)",
+        "axis_s": "Perception (S/N)",
+        "axis_t": "Decision (T/F)",
+        "axis_j": "Lifestyle (J/P)",
     },
     "zh": {
         "lang_label": "语言",
@@ -258,9 +282,21 @@ T = {
         "lucky_num": "幸运数字",
         "mbti_influence": "MBTI 对运势的影响",
         "combo_advice": "生肖 + MBTI 组合建议",
+        "influence_love": "对恋爱运的影响",
+        "influence_money": "对财运的影响",
+        "influence_work": "对事业/学业的影响",
+        "influence_health": "对健康运的影响",
+        "test12_title": "MBTI – 12",
+        "test12_desc": "提交后将直接进入结果。",
+        "test16_title": "MBTI – 16",
+        "test16_desc": "每个维度4题（共16题）。提交后进入结果。",
         "err_year": "出生年份需在 1900–2030！",
         "err_birth": "生日不正确，请重新检查！",
         "ad_reserved": "AD（审核通过后此处显示广告）",
+        "axis_e": "能量来源(E/I)",
+        "axis_s": "信息处理(S/N)",
+        "axis_t": "判断方式(T/F)",
+        "axis_j": "生活风格(J/P)",
     },
     "ja": {
         "lang_label": "言語",
@@ -304,9 +340,21 @@ T = {
         "lucky_num": "ラッキーナンバー",
         "mbti_influence": "MBTI が運勢に与える影響",
         "combo_advice": "干支 + MBTI 組み合わせアドバイス",
+        "influence_love": "恋愛への影響",
+        "influence_money": "金運への影響",
+        "influence_work": "仕事/学業への影響",
+        "influence_health": "健康への影響",
+        "test12_title": "MBTI – 12",
+        "test12_desc": "送信すると結果へ移動します。",
+        "test16_title": "MBTI – 16",
+        "test16_desc": "各軸4問（合計16）。送信すると結果へ移動します。",
         "err_year": "1900〜2030年の範囲で入力してください！",
         "err_birth": "生年月日が正しくありません。確認してください！",
         "ad_reserved": "AD（承認後ここに広告が表示されます）",
+        "axis_e": "エネルギー(E/I)",
+        "axis_s": "認知(S/N)",
+        "axis_t": "判断(T/F)",
+        "axis_j": "スタイル(J/P)",
     },
     "ru": {
         "lang_label": "Язык",
@@ -350,9 +398,21 @@ T = {
         "lucky_num": "Число",
         "mbti_influence": "Как MBTI влияет на удачу",
         "combo_advice": "Совет по сочетанию",
+        "influence_love": "Влияние на любовь",
+        "influence_money": "Влияние на деньги",
+        "influence_work": "Влияние на работу/учёбу",
+        "influence_health": "Влияние на здоровье",
+        "test12_title": "MBTI – 12",
+        "test12_desc": "Отправьте — и перейдёте к результату.",
+        "test16_title": "MBTI – 16",
+        "test16_desc": "4 вопроса на ось (всего 16). Отправьте для результата.",
         "err_year": "Год рождения должен быть 1900–2030!",
         "err_birth": "Неверная дата рождения. Проверьте!",
         "ad_reserved": "AD (после одобрения здесь будет реклама)",
+        "axis_e": "Энергия(E/I)",
+        "axis_s": "Восприятие(S/N)",
+        "axis_t": "Решения(T/F)",
+        "axis_j": "Стиль(J/P)",
     },
     "hi": {
         "lang_label": "भाषा",
@@ -396,9 +456,21 @@ T = {
         "lucky_num": "नंबर",
         "mbti_influence": "MBTI का असर",
         "combo_advice": "कॉम्बो सलाह",
+        "influence_love": "प्रेम पर असर",
+        "influence_money": "धन पर असर",
+        "influence_work": "काम/पढ़ाई पर असर",
+        "influence_health": "स्वास्थ्य पर असर",
+        "test12_title": "MBTI – 12",
+        "test12_desc": "सबमिट करते ही परिणाम दिखेगा।",
+        "test16_title": "MBTI – 16",
+        "test16_desc": "प्रति आयाम 4 प्रश्न (कुल 16)। सबमिट पर परिणाम।",
         "err_year": "वर्ष 1900–2030 के बीच होना चाहिए!",
         "err_birth": "जन्मतिथि गलत है। कृपया जाँचें!",
         "ad_reserved": "AD (स्वीकृति के बाद यहाँ विज्ञापन दिखेगा)",
+        "axis_e": "ऊर्जा(E/I)",
+        "axis_s": "जानकारी(S/N)",
+        "axis_t": "निर्णय(T/F)",
+        "axis_j": "स्टाइल(J/P)",
     },
 }
 
@@ -443,6 +515,62 @@ ZODIAC_DESC = {
         "Rooster":"Effort rewarded—recognition and promotion.",
         "Dog":"Helpful people appear—network opens doors.",
         "Pig":"Luck grows in calm—accumulate steadily.",
+    },
+    "zh": {
+        "Rat":"判断敏捷，小机会能放大成大收获。",
+        "Ox":"稳扎稳打，长期坚持会带来成果。",
+        "Tiger":"敢冲敢拼，领导力与行动力增强。",
+        "Rabbit":"关键在平衡，谨慎更有利。",
+        "Dragon":"运势上升，自信会吸引机会。",
+        "Snake":"直觉变现，信息与时机很重要。",
+        "Horse":"速度是优势，但要避免过劳。",
+        "Goat":"人际运强，合作带来收益。",
+        "Monkey":"点子变钱，策划/内容运佳。",
+        "Rooster":"努力见回报，认可与晋升机会多。",
+        "Dog":"贵人运旺，人脉带来突破。",
+        "Pig":"越放松越顺，稳稳累积更大吉。",
+    },
+    "ja": {
+        "Rat":"判断が冴える年。小さなチャンスが大きく育つ。",
+        "Ox":"コツコツ型が勝つ。安定の中で強くなる。",
+        "Tiger":"勝負のタイミング！推進力とリーダー運。",
+        "Rabbit":"バランス重視。慎重さが有利。",
+        "Dragon":"運気上昇。自信がチャンスを呼ぶ。",
+        "Snake":"直感が利益に。情報とタイミングが鍵。",
+        "Horse":"スピードが武器。過労だけ注意。",
+        "Goat":"人間関係運◎。協力が収益に。",
+        "Monkey":"アイデアが武器。企画/コンテンツ運◎。",
+        "Rooster":"努力が実る。評価・昇進の流れ。",
+        "Dog":"味方が増える年。人から道が開く。",
+        "Pig":"ゆとりが福を呼ぶ。積み上げで大吉。",
+    },
+    "ru": {
+        "Rat":"Быстрое мышление приносит шанс — малое станет большим.",
+        "Ox":"Постоянство даёт результат. Стабильный рост.",
+        "Tiger":"Время решительных шагов — лидерство и импульс.",
+        "Rabbit":"Баланс важнее риска. Осторожность выигрышнее.",
+        "Dragon":"Удача растёт — уверенность притягивает возможности.",
+        "Snake":"Интуиция приносит прибыль — важны информация и тайминг.",
+        "Horse":"Скорость — плюс, но берегите силы.",
+        "Goat":"Сильна удача в отношениях — сотрудничество выгодно.",
+        "Monkey":"Идеи монетизируются — планирование/контент в плюс.",
+        "Rooster":"Награда за труд — признание и рост.",
+        "Dog":"Люди помогают — связи открывают двери.",
+        "Pig":"Спокойствие усиливает удачу — копите постепенно.",
+    },
+    "hi": {
+        "Rat":"तेज़ निर्णय से लाभ—छोटे मौके बड़े बनेंगे।",
+        "Ox":"लगातार मेहनत का फल—स्थिर प्रगति।",
+        "Tiger":"साहसी समय—लीडरशिप और गति बढ़ेगी।",
+        "Rabbit":"संतुलन ज़रूरी—सावधानी फायदेमंद।",
+        "Dragon":"भाग्य बढ़ेगा—आत्मविश्वास अवसर खींचेगा।",
+        "Snake":"अंतर्ज्ञान से लाभ—जानकारी/टाइमिंग अहम।",
+        "Horse":"स्पीड आपकी ताकत—ओवरवर्क से बचें।",
+        "Goat":"रिश्तों से फायदा—सहयोग से कमाई।",
+        "Monkey":"आइडिया से पैसा—प्लानिंग/कंटेंट मजबूत।",
+        "Rooster":"मेहनत का फल—पहचान/प्रमोशन के संकेत।",
+        "Dog":"सहयोगी मिलेंगे—नेटवर्क से रास्ता खुलेगा।",
+        "Pig":"शांत रहो तो भाग्य बढ़े—धीरे-धीरे बड़ा लाभ।",
     }
 }
 
@@ -458,6 +586,30 @@ MBTI_DESC = {
         "INFJ":"Insightful · meaning & people","INFP":"Idealist · values & empathy","ENFJ":"Coordinator · guidance & care","ENFP":"Spark · energy & inspiration",
         "ISTJ":"Organizer · rules & structure","ISFJ":"Defender · responsibility & warmth","ESTJ":"Operator · execution & results","ESFJ":"Connector · harmony & people",
         "ISTP":"Craft · fixes & tools","ISFP":"Artist · aesthetics & balance","ESTP":"Doer · action & quick calls","ESFP":"Entertainer · vibe & expression",
+    },
+    "zh": {
+        "INTJ":"战略家 · 大局/规划","INTP":"分析者 · 逻辑/点子","ENTJ":"指挥者 · 推进/决断","ENTP":"创意者 · 转向/辩论",
+        "INFJ":"洞察者 · 意义/人心","INFP":"理想者 · 价值/共情","ENFJ":"协调者 · 共感/带领","ENFP":"激发者 · 能量/灵感",
+        "ISTJ":"管理者 · 规则/整理","ISFJ":"守护者 · 体贴/责任","ESTJ":"执行者 · 现实/成果","ESFJ":"亲和者 · 关系/氛围",
+        "ISTP":"匠人 · 解决问题","ISFP":"感性者 · 审美/平衡","ESTP":"行动派 · 执行/快决","ESFP":"气氛组 · 表达/快乐",
+    },
+    "ja": {
+        "INTJ":"戦略家 · 計画/大局","INTP":"分析家 · 論理/アイデア","ENTJ":"指揮官 · 推進/決断","ENTP":"発明家 · 転換/議論",
+        "INFJ":"洞察家 · 意味/人","INFP":"理想家 · 価値/共感","ENFJ":"調整役 · 共感/リード","ENFP":"促進役 · エネルギー/発想",
+        "ISTJ":"管理者 · ルール/整理","ISFJ":"守護者 · 思いやり/責任","ESTJ":"運営者 · 現実/成果","ESFJ":"協調型 · 関係/雰囲気",
+        "ISTP":"職人 · 問題解決","ISFP":"感性型 · 美意識/バランス","ESTP":"勝負師 · 実行/即断","ESFP":"ムードメーカー · 表現/楽しさ",
+    },
+    "ru": {
+        "INTJ":"Стратег · план и масштаб","INTP":"Аналитик · логика и идеи","ENTJ":"Командир · решительность","ENTP":"Новатор · поворот и дебаты",
+        "INFJ":"Инсайт · смысл и люди","INFP":"Идеалист · ценности и эмпатия","ENFJ":"Координатор · забота и лидерство","ENFP":"Искра · энергия и вдохновение",
+        "ISTJ":"Организатор · порядок и правила","ISFJ":"Защитник · ответственность","ESTJ":"Оператор · результат","ESFJ":"Связующий · гармония и люди",
+        "ISTP":"Мастер · починка/решения","ISFP":"Художник · эстетика/баланс","ESTP":"Деятель · действие/быстро","ESFP":"Шоумен · эмоции/веселье",
+    },
+    "hi": {
+        "INTJ":"रणनीतिकार · योजना/बड़ा चित्र","INTP":"विश्लेषक · लॉजिक/आइडिया","ENTJ":"नेता · निर्णायक/प्रगति","ENTP":"नवोन्मेषक · बदलाव/बहस",
+        "INFJ":"अंतर्दृष्टि · अर्थ/लोग","INFP":"आदर्शवादी · मूल्य/सहानुभूति","ENFJ":"समन्वयक · मार्गदर्शन/देखभाल","ENFP":"ऊर्जा · प्रेरणा/उत्साह",
+        "ISTJ":"व्यवस्थापक · नियम/संरचना","ISFJ":"रक्षक · जिम्मेदारी/देखभाल","ESTJ":"ऑपरेटर · परिणाम/यथार्थ","ESFJ":"कनेक्टर · रिश्ते/सद्भाव",
+        "ISTP":"कारीगर · समस्या-समाधान","ISFP":"कलाकार · सौंदर्य/संतुलन","ESTP":"एक्शन · जल्दी निर्णय","ESFP":"मूड · अभिव्यक्ति/मज़ा",
     }
 }
 
@@ -526,7 +678,7 @@ FORTUNE = {
         "colors": ["Gold","Red","Blue","Green","Purple","White","Black"],
         "items": ["Golden accessory","Red wallet","Blue keyring","Green plant","Purple pen","Minimal watch"],
     },
-    "zh": {  # non-ko/en은 en fallback이지만, 간단 메시지는 유지
+    "zh": {
         "saju_line": "五行均衡 → 不要过度用力，整体更顺。",
         "today": ["整理会打开好运：先完成一件拖延的事。", "主动联系更顺利。", "别急躁就大吉。"],
         "tomorrow": ["人际运强：约会/会议里会出现关键提示。", "比较后再决定更划算。", "把睡眠当投资。"],
@@ -595,129 +747,6 @@ TAROT = {
 APP_URL = "https://my-fortune.streamlit.app"
 
 # =========================================================
-# MBTI 영향/조언 로직 (핵심 업데이트)
-# =========================================================
-def mbti_profile(mbti: str):
-    """
-    MBTI 4글자를 '행동 패턴'으로 변환.
-    이후 운세(연애/재물/일/건강)에서 조언을 조합한다.
-    """
-    E = mbti[0] == "E"
-    S = mbti[1] == "S"
-    Tt = mbti[2] == "T"
-    J = mbti[3] == "J"
-    return {"E": E, "S": S, "T": Tt, "J": J}
-
-MBTI_ADVICE = {
-    "ko": {
-        "love": {
-            "E": "표현이 강점이에요. ‘먼저 제안’하면 연애운이 빨리 열려요.",
-            "I": "깊이가 강점이에요. ‘짧고 진심’ 한 문장이 가장 먹혀요.",
-            "T": "팩트로만 말하면 차갑게 보일 수 있어요. 결론 전에 ‘공감 1줄’ 추가!",
-            "F": "배려가 강점이에요. 다만 ‘좋다/싫다’ 기준을 한 번은 분명히 말해줘요.",
-            "J": "관계도 계획하면 안정적이에요. 다음 약속 날짜를 잡아두면 좋아요.",
-            "P": "즉흥이 매력! 대신 약속 변경이 잦으면 운이 샐 수 있어요.",
-        },
-        "money": {
-            "S": "현실 감각이 강점. 지출을 ‘항목별 1줄’만 기록해도 돈이 모여요.",
-            "N": "아이디어가 돈이 돼요. 다만 실행 전 ‘비용/리스크 3줄 체크’가 필요!",
-            "T": "분석력이 강점. 가격 비교/조건 확인에서 이득을 봐요.",
-            "F": "사람 때문에 쓰는 돈이 늘 수 있어요. ‘기분 소비’는 예산을 정해요.",
-            "J": "예산/루틴이 돈운을 지켜요. 자동이체/구독 정리 추천.",
-            "P": "타이밍 감이 좋아요. 대신 충동구매 방지로 ‘24시간 룰’ 추천.",
-        },
-        "work": {
-            "E": "네트워킹이 운을 키워요. 공유/보고 한 번 더가 기회로 연결!",
-            "I": "혼자 집중할 때 성과가 커요. ‘방해 없는 30분 블록’이 핵심.",
-            "S": "디테일로 신뢰를 얻어요. 체크리스트가 승진운을 끌어옵니다.",
-            "N": "큰그림으로 방향을 잡아요. 단, 마감은 ‘작은 단위’로 쪼개야 승부!",
-            "T": "결정/판단이 강점. 다만 표현은 ‘근거+배려’ 조합이 최고.",
-            "F": "팀 분위기를 살려요. 다만 ‘부담 떠안기’는 끊어야 운이 올라요.",
-            "J": "계획/관리로 성과를 만듭니다. 일정 고정이 행운.",
-            "P": "위기 대처가 강해요. 대신 ‘마감 24시간 전’ 미리 점검 추천.",
-        },
-        "health": {
-            "E": "외부 활동이 기운을 올려요. 가벼운 산책/운동이 효과적.",
-            "I": "수면/회복이 운의 핵심. 혼자 쉬는 시간을 ‘일정’으로 확보!",
-            "S": "몸 신호를 잘 느껴요. 수분/식단 루틴을 잡으면 좋아요.",
-            "N": "생각이 많아 피곤해질 수 있어요. ‘멍 때리기 5분’이 약이에요.",
-            "T": "무리해서 버틸 수 있어요. 컨디션도 데이터처럼 체크하세요.",
-            "F": "감정이 컨디션을 좌우해요. 스트레스 배출 루틴이 중요.",
-            "J": "루틴이 건강을 지켜요. 정해진 시간 수면 추천.",
-            "P": "리듬이 흔들리기 쉬워요. 카페인/야식만 줄여도 급상승!",
-        },
-        "combo": [
-            "올해는 ‘{zodiac}의 흐름’ 위에 ‘{mbti}의 습관’이 결과를 좌우해요. **강점은 더 쓰고, 약점은 규칙으로 막기!**",
-            "{mbti}는 결정의 속도가 강점이에요. {zodiac} 운세는 ‘타이밍’이 핵심이라, **결정→바로 실행**이 최고의 조합!",
-            "{zodiac} 운은 사람/기회가 중요해요. {mbti} 성향대로 **연락·공유·협업**을 하면 운이 2배로 커져요.",
-        ],
-        "influence_summary": {
-            "E": "기회는 ‘사람’에서 빠르게 들어옵니다.",
-            "I": "기회는 ‘몰입’에서 크게 터집니다.",
-            "S": "운이 ‘디테일/관리’로 굳어집니다.",
-            "N": "운이 ‘아이디어/전략’으로 확장됩니다.",
-            "T": "운이 ‘판단/조건’에서 갈립니다.",
-            "F": "운이 ‘관계/감정’에서 흐름이 바뀝니다.",
-            "J": "운이 ‘계획/루틴’으로 지켜집니다.",
-            "P": "운이 ‘유연/즉흥’으로 열리지만 샐 수 있습니다.",
-        }
-    },
-    "en": {
-        "love": {
-            "E": "Your strength is expression—ask first and luck opens fast.",
-            "I": "Depth is your strength—a short sincere line works best.",
-            "T": "Pure facts can feel cold—add one empathy sentence first.",
-            "F": "Warmth is your strength—state your boundaries once clearly.",
-            "J": "Stability helps—set the next plan/date.",
-            "P": "Spontaneity is attractive—avoid frequent last-minute changes.",
-        },
-        "money": {
-            "S": "Practical sense wins—write one expense line per category.",
-            "N": "Ideas can monetize—check cost/risk in 3 lines before action.",
-            "T": "Comparison & terms checking pay off.",
-            "F": "Mood-spending can grow—set a small ‘fun budget’.",
-            "J": "Budget + routines protect money luck.",
-            "P": "Timing is great—use a 24-hour rule to block impulses.",
-        },
-        "work": {
-            "E": "Networking multiplies luck—share one more update.",
-            "I": "Deep work is key—protect a 30-min focus block.",
-            "S": "Details earn trust—checklists pull promotions.",
-            "N": "Big picture guides—break deadlines into smaller chunks.",
-            "T": "Decisions are strong—combine reasons + care.",
-            "F": "You lift the team—stop taking extra burdens.",
-            "J": "Planning creates results—fixed schedule brings luck.",
-            "P": "Crisis handling is strong—review 24h before deadline.",
-        },
-        "health": {
-            "E": "Activity boosts energy—light walk helps.",
-            "I": "Recovery is key—schedule alone time.",
-            "S": "Body signals are clear—keep water/food routines.",
-            "N": "Overthinking drains—5 minutes doing nothing helps.",
-            "T": "You can overpush—track condition like data.",
-            "F": "Emotions affect body—use a stress-release routine.",
-            "J": "Routine protects health—consistent sleep time helps.",
-            "P": "Rhythm can slip—reduce late snacks/caffeine.",
-        },
-        "combo": [
-            "This year, your {mbti} habits decide outcomes on top of {zodiac} flow. Use strengths, block weaknesses with rules.",
-            "{mbti} is fast at deciding; {zodiac} favors timing—decide and execute quickly.",
-            "{zodiac} brings people/opportunities; follow {mbti} style to reach out and collaborate to double luck.",
-        ],
-        "influence_summary": {
-            "E": "Opportunities come through people.",
-            "I": "Opportunities come through deep focus.",
-            "S": "Luck solidifies via management and details.",
-            "N": "Luck expands via ideas and strategy.",
-            "T": "Luck changes with conditions and decisions.",
-            "F": "Luck shifts with relationships and emotions.",
-            "J": "Luck is protected by planning and routines.",
-            "P": "Luck opens by flexibility but can leak without guardrails.",
-        }
-    }
-}
-
-# =========================================================
 # Helpers
 # =========================================================
 def stable_seed(*parts) -> int:
@@ -737,14 +766,6 @@ def get_zodiac(year: int, lang: str):
         return None
     idx = (year - 4) % 12
     return ZODIAC_KO[idx] if lang == "ko" else ZODIAC_EN[idx]
-
-def get_desc(dic, lang, key):
-    if lang in dic and key in dic[lang]:
-        return dic[lang][key]
-    return dic.get("en", {}).get(key, "")
-
-def fortune_bank(lang: str):
-    return FORTUNE.get(lang, FORTUNE["en"])
 
 def render_reserved_ad(text):
     st.markdown(
@@ -822,8 +843,378 @@ def share_component(t, share_text: str):
         height=120
     )
 
+def fortune_bank(lang: str):
+    return FORTUNE.get(lang, FORTUNE["en"])
+
 # =========================================================
-# Tests (12 / 16) - 6개 언어 제공
+# MBTI Influence & Combo Advice (6 languages)
+# =========================================================
+INFL = {
+    "ko": {
+        "E": {
+            "love": "표현과 추진력이 강해요. 연락/만남을 먼저 잡으면 연애운이 빨리 열립니다.",
+            "money": "기회가 ‘사람’에서 옵니다. 소개·추천·네트워킹이 수입으로 연결돼요.",
+            "work": "협업/발표에서 빛나요. 다만 말이 앞서면 오해가 생길 수 있어요.",
+            "health": "일정이 많아 과로 위험. 휴식도 약속처럼 ‘예약’하세요.",
+        },
+        "I": {
+            "love": "깊이 있는 관계에 강해요. 천천히 신뢰를 쌓는 방식이 유리합니다.",
+            "money": "분석/선택으로 새는 돈을 잘 막아요. 큰 한 방보다 ‘꾸준한 관리’가 답.",
+            "work": "몰입력이 강점. 혼자 집중할 시간 확보가 성과를 키웁니다.",
+            "health": "스트레스를 혼자 삼키기 쉬워요. 산책/호흡 등 작은 루틴이 도움.",
+        },
+        "S": {
+            "love": "현실적인 배려가 매력. 약속/시간/작은 행동이 신뢰를 만듭니다.",
+            "money": "지출 통제에 강해요. ‘고정비 정리’만 해도 재물운이 확 올라가요.",
+            "work": "실행력/정확도가 무기. 체크리스트가 성공 확률을 올립니다.",
+            "health": "몸의 신호를 잘 캐치해요. 수면/식단만 정리해도 회복 빨라요.",
+        },
+        "N": {
+            "love": "설렘/아이디어가 관계를 살립니다. 다만 말보다 ‘확인’이 필요할 때가 있어요.",
+            "money": "아이디어로 돈을 벌 수 있어요. 단, 계획 없이 지르면 지출이 커질 수 있어요.",
+            "work": "기획/전략에 강함. 큰 그림을 ‘작은 실행’으로 쪼개면 대박.",
+            "health": "생각이 많아 피로 누적. 짧은 운동/스트레칭이 효과적입니다.",
+        },
+        "T": {
+            "love": "해결 중심이라 든든해요. 다만 감정 공감 한 마디가 연애운을 더 키웁니다.",
+            "money": "합리적 소비에 강함. 손익/가성비 기준을 세우면 돈이 모입니다.",
+            "work": "결단/최적화에 강해요. 숫자와 지표를 잡으면 승진운이 붙습니다.",
+            "health": "무리해도 버티는 편. ‘쉬어야 오래 간다’를 기억하세요.",
+        },
+        "F": {
+            "love": "공감/배려가 매력. 작은 말 한마디가 관계를 확 바꿉니다.",
+            "money": "사람에 쓰는 돈이 많아질 수 있어요. 예산만 정하면 흐름이 좋아요.",
+            "work": "분위기/팀워크를 살립니다. 다만 부탁을 거절 못하면 과부하!",
+            "health": "감정 기복이 컨디션에 영향. 수면/햇빛/산책이 안정에 도움.",
+        },
+        "J": {
+            "love": "확실한 약속/계획이 안정감을 줍니다. ‘선명한 표현’이 호감 포인트.",
+            "money": "예산/저축 루틴이 강점. 자동이체만 세팅해도 운이 붙어요.",
+            "work": "마감/관리 능력 최고. 책임감이 인정으로 이어집니다.",
+            "health": "완벽주의로 긴장될 수 있어요. 휴식도 계획에 넣어주세요.",
+        },
+        "P": {
+            "love": "자유롭고 재미있는 매력이 있어요. 다만 중요한 날은 약속을 ‘확정’하세요.",
+            "money": "기분 소비 주의. ‘소비 전 10분 대기’ 규칙이 효과적입니다.",
+            "work": "순발력/현장 대응이 무기. 단, 마감 관리만 보완하면 급상승!",
+            "health": "생활 리듬이 흔들리기 쉬워요. 취침 시간만 고정해도 좋아집니다.",
+        },
+        "combo": {
+            "growth": "올해 테마는 성장. {zodiac}의 흐름을 {mbti}의 장점(강점)으로 ‘꾸준히’ 끌고 가면 결과가 크게 옵니다.",
+            "love": "연애는 ‘표현 ↔ 배려’ 균형이 핵심. {mbti} 스타일대로 하되 상대의 속도를 한 번 더 맞춰주세요.",
+            "money": "재물은 ‘새는 돈 차단 + 기회 포착’이 답. {zodiac}의 기회운이 오면 {mbti} 방식으로 실행을 한 단계만 더 구체화하세요.",
+            "work": "일/학업은 ‘작은 실행’이 승부. 오늘 해야 할 1개를 끝내면 전체 흐름이 열립니다.",
+        }
+    },
+    "en": {
+        "E": {
+            "love": "You thrive on expression and momentum. Initiate plans and your love luck opens faster.",
+            "money": "Opportunities come through people. Intros/referrals can turn into income.",
+            "work": "You shine in collaboration and presenting. Watch for misunderstandings from rushing words.",
+            "health": "Busy schedules risk burnout. Treat rest like an appointment.",
+        },
+        "I": {
+            "love": "You’re strong at deep bonds. Slow trust-building works in your favor.",
+            "money": "You block money leaks well. Steady management beats risky bets.",
+            "work": "Deep focus is your edge. Protect quiet time to multiply results.",
+            "health": "You may bottle stress. Small routines (walk/breathing) help a lot.",
+        },
+        "S": {
+            "love": "Practical care is attractive. Small actions build big trust.",
+            "money": "You’re good at control. Cutting fixed costs boosts money luck quickly.",
+            "work": "Accuracy and execution are your weapons. Checklists raise success odds.",
+            "health": "You notice body signals early. Sleep/food tweaks speed recovery.",
+        },
+        "N": {
+            "love": "Your ideas add spark. Sometimes confirm with actions, not only words.",
+            "money": "Ideas can become money, but unplanned spending can grow—add structure.",
+            "work": "Great at planning and strategy. Break big visions into tiny steps.",
+            "health": "Overthinking stacks fatigue. Short workouts/stretching are effective.",
+        },
+        "T": {
+            "love": "You feel reliable with solutions. Add one empathic sentence to boost love luck.",
+            "money": "Rational spending is your strength. Set ROI/value rules and savings follow.",
+            "work": "Strong at decisions and optimization. Metrics can bring recognition.",
+            "health": "You can push through—remember: rest sustains performance.",
+        },
+        "F": {
+            "love": "Warm empathy is your charm. One kind phrase can change the vibe instantly.",
+            "money": "You may spend on people. A simple budget keeps the flow healthy.",
+            "work": "You lift teamwork. Avoid overload from saying yes to everything.",
+            "health": "Mood affects energy. Sleep/sunlight/walks stabilize you.",
+        },
+        "J": {
+            "love": "Clear plans feel safe. Direct, kind clarity is your attractiveness point.",
+            "money": "Budget routines win. Auto-saving alone increases money luck.",
+            "work": "Deadlines and organization are your superpower—recognition follows.",
+            "health": "Perfectionism can tighten you. Schedule downtime deliberately.",
+        },
+        "P": {
+            "love": "Your free, fun vibe is attractive. Lock in important dates to avoid friction.",
+            "money": "Watch impulse spending. A 10-minute pause rule works well.",
+            "work": "Fast adaptation is your weapon. Add deadline control and you level up.",
+            "health": "Rhythm can drift. Fix bedtime and your energy improves.",
+        },
+        "combo": {
+            "growth": "This year’s theme is growth. Ride {zodiac}'s flow and apply {mbti}'s strengths consistently.",
+            "love": "Love needs balance between expression and care. Keep your {mbti} style, but match the other person's pace once more.",
+            "money": "Money = block leaks + catch chances. When {zodiac}'s opportunity appears, make one more concrete action in {mbti} style.",
+            "work": "Work/study is won by small execution. Finish one task today and the whole flow opens.",
+        }
+    },
+    "zh": {
+        "E": {
+            "love": "你擅长表达与推进。主动约见/沟通，恋爱运更快打开。",
+            "money": "机会多来自人脉。介绍/推荐可能直接变成收入。",
+            "work": "你在协作与表达上发光。但说得太快可能引起误会。",
+            "health": "行程多易过劳。把休息也当作“预约”。",
+        },
+        "I": {
+            "love": "你擅长深度关系。慢慢建立信任更有利。",
+            "money": "你会有效止损漏财。比起冒险，更适合稳健管理。",
+            "work": "专注力强是优势。给自己留“独处深度工作”时间。",
+            "health": "容易把压力闷在心里。散步/呼吸等小习惯很有用。",
+        },
+        "S": {
+            "love": "现实的体贴很加分。守时与小行动能建立信任。",
+            "money": "你善于控制支出。清理固定成本就能明显提升财运。",
+            "work": "执行与准确是武器。清单化能提高成功率。",
+            "health": "你能更早察觉身体信号。规律睡眠饮食恢复更快。",
+        },
+        "N": {
+            "love": "你能带来心动与灵感。但有时需要用行动确认，而不是只靠话。",
+            "money": "点子能赚钱，但无计划容易扩张消费，需要一点结构。",
+            "work": "策划与大局观强。把大目标拆成小步骤会很强。",
+            "health": "想太多会累。短运动/拉伸很有效。",
+        },
+        "T": {
+            "love": "你解决问题很可靠。加一句共情，会让恋爱运更好。",
+            "money": "理性消费强项。建立价值/收益规则，钱更容易聚。",
+            "work": "决断与优化能力强。抓住指标与数据会更易被认可。",
+            "health": "容易硬扛。记住：休息才能走更远。",
+        },
+        "F": {
+            "love": "共情与温柔是魅力。一句体贴话能瞬间升温。",
+            "money": "可能在人情上多花钱。设预算就能稳住财运。",
+            "work": "你能带动氛围与团队。但别什么都答应，避免过载。",
+            "health": "情绪影响状态。睡眠/晒太阳/散步能稳住能量。",
+        },
+        "J": {
+            "love": "明确的计划带来安全感。清晰表达是加分点。",
+            "money": "预算与储蓄习惯很强。自动转存就能提升财运。",
+            "work": "管理与截止能力强，容易得到认可与晋升。",
+            "health": "完美主义易紧绷。把休息写进计划里。",
+        },
+        "P": {
+            "love": "自由有趣很吸引人。但重要日子请“确认”，避免误会。",
+            "money": "注意情绪性消费。消费前等10分钟很有效。",
+            "work": "应变快是武器。补上截止管理，会明显上升。",
+            "health": "作息易漂。固定睡觉时间就会改善。",
+        },
+        "combo": {
+            "growth": "今年主题是成长。顺着 {zodiac} 的走势，用 {mbti} 的优势持续推进，收获会更大。",
+            "love": "恋爱关键在“表达与体贴”的平衡。保持 {mbti} 风格，同时再多对齐一次对方节奏。",
+            "money": "财运=堵漏+抓机会。当 {zodiac} 的机会出现时，用 {mbti} 的方式把行动再具体一步。",
+            "work": "事业/学业靠小执行取胜。今天完成一件事，整体流动就会打开。",
+        }
+    },
+    "ja": {
+        "E": {
+            "love": "表現と推進力が強み。先に連絡/予定を取ると恋愛運が開きやすい。",
+            "money": "チャンスは人から。紹介・推薦が収入につながりやすい。",
+            "work": "協力や発表で輝く。ただし言葉が先走ると誤解に注意。",
+            "health": "予定過多で疲れやすい。休息も“予定”として確保。",
+        },
+        "I": {
+            "love": "深い関係づくりが得意。ゆっくり信頼を積むのが有利。",
+            "money": "ムダ遣いを止めるのが上手。大勝負より安定運用が◎。",
+            "work": "没頭力が武器。集中できる時間を守ると成果が伸びる。",
+            "health": "ストレスを抱え込みがち。散歩/呼吸など小さな習慣が効く。",
+        },
+        "S": {
+            "love": "現実的な気配りが魅力。約束/時間/行動が信頼を作る。",
+            "money": "支出管理が得意。固定費を見直すだけで金運UP。",
+            "work": "実行力と正確さが武器。チェックリストが成功率を上げる。",
+            "health": "体のサインに気づきやすい。睡眠と食事で回復が早い。",
+        },
+        "N": {
+            "love": "ときめきと発想で関係が進む。言葉だけでなく確認も大切。",
+            "money": "アイデアが収益に。ただ無計画だと出費が増えやすい。",
+            "work": "企画/戦略が強い。大きな構想を小さな行動に分解すると◎。",
+            "health": "考えすぎで疲れがたまる。短い運動/ストレッチが効果的。",
+        },
+        "T": {
+            "love": "解決志向で頼れる。共感の一言が恋愛運をさらに伸ばす。",
+            "money": "合理的な判断が強み。基準を作るほど貯まりやすい。",
+            "work": "決断と最適化が得意。数値と指標を押さえると評価UP。",
+            "health": "無理しても耐えがち。休むほど長く走れる。",
+        },
+        "F": {
+            "love": "共感と優しさが魅力。小さな一言で雰囲気が変わる。",
+            "money": "人のための出費が増えがち。予算を決めると安定。",
+            "work": "チームの空気を良くする。ただ抱え込み過ぎに注意。",
+            "health": "気分が体調に出やすい。睡眠/日光/散歩で安定。",
+        },
+        "J": {
+            "love": "はっきりした約束が安心感。丁寧に明確に伝えると好感度UP。",
+            "money": "予算/貯蓄ルーティンが強み。自動積立が効果大。",
+            "work": "締切管理が最強。責任感が評価につながる。",
+            "health": "完璧主義で緊張しやすい。休息も計画に入れて。",
+        },
+        "P": {
+            "love": "自由で楽しい魅力。大事な日は“確定”して摩擦を減らす。",
+            "money": "気分買い注意。買う前に10分待つルールが効く。",
+            "work": "臨機応変が武器。締切管理を補強すると一気に伸びる。",
+            "health": "生活リズムが乱れやすい。就寝時間固定が効果的。",
+        },
+        "combo": {
+            "growth": "今年のテーマは成長。{zodiac} の流れを {mbti} の強みで“継続”すると大きく実ります。",
+            "love": "恋愛は「表現と配慮」のバランスが鍵。{mbti} らしさを保ちつつ相手のペースにもう一歩合わせて。",
+            "money": "金運は「ムダの遮断＋チャンス捕捉」。{zodiac} の機会が来たら {mbti} 流で一段だけ具体化。",
+            "work": "仕事/学業は小さな実行が勝負。今日1つ終えると流れが開きます。",
+        }
+    },
+    "ru": {
+        "E": {
+            "love": "Сильны выражение и импульс. Инициируйте встречи — любовь откроется быстрее.",
+            "money": "Шансы приходят через людей. Рекомендации могут стать доходом.",
+            "work": "Вы ярки в команде и презентациях. Не торопитесь с словами, чтобы избежать недопонимания.",
+            "health": "Риск выгорания из-за занятости. Планируйте отдых как встречу.",
+        },
+        "I": {
+            "love": "Сильны глубокие связи. Медленное укрепление доверия выгоднее.",
+            "money": "Хорошо перекрываете утечки. Стабильная стратегия лучше риска.",
+            "work": "Ваш козырь — концентрация. Берегите тихое время для фокуса.",
+            "health": "Стресс легко копится внутри. Помогают прогулки/дыхание/рутины.",
+        },
+        "S": {
+            "love": "Практичная забота — ваш плюс. Пунктуальность и действия создают доверие.",
+            "money": "Контроль расходов сильный. Пересмотр фиксированных затрат резко улучшит финансы.",
+            "work": "Точность и исполнение — оружие. Чек-листы повышают успех.",
+            "health": "Рано замечаете сигналы тела. Сон и питание дают быстрый эффект.",
+        },
+        "N": {
+            "love": "Вы даёте искру и идеи. Но иногда нужны подтверждения действиями.",
+            "money": "Идеи могут приносить деньги, но без плана растут траты — добавьте структуру.",
+            "work": "Сильны в стратегии. Разбейте большой план на маленькие шаги.",
+            "health": "Перемысливание копит усталость. Короткие упражнения/растяжка помогают.",
+        },
+        "T": {
+            "love": "Вы надёжны в решениях. Добавьте фразу сочувствия — и отношения заиграют.",
+            "money": "Рациональность — сила. Правила ценности/выгоды помогают копить.",
+            "work": "Сильны в оптимизации. Метрики и цифры принесут признание.",
+            "health": "Легко «тащите» до конца. Отдых = долгосрочная сила.",
+        },
+        "F": {
+            "love": "Эмпатия — ваш шарм. Одно тёплое слово меняет атмосферу.",
+            "money": "Можно много тратить на людей. Простой бюджет стабилизирует.",
+            "work": "Вы укрепляете команду. Но не берите всё на себя — риск перегруза.",
+            "health": "Эмоции влияют на энергию. Сон/свет/прогулки стабилизируют.",
+        },
+        "J": {
+            "love": "Чёткие договорённости дают безопасность. Ясность — ваш плюс.",
+            "money": "Сильны в режиме бюджета. Автосбережения заметно улучшают финансы.",
+            "work": "Дедлайны и порядок — суперсила. Признание приходит естественно.",
+            "health": "Перфекционизм напрягает. Планируйте отдых заранее.",
+        },
+        "P": {
+            "love": "Свободный и лёгкий стиль привлекает. Важные даты лучше фиксировать.",
+            "money": "Осторожно с импульсивными покупками. Правило «подождать 10 минут» работает.",
+            "work": "Сильны в адаптации. Добавьте контроль дедлайнов — и рост будет быстрым.",
+            "health": "Ритм легко сбивается. Фиксируйте время сна.",
+        },
+        "combo": {
+            "growth": "Тема года — рост. Используйте поток {zodiac} и сильные стороны {mbti} регулярно — результат будет крупнее.",
+            "love": "В любви важен баланс «выражение и забота». Сохраняйте стиль {mbti}, но ещё раз подстройтесь под темп партнёра.",
+            "money": "Финансы = перекрыть утечки + поймать шанс. Когда появляется шанс {zodiac}, сделайте действие на шаг конкретнее в стиле {mbti}.",
+            "work": "Работа/учёба решается маленькими действиями. Закройте одну задачу сегодня — и поток откроется.",
+        }
+    },
+    "hi": {
+        "E": {
+            "love": "आपका एक्सप्रेशन और मोमेंटम मजबूत है। पहल करेंगे तो प्रेम-भाग्य जल्दी खुलेगा।",
+            "money": "मौके लोगों से आते हैं। रेफरल/परिचय आय में बदल सकते हैं।",
+            "work": "टीमवर्क और प्रेज़ेंटेशन में आप चमकते हैं। जल्दबाज़ी से गलतफहमी हो सकती है।",
+            "health": "व्यस्तता से बर्नआउट का खतरा। आराम को भी अपॉइंटमेंट की तरह तय करें।",
+        },
+        "I": {
+            "love": "गहरी रिश्तों में आप मजबूत हैं। धीरे-धीरे भरोसा बनाना फायदेमंद।",
+            "money": "आप खर्च की ‘लीकेज’ रोकते हैं। जोखिम से अधिक स्थिर मैनेजमेंट बेहतर।",
+            "work": "डीप-फोकस आपका हथियार है। शांत समय बचाकर रखें।",
+            "health": "तनाव अंदर जमा हो सकता है। वॉक/ब्रीदिंग जैसी छोटी रूटीन मदद करेगी।",
+        },
+        "S": {
+            "love": "व्यावहारिक देखभाल आकर्षक है। समय/वादा/कर्म से भरोसा बनता है।",
+            "money": "खर्च नियंत्रण आपकी ताकत। फिक्स्ड कॉस्ट घटाएँ, धन-भाग्य बढ़ेगा।",
+            "work": "एक्ज़िक्यूशन और सटीकता आपका प्लस। चेकलिस्ट सफलता बढ़ाती है।",
+            "health": "शरीर के संकेत जल्दी पकड़ते हैं। नींद/डाइट सुधार से रिकवरी तेज।",
+        },
+        "N": {
+            "love": "आप रिश्ते में स्पार्क और आइडिया लाते हैं। कभी-कभी शब्द नहीं, कार्रवाई जरूरी।",
+            "money": "आइडिया से कमाई हो सकती है, पर बिना प्लान खर्च बढ़ेगा—थोड़ी संरचना रखें।",
+            "work": "रणनीति में मजबूत। बड़े लक्ष्य को छोटे कदमों में तोड़ें।",
+            "health": "ओवरथिंकिंग से थकान बढ़ती है। छोटा वर्कआउट/स्ट्रेचिंग असरदार।",
+        },
+        "T": {
+            "love": "समाधान देने में आप भरोसेमंद हैं। एक सहानुभूति वाक्य प्रेम-भाग्य बढ़ाएगा।",
+            "money": "तर्कसंगत खर्च आपकी ताकत। वैल्यू/ROI नियम बनाएं—बचत बढ़ेगी।",
+            "work": "निर्णय और ऑप्टिमाइज़ेशन मजबूत। मीट्रिक्स से पहचान मिलेगी।",
+            "health": "आप ज्यादा सह लेते हैं। याद रखें—आराम से लंबी दौड़ होती है।",
+        },
+        "F": {
+            "love": "आपकी सहानुभूति आकर्षण है। एक नरम वाक्य माहौल बदल देता है।",
+            "money": "लोगों पर खर्च बढ़ सकता है। सिंपल बजट से संतुलन बनेगा।",
+            "work": "टीम का माहौल आप बनाते हैं। हर चीज़ ‘हाँ’ न कहें—ओवरलोड से बचें।",
+            "health": "मूड का असर शरीर पर पड़ता है। नींद/धूप/वॉक स्थिरता देती है।",
+        },
+        "J": {
+            "love": "स्पष्ट प्लान रिश्ते को सुरक्षा देता है। साफ और दयालु संप्रेषण प्लस है।",
+            "money": "बजट रूटीन आपकी ताकत। ऑटो-सेविंग से धन-भाग्य बढ़ेगा।",
+            "work": "डेडलाइन और संगठन मजबूत। जिम्मेदारी से पहचान मिलती है।",
+            "health": "परफेक्शनिज़्म तनाव दे सकता है। आराम को भी प्लान में रखें।",
+        },
+        "P": {
+            "love": "आपका फ्री और मज़ेदार अंदाज़ आकर्षक है। महत्वपूर्ण तारीखें पक्की करें।",
+            "money": "इम्पल्स खर्च पर ध्यान दें। खरीद से पहले 10 मिनट रुकें।",
+            "work": "एडाप्टेशन आपकी ताकत। डेडलाइन कंट्रोल जोड़ेंगे तो ग्रोथ तेज।",
+            "health": "रूटीन बिगड़ सकता है। सोने का समय फिक्स करें।",
+        },
+        "combo": {
+            "growth": "इस साल का थीम ग्रोथ है। {zodiac} के फ्लो के साथ {mbti} की ताकत को लगातार लगाएँ—नतीजा बड़ा होगा।",
+            "love": "प्रेम में ‘अभिव्यक्ति और देखभाल’ का संतुलन जरूरी है। {mbti} स्टाइल रखें, पर साथी की गति से एक कदम और मिलाएँ।",
+            "money": "धन = लीकेज रोकना + अवसर पकड़ना। {zodiac} का मौका आए तो {mbti} स्टाइल में एक कदम और ठोस कार्रवाई करें।",
+            "work": "काम/पढ़ाई छोटे एक्शन से जीतती है। आज एक काम पूरा करें, फ्लो खुलेगा।",
+        }
+    },
+}
+
+def mbti_influence_text(lang: str, mbti: str):
+    pack = INFL.get(lang, INFL["en"])
+    # letters
+    e = "E" if mbti[0] == "E" else "I"
+    s = "S" if mbti[1] == "S" else "N"
+    t = "T" if mbti[2] == "T" else "F"
+    j = "J" if mbti[3] == "J" else "P"
+
+    # For each category, blend 2 letters to feel meaningful (not too long)
+    love = f"{pack[e]['love']} {pack[t]['love']}"
+    money = f"{pack[s]['money']} {pack[j]['money']}"
+    work = f"{pack[t]['work']} {pack[j]['work']}"
+    health = f"{pack[e]['health']} {pack[s]['health']}"
+    return love, money, work, health
+
+def combo_advice_text(lang: str, zodiac: str, mbti: str, rng: random.Random):
+    pack = INFL.get(lang, INFL["en"])["combo"]
+    # pick 2 lines to keep it concise but rich
+    keys = ["growth", "love", "money", "work"]
+    rng.shuffle(keys)
+    chosen = keys[:2]
+    a = pack[chosen[0]].format(zodiac=zodiac, mbti=mbti)
+    b = pack[chosen[1]].format(zodiac=zodiac, mbti=mbti)
+    return a, b
+
+# =========================================================
+# Tests (12 / 16)
 # =========================================================
 SIMPLE_12 = {
     "ko": [
@@ -913,30 +1304,168 @@ SIMPLE_12 = {
 }
 
 DETAIL_16 = {
-    "ko": {"E": ("사람을 만나면 에너지가 채워진다", "그렇다", "아니다"),
-           "S": ("구체적 사실/디테일을 먼저 본다", "그렇다", "아니다"),
-           "T": ("결정 시 논리가 감정보다 우선이다", "그렇다", "아니다"),
-           "J": ("계획이 있어야 마음이 편하다", "그렇다", "아니다")},
-    "en": {"E": ("Socializing recharges me", "Yes", "No"),
-           "S": ("I notice concrete details first", "Yes", "No"),
-           "T": ("Logic comes before feelings in decisions", "Yes", "No"),
-           "J": ("I feel comfortable with plans", "Yes", "No")},
-    "zh": {"E": ("社交会让我充电", "是", "否"),
-           "S": ("我会先注意具体细节", "是", "否"),
-           "T": ("做决定时逻辑优先", "是", "否"),
-           "J": ("有计划会更安心", "是", "否")},
-    "ja": {"E": ("人と会うと元気になる", "はい", "いいえ"),
-           "S": ("具体的な事実や細部を先に見る", "はい", "いいえ"),
-           "T": ("決定では論理が感情より優先", "はい", "いいえ"),
-           "J": ("計画があると安心する", "はい", "いいえ")},
-    "ru": {"E": ("Общение меня заряжает", "Да", "Нет"),
-           "S": ("Сначала замечаю конкретные детали", "Да", "Нет"),
-           "T": ("В решениях логика важнее эмоций", "Да", "Нет"),
-           "J": ("С планом мне спокойнее", "Да", "Нет")},
-    "hi": {"E": ("लोगों से मिलकर ऊर्जा मिलती है", "हाँ", "नहीं"),
-           "S": ("मैं पहले ठोस डिटेल देखता/देखती हूँ", "हाँ", "नहीं"),
-           "T": ("निर्णय में लॉजिक पहले", "हाँ", "नहीं"),
-           "J": ("प्लान होने पर मन शांत रहता है", "हाँ", "नहीं")},
+    "ko": {
+        "labels": {"yes": "그렇다", "no": "아니다"},
+        "E": [
+            "사람을 만나면 에너지가 채워진다",
+            "혼자 있으면 금방 심심해진다",
+            "생각을 말로 정리하는 편이다",
+            "새로운 사람을 만나는 게 부담스럽지 않다",
+        ],
+        "S": [
+            "구체적인 사실/경험을 더 믿는다",
+            "설명은 예시와 디테일이 있어야 이해가 쉽다",
+            "현재 할 수 있는 현실적인 방법을 먼저 찾는다",
+            "감으로 보기보다 확인하고 진행하는 편이다",
+        ],
+        "T": [
+            "결정할 때 논리/근거가 가장 중요하다",
+            "문제는 감정보다 해결이 먼저라고 생각한다",
+            "토론에서 맞고 틀림을 분명히 하는 편이다",
+            "정 때문에 기준을 바꾸는 건 부담스럽다",
+        ],
+        "J": [
+            "계획이 있어야 마음이 편하다",
+            "마감은 미리 끝내는 편이다",
+            "정리/정돈이 안 되면 스트레스를 받는다",
+            "약속이 갑자기 바뀌면 불편하다",
+        ],
+    },
+    "en": {
+        "labels": {"yes": "Yes", "no": "No"},
+        "E": [
+            "Socializing recharges me",
+            "I get bored quickly when I’m alone",
+            "I organize my thoughts by speaking",
+            "Meeting new people doesn’t feel stressful",
+        ],
+        "S": [
+            "I trust concrete facts/experience more",
+            "Examples and details help me understand",
+            "I look for practical methods first",
+            "I prefer to verify before acting",
+        ],
+        "T": [
+            "Logic and evidence matter most in decisions",
+            "Solving the problem comes before feelings",
+            "I like to be clear about right/wrong in debates",
+            "Changing standards just to be nice feels hard",
+        ],
+        "J": [
+            "I feel comfortable with plans",
+            "I usually finish before the deadline",
+            "Messiness stresses me out",
+            "Sudden schedule changes bother me",
+        ],
+    },
+    "zh": {
+        "labels": {"yes": "是", "no": "否"},
+        "E": [
+            "社交会让我充电",
+            "独处久了会很快无聊",
+            "我倾向于通过说出来整理思路",
+            "结识新朋友不会让我有压力",
+        ],
+        "S": [
+            "我更相信具体事实/经验",
+            "有例子和细节会更容易理解",
+            "我会先找现实可行的方法",
+            "我倾向先确认再行动",
+        ],
+        "T": [
+            "做决定时逻辑和证据最重要",
+            "我更重视解决问题而不是情绪",
+            "讨论时我喜欢把对错讲清楚",
+            "为了照顾人而改变原则会让我为难",
+        ],
+        "J": [
+            "有计划会让我更安心",
+            "我通常会提前完成截止任务",
+            "不整洁会让我压力大",
+            "日程突然变动会让我不舒服",
+        ],
+    },
+    "ja": {
+        "labels": {"yes": "はい", "no": "いいえ"},
+        "E": [
+            "人と会うと元気になる",
+            "一人だとすぐ退屈になる",
+            "話すことで考えが整理される",
+            "新しい人と会うのはあまり負担ではない",
+        ],
+        "S": [
+            "具体的な事実や経験をより信じる",
+            "例や細部があると理解しやすい",
+            "まず現実的にできる方法を探す",
+            "確認してから進めるタイプだ",
+        ],
+        "T": [
+            "決定では論理と根拠が最重要",
+            "感情より問題解決を優先する",
+            "議論では白黒をはっきりさせたい",
+            "気を使って基準を変えるのは苦手",
+        ],
+        "J": [
+            "計画があると安心する",
+            "締切は前倒しで終えることが多い",
+            "散らかっているとストレス",
+            "予定が急に変わると困る",
+        ],
+    },
+    "ru": {
+        "labels": {"yes": "Да", "no": "Нет"},
+        "E": [
+            "Общение меня заряжает",
+            "Когда я один/одна, быстро становится скучно",
+            "Я лучше формулирую мысли вслух",
+            "Новые знакомства обычно не стресс",
+        ],
+        "S": [
+            "Я больше доверяю фактам и опыту",
+            "Примеры и детали помогают понять",
+            "Сначала ищу практичный способ",
+            "Предпочитаю проверять перед действием",
+        ],
+        "T": [
+            "В решениях важнее логика и доказательства",
+            "Сначала решение, потом эмоции",
+            "В споре люблю ясность: что верно, а что нет",
+            "Менять принципы «ради вежливости» трудно",
+        ],
+        "J": [
+            "С планом мне спокойнее",
+            "Чаще заканчиваю до дедлайна",
+            "Беспорядок вызывает стресс",
+            "Резкие изменения планов раздражают",
+        ],
+    },
+    "hi": {
+        "labels": {"yes": "हाँ", "no": "नहीं"},
+        "E": [
+            "लोगों से मिलकर मुझे ऊर्जा मिलती है",
+            "अकेले रहने पर मुझे जल्दी बोरियत होती है",
+            "बोलकर मैं अपने विचार स्पष्ट करता/करती हूँ",
+            "नए लोगों से मिलना मुझे तनाव नहीं देता",
+        ],
+        "S": [
+            "मैं ठोस तथ्य/अनुभव पर ज्यादा भरोसा करता/करती हूँ",
+            "उदाहरण और डिटेल से समझना आसान होता है",
+            "मैं पहले व्यावहारिक तरीका ढूंढता/ढूंढती हूँ",
+            "मैं कार्रवाई से पहले पुष्टि करना पसंद करता/करती हूँ",
+        ],
+        "T": [
+            "निर्णय में लॉजिक/सबूत सबसे अहम है",
+            "मैं भावना से पहले समस्या-समाधान को रखता/रखती हूँ",
+            "बहस में सही/गलत स्पष्ट करना मुझे पसंद है",
+            "केवल ‘अच्छा लगने’ के लिए नियम बदलना कठिन है",
+        ],
+        "J": [
+            "योजना होने पर मन शांत रहता है",
+            "मैं डेडलाइन से पहले काम खत्म करता/करती हूँ",
+            "अव्यवस्था से तनाव होता है",
+            "अचानक शेड्यूल बदलने पर असहज लगता है",
+        ],
+    },
 }
 
 # =========================================================
@@ -1030,7 +1559,10 @@ def input_screen():
 # =========================================================
 def test12_screen():
     qs = SIMPLE_12.get(st.session_state.lang, SIMPLE_12["en"])
-    st.markdown("<div class='card'><div class='card-title'>MBTI – 12</div><div class='mini'>제출하면 바로 결과로 넘어갑니다.</div></div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='card'><div class='card-title'>{t['test12_title']}</div><div class='mini'>{t['test12_desc']}</div></div>",
+        unsafe_allow_html=True
+    )
 
     with st.form("form_test12", clear_on_submit=False):
         answers = []
@@ -1051,79 +1583,32 @@ def test12_screen():
         go_result()
 
 # =========================================================
-# Test 16
+# Test 16 (중복 질문 제거)
 # =========================================================
 def test16_screen():
     d = DETAIL_16.get(st.session_state.lang, DETAIL_16["en"])
-    st.markdown("<div class='card'><div class='card-title'>MBTI – 16</div><div class='mini'>각 축 4문항씩. 제출하면 결과로 넘어갑니다.</div></div>", unsafe_allow_html=True)
+    yes_label = d["labels"]["yes"]
+    no_label = d["labels"]["no"]
+
+    st.markdown(
+        f"<div class='card'><div class='card-title'>{t['test16_title']}</div><div class='mini'>{t['test16_desc']}</div></div>",
+        unsafe_allow_html=True
+    )
 
     with st.form("form_test16", clear_on_submit=False):
         scores = {"E":0, "S":0, "T":0, "J":0}
         for axis in ["E","S","T","J"]:
-            q, yes, no = d[axis]
-            st.markdown(f"**{q}**")
-            for i in range(4):
-                c = st.radio(f"{i+1}/4", [yes, no], key=f"t16_{st.session_state.lang}_{axis}_{i}")
-                scores[axis] += 1 if c == yes else -1
             st.markdown("---")
+            for i, q in enumerate(d[axis]):
+                c = st.radio(q, [yes_label, no_label], key=f"t16_{st.session_state.lang}_{axis}_{i}")
+                scores[axis] += 1 if c == yes_label else -1
+
         submitted = st.form_submit_button(t["view_result"], use_container_width=True)
 
     if submitted:
         mbti = ("E" if scores["E"] >= 0 else "I") + ("S" if scores["S"] >= 0 else "N") + ("T" if scores["T"] >= 0 else "F") + ("J" if scores["J"] >= 0 else "P")
         st.session_state.mbti = mbti
         go_result()
-
-# =========================================================
-# MBTI 영향 문장 생성
-# =========================================================
-def build_mbti_influence(lang: str, mbti: str, rng: random.Random):
-    pack = MBTI_ADVICE.get(lang, MBTI_ADVICE["en"])
-    profile = mbti_profile(mbti)
-
-    # 요약 4줄(각 축 영향)
-    summary = []
-    summary_map = pack["influence_summary"]
-    summary.append(summary_map["E"] if profile["E"] else summary_map["I"])
-    summary.append(summary_map["S"] if profile["S"] else summary_map["N"])
-    summary.append(summary_map["T"] if profile["T"] else summary_map["F"])
-    summary.append(summary_map["J"] if profile["J"] else summary_map["P"])
-
-    # 카테고리별 조언(축 조합)
-    love = []
-    money = []
-    work = []
-    health = []
-
-    love.append(pack["love"]["E"] if profile["E"] else pack["love"]["I"])
-    love.append(pack["love"]["T"] if profile["T"] else pack["love"]["F"])
-    love.append(pack["love"]["J"] if profile["J"] else pack["love"]["P"])
-
-    money.append(pack["money"]["S"] if profile["S"] else pack["money"]["N"])
-    money.append(pack["money"]["T"] if profile["T"] else pack["money"]["F"])
-    money.append(pack["money"]["J"] if profile["J"] else pack["money"]["P"])
-
-    work.append(pack["work"]["E"] if profile["E"] else pack["work"]["I"])
-    work.append(pack["work"]["S"] if profile["S"] else pack["work"]["N"])
-    work.append(pack["work"]["T"] if profile["T"] else pack["work"]["F"])
-    work.append(pack["work"]["J"] if profile["J"] else pack["work"]["P"])
-
-    health.append(pack["health"]["E"] if profile["E"] else pack["health"]["I"])
-    health.append(pack["health"]["S"] if profile["S"] else pack["health"]["N"])
-    health.append(pack["health"]["T"] if profile["T"] else pack["health"]["F"])
-    health.append(pack["health"]["J"] if profile["J"] else pack["health"]["P"])
-
-    return {
-        "summary": summary,
-        "love": love,
-        "money": money,
-        "work": work,
-        "health": health,
-    }
-
-def build_combo_advice(lang: str, zodiac: str, mbti: str, rng: random.Random):
-    pack = MBTI_ADVICE.get(lang, MBTI_ADVICE["en"])
-    tpl = rng.choice(pack["combo"])
-    return tpl.format(zodiac=zodiac, mbti=mbti)
 
 # =========================================================
 # Result Screen
@@ -1134,6 +1619,7 @@ def result_screen():
 
     y, m, d = st.session_state.y, st.session_state.m, st.session_state.d
     mbti = st.session_state.mbti
+
     zodiac = get_zodiac(y, lang)
     if zodiac is None:
         zodiac = get_zodiac(y, "en")
@@ -1155,6 +1641,10 @@ def result_screen():
     lucky_item = rng.choice(b["items"])
     lucky_num = str(rng.randint(1, 9))
 
+    # NEW: MBTI influence + combo advice
+    infl_love, infl_money, infl_work, infl_health = mbti_influence_text(lang, mbti)
+    c1, c2 = combo_advice_text(lang, zodiac, mbti, rng)
+
     name = st.session_state.name.strip()
     name_prefix = (name + ("님의" if lang == "ko" else "")) if name else ""
 
@@ -1168,23 +1658,13 @@ def result_screen():
         unsafe_allow_html=True
     )
 
-    # 기본 정보
-    z_desc = get_desc(ZODIAC_DESC, lang, zodiac)
-    if not z_desc:
-        z_desc = get_desc(ZODIAC_DESC, "en", zodiac)
-
-    m_desc = get_desc(MBTI_DESC, lang, mbti)
-    if not m_desc:
-        m_desc = get_desc(MBTI_DESC, "en", mbti)
+    z_desc = ZODIAC_DESC.get(lang, ZODIAC_DESC["en"]).get(zodiac, "")
+    m_desc = MBTI_DESC.get(lang, MBTI_DESC["en"]).get(mbti, "")
 
     saju_line = b["saju_line"]
 
-    # MBTI 영향/조언 생성
-    infl = build_mbti_influence(lang if lang in ["ko", "en"] else "en", mbti, rng)
-    combo_line = build_combo_advice(lang if lang in ["ko", "en"] else "en", zodiac, mbti, rng)
-
-    # 결과 카드 (태그 없이 Markdown)
     st.markdown("<div class='card'>", unsafe_allow_html=True)
+
     st.markdown(
         f"""
 **{t["zodiac_title"]}**: {z_desc}  
@@ -1206,29 +1686,22 @@ def result_screen():
 **{t["caution"]}**: {caution_msg}
 """.strip()
     )
-    st.markdown("</div>", unsafe_allow_html=True)
 
-    # ✅ MBTI 영향 카드 (핵심 업데이트)
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown("---")
     st.markdown(f"### {t['mbti_influence']}")
     st.markdown(
-        "- " + "\n- ".join(infl["summary"])
+        f"""
+**{t["influence_love"]}**: {infl_love}  
+**{t["influence_money"]}**: {infl_money}  
+**{t["influence_work"]}**: {infl_work}  
+**{t["influence_health"]}**: {infl_health}
+""".strip()
     )
-    st.markdown("---")
-    st.markdown(f"**{t['love']}**")
-    st.markdown("- " + "\n- ".join(infl["love"]))
-    st.markdown(f"**{t['money']}**")
-    st.markdown("- " + "\n- ".join(infl["money"]))
-    st.markdown(f"**{t['work']}**")
-    st.markdown("- " + "\n- ".join(infl["work"]))
-    st.markdown(f"**{t['health']}**")
-    st.markdown("- " + "\n- ".join(infl["health"]))
-    st.markdown("</div>", unsafe_allow_html=True)
 
-    # ✅ 띠 + MBTI 조합 조언 카드
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown("---")
     st.markdown(f"### {t['combo_advice']}")
-    st.markdown(combo_line)
+    st.markdown(f"- {c1}\n- {c2}")
+
     st.markdown("</div>", unsafe_allow_html=True)
 
     # 광고 (한국어만 다나눔렌탈)
@@ -1247,17 +1720,21 @@ def result_screen():
         st.markdown(tarot_mean)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # 공유 텍스트 (MBTI 영향/조합 조언 포함)
+    # 공유 텍스트 (MBTI 영향/조합도 포함)
     share_text = (
         f"{t['title']}\n"
         f"{name_prefix} {zodiac} / {mbti}\n\n"
         f"{t['today']}: {today_msg}\n"
         f"{t['tomorrow']}: {tomorrow_msg}\n\n"
-        f"{t['annual']}: {annual_msg}\n\n"
-        f"{t['combo_advice']}: {combo_line}\n\n"
+        f"{t['mbti_influence']}:\n"
+        f"- {t['influence_love']}: {infl_love}\n"
+        f"- {t['influence_money']}: {infl_money}\n"
+        f"- {t['influence_work']}: {infl_work}\n"
+        f"- {t['influence_health']}: {infl_health}\n\n"
+        f"{t['combo_advice']}:\n"
+        f"- {c1}\n- {c2}\n\n"
         f"{APP_URL}"
     )
-
     share_component(t, share_text)
 
     if st.button(t["reset"], use_container_width=True):
