@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import random
 import time
 import re
+import json
 
 # ---- (선택) 구글시트 사용 ----
 # requirements.txt: streamlit, gspread, google-auth
@@ -18,8 +19,8 @@ except Exception:
 # 0) 기본 설정
 # =========================================================
 APP_URL = "https://my-fortune.streamlit.app"
-SPREADSHEET_ID = "1WvuKXx2if2WvxmQaxkqzFW-BzDEWWma9hZgCr2jJQYY"  # (기억된 ID)
-SHEET_NAME = "시트1"  # 사용자 지정: 시트1
+SPREADSHEET_ID = "1WvuKXx2if2WvxmQaxkqzFW-BzDEWWma9hZgCr2jJQYY"  # 고정
+SHEET_NAME = "시트1"  # 고정(사용자 요청)
 
 st.set_page_config(
     page_title="2026 Fortune | 띠+MBTI+사주+오늘/내일",
@@ -32,7 +33,6 @@ st.set_page_config(
 #   - Streamlit은 head 직접 제어가 제한적이라 JS로 head에 삽입
 # =========================================================
 def inject_seo(lang_code: str):
-    # 언어별 간단 설명
     desc_map = {
         "ko": "2026년 띠운세 + MBTI + 사주 + 오늘/내일 운세를 한 번에! 무료 운세 서비스. 미니게임 이벤트(한국어).",
         "en": "Free 2026 Zodiac + MBTI + Saju + Daily/Tomorrow fortune. Mini game event (Korean only).",
@@ -43,20 +43,21 @@ def inject_seo(lang_code: str):
     }
     description = desc_map.get(lang_code, desc_map["en"])
 
-    keywords = {
-        "ko": "2026 운세, 띠운세, MBTI 운세, 사주, 오늘 운세, 내일 운세, 무료 운세",
-        "en": "2026 fortune, zodiac, MBTI, saju, today fortune, tomorrow fortune, free",
-        "ja": "2026 運勢, 干支, MBTI, 四柱, 今日の運勢, 明日の運勢, 無料",
-        "zh": "2026 运势, 生肖, MBTI, 四柱, 今日运势, 明日运势, 免费",
-        "ru": "2026 гороскоп, зодиак, MBTI, саджу, удача сегодня, бесплатно",
-        "hi": "2026 राशिफल, MBTI, आज का राशिफल, कल का राशिफल, मुफ्त"
-    }.get(lang_code, keywords["en"])
+    keywords_map = {
+        "ko": "2026 운세, 띠운세, MBTI 운세, 사주, 오늘 운세, 내일 운세, 무료 운세, 타로",
+        "en": "2026 fortune, zodiac, MBTI, saju, today fortune, tomorrow fortune, free, tarot",
+        "ja": "2026 運勢, 干支, MBTI, 四柱, 今日の運勢, 明日の運勢, 無料, タロット",
+        "zh": "2026 运势, 生肖, MBTI, 四柱, 今日运势, 明日运势, 免费, 塔罗",
+        "ru": "2026 гороскоп, зодиак, MBTI, саджу, удача сегодня, бесплатно, таро",
+        "hi": "2026 राशिफल, राशि, MBTI, आज का राशिफल, कल का राशिफल, मुफ्त, टैरो"
+    }
+    keywords = keywords_map.get(lang_code, keywords_map["en"])
 
     title = "2026 Fortune | Zodiac + MBTI + Saju + Today/Tomorrow"
     if lang_code == "ko":
         title = "2026 운세 | 띠 + MBTI + 사주 + 오늘/내일 운세"
 
-    json_ld = {
+    json_ld_obj = {
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": title,
@@ -65,26 +66,26 @@ def inject_seo(lang_code: str):
         "operatingSystem": "Web",
         "description": description
     }
+    json_ld_str = json.dumps(json_ld_obj, ensure_ascii=False)
 
-    # head 삽입 (streamlit 제한 우회)
     st.components.v1.html(
         f"""
 <script>
 (function() {{
   try {{
     const meta = [
-      ['name','description','{description}'],
-      ['name','keywords','{keywords}'],
-      ['property','og:title','{title}'],
-      ['property','og:description','{description}'],
+      ['name','description', {json.dumps(description, ensure_ascii=False)}],
+      ['name','keywords', {json.dumps(keywords, ensure_ascii=False)}],
+      ['property','og:title', {json.dumps(title, ensure_ascii=False)}],
+      ['property','og:description', {json.dumps(description, ensure_ascii=False)}],
       ['property','og:type','website'],
-      ['property','og:url','{APP_URL}'],
+      ['property','og:url', {json.dumps(APP_URL)}],
       ['name','twitter:card','summary'],
       ['name','robots','index,follow']
     ];
 
     meta.forEach(([attr, key, val]) => {{
-      let el = document.head.querySelector(`meta[{attr}="${{key}}"]`);
+      let el = document.head.querySelector(`meta[${{attr}}="${{key}}"]`);
       if(!el) {{
         el = document.createElement('meta');
         el.setAttribute(attr, key);
@@ -93,16 +94,14 @@ def inject_seo(lang_code: str):
       el.setAttribute('content', val);
     }});
 
-    // canonical
     let canonical = document.head.querySelector('link[rel="canonical"]');
     if(!canonical) {{
       canonical = document.createElement('link');
       canonical.setAttribute('rel','canonical');
       document.head.appendChild(canonical);
     }}
-    canonical.setAttribute('href','{APP_URL}');
+    canonical.setAttribute('href', {json.dumps(APP_URL)});
 
-    // JSON-LD
     let script = document.head.querySelector('script[data-jsonld="fortune"]');
     if(!script) {{
       script = document.createElement('script');
@@ -110,7 +109,7 @@ def inject_seo(lang_code: str):
       script.setAttribute('data-jsonld','fortune');
       document.head.appendChild(script);
     }}
-    script.text = {json_ld};
+    script.text = {json.dumps(json_ld_str)};
   }} catch(e) {{}}
 }})();
 </script>
@@ -119,9 +118,7 @@ def inject_seo(lang_code: str):
     )
 
 # =========================================================
-# 2) 다국어 텍스트
-#   - 6개 언어(ko,en,ja,zh,ru,hi)
-#   - 12/16 문항도 언어별로 제공 (간단하고 안정적인 문장으로)
+# 2) 다국어 텍스트 (6개 언어)
 # =========================================================
 LANGS = [
     ("ko", "한국어"),
@@ -209,7 +206,7 @@ T = {
         "go_result": "See 2026 Fortune!",
         "reset": "Start over",
         "share_btn": "Share result",
-        "share_hint": "On mobile it opens the native share sheet. On PC it copies.",
+        "share_hint": "On mobile it opens share sheet. On PC it copies.",
         "tarot_btn": "Draw today's tarot card",
         "tarot_title": "Today's Tarot",
         "best_combo": "Best combo!",
@@ -228,7 +225,7 @@ T = {
             "advice": "Combo advice",
         },
         "ad_placeholder": "AD (Ads will appear here after approval)",
-        "mini_title": "",  # non-ko 숨김
+        "mini_title": "",
         "mini_desc": "",
         "mini_start": "",
         "mini_stop": "",
@@ -280,7 +277,7 @@ T = {
             "work": "仕事/学業",
             "health": "健康",
             "point": "ラッキーポイント",
-            "advice": "組み合わせアドバイス",
+            "advice": "アドバイス",
         },
         "ad_placeholder": "AD（審査通過後ここに表示）",
         "mini_title": "",
@@ -335,7 +332,7 @@ T = {
             "work": "工作/学习",
             "health": "健康",
             "point": "幸运点",
-            "advice": "组合建议",
+            "advice": "建议",
         },
         "ad_placeholder": "AD（审核通过后显示）",
         "mini_title": "",
@@ -472,7 +469,6 @@ T = {
 
 # =========================================================
 # 3) 데이터(운세/띠/MBTI/질문/타로)
-#   - 핵심은 안정 동작 + 가독성
 # =========================================================
 TAROT = {
     "The Fool": {"ko": "바보 - 새로운 시작, 모험", "en": "New beginnings, adventure"},
@@ -488,7 +484,6 @@ TAROT = {
     "The World": {"ko": "세계 - 완성, 성취", "en": "Completion, achievement"},
 }
 
-# 띠(ko/en 공통 키) - 화면 출력은 언어별 별칭
 ZODIAC_ORDER = ["rat", "ox", "tiger", "rabbit", "dragon", "snake", "horse", "goat", "monkey", "rooster", "dog", "pig"]
 ZODIAC_LABEL = {
     "rat":     {"ko": "쥐띠", "en": "Rat", "ja": "鼠", "zh": "鼠", "ru": "Крыса", "hi": "चूहा"},
@@ -592,50 +587,29 @@ YEAR_ALL = {
     ],
 }
 
-# MBTI가 다른 운세에 미치는 영향(조합 조언)
 def combo_advice(lang, zodiac_key, mbti):
-    # 핵심: MBTI 성향 → 연애/재물/일/건강에 반영
-    ei = mbti[0]
-    sn = mbti[1]
-    tf = mbti[2]
-    jp = mbti[3]
-
+    ei = mbti[0]; sn = mbti[1]; tf = mbti[2]; jp = mbti[3]
     if lang == "ko":
         parts = []
-        # 연애
-        if tf == "F":
-            parts.append("연애운: 감정 교류가 운을 키웁니다. 오늘은 ‘공감 한 마디’를 먼저!")
-        else:
-            parts.append("연애운: 해결하려 들기보다 ‘듣기’가 포인트. 논리 50%, 공감 50%!")
-        # 재물
-        if jp == "J":
-            parts.append("재물운: 계획형이라 지출 통제가 강점. 자동이체/예산표로 운을 굳히세요.")
-        else:
-            parts.append("재물운: 즉흥지출만 막으면 크게 좋아져요. ‘24시간 룰(하루 뒤 구매)’ 추천.")
-        # 일/학업
-        if sn == "N":
-            parts.append("일/학업운: 큰그림은 강점! 다만 실행 체크리스트로 현실화하면 성과 폭발.")
-        else:
-            parts.append("일/학업운: 디테일 강점! 반복 루틴을 만들면 안정적으로 점수/성과가 오릅니다.")
-        # 건강
-        if ei == "E":
-            parts.append("건강운: 사람 만나며 과열되기 쉬움. 수면/카페인만 조절해도 컨디션 급상승.")
-        else:
-            parts.append("건강운: 혼자 회복이 핵심. ‘짧은 산책+스트레칭 5분’이 운을 돕습니다.")
+        parts.append("연애운: " + ("감정 교류가 운을 키웁니다. 오늘은 ‘공감 한 마디’를 먼저!" if tf == "F"
+                                 else "해결하려 들기보다 ‘듣기’가 포인트. 논리 50%, 공감 50%!"))
+        parts.append("재물운: " + ("계획형이라 지출 통제가 강점. 자동이체/예산표로 운을 굳히세요." if jp == "J"
+                                 else "즉흥지출만 막으면 크게 좋아져요. ‘24시간 룰(하루 뒤 구매)’ 추천."))
+        parts.append("일/학업운: " + ("큰그림은 강점! 다만 실행 체크리스트로 현실화하면 성과 폭발." if sn == "N"
+                                  else "디테일 강점! 반복 루틴을 만들면 안정적으로 점수/성과가 오릅니다."))
+        parts.append("건강운: " + ("사람 만나며 과열되기 쉬움. 수면/카페인만 조절해도 컨디션 급상승." if ei == "E"
+                                 else "혼자 회복이 핵심. ‘짧은 산책+스트레칭 5분’이 운을 돕습니다."))
         return "\n".join(parts)
-
-    # non-ko: 영어로 통일(너 요청: “한국어 외가 영어로만 나오는 문제”는 UI/질문을 해결했고,
-    # 결과 본문은 각 언어별 완전 번역까지는 길어져서 기본 영어로 안정 제공)
-    parts = []
-    parts.append("Love: Balance empathy and listening.")
-    parts.append("Money: Avoid impulse buys; use a simple budget.")
-    parts.append("Work/Study: Turn ideas into a checklist and execute.")
-    parts.append("Health: Keep sleep consistent; short walks help.")
+    parts = [
+        "Love: Balance empathy and listening.",
+        "Money: Avoid impulse buys; use a simple budget.",
+        "Work/Study: Turn ideas into a checklist and execute.",
+        "Health: Keep sleep consistent; short walks help.",
+    ]
     return "\n".join(parts)
 
-
 # =========================================================
-# 4) MBTI 테스트 (12 / 16) - 언어별 질문 제공
+# 4) MBTI 테스트 질문(12/16) - (이전 코드 그대로)
 # =========================================================
 MBTI_12_Q = {
     "ko": [
@@ -674,7 +648,7 @@ MBTI_12_Q = {
         ("初対面でも話しかけやすい？", ("E", "はい"), ("I", "いいえ")),
         ("まず全体像、あとで詳細？", ("N", "はい"), ("S", "いいえ")),
         ("共感より解決策を先に言う？", ("T", "はい"), ("F", "いいえ")),
-        ("締切より前に終わらせる？", ("J", "はい"), ("P", "いいえ")),
+        ("締切前に終わらせる？", ("J", "はい"), ("P", "いいえ")),
         ("人といると充電できる？", ("E", "はい"), ("I", "いいえ")),
         ("今より未来の可能性が好き？", ("N", "はい"), ("S", "いいえ")),
         ("気持ちより正解を探す？", ("T", "はい"), ("F", "いいえ")),
@@ -725,7 +699,6 @@ MBTI_12_Q = {
 }
 
 MBTI_16_Q = {
-    # 4축 * 4문항 = 16, 질문은 간단/중복 최소화
     "ko": {
         "E/I": [
             "사람 많은 자리에서 에너지가 올라간다.",
@@ -897,7 +870,6 @@ MBTI_16_Q = {
 }
 
 def calc_zodiac_key(year: int) -> str:
-    # 1900~2030 내에서만 의미, (y-4)%12
     idx = (year - 4) % 12
     return ZODIAC_ORDER[idx]
 
@@ -914,7 +886,6 @@ def seeded_daily(lang: str, zodiac_key: str, offset: int = 0) -> str:
     return random.choice(arr)
 
 def year_overall(lang: str, zodiac_key: str, mbti: str) -> str:
-    # zodiac+mbti로 seed 만들어서 매번 결과 일관성 조금 높임
     seed = ZODIAC_ORDER.index(zodiac_key) * 101 + sum(ord(c) for c in mbti)
     random.seed(seed)
     arr = YEAR_ALL["ko"] if lang == "ko" else YEAR_ALL["en"]
@@ -926,7 +897,7 @@ def pick_tarot(lang: str):
     return k, meaning
 
 # =========================================================
-# 5) 구글시트 연결 (고정 컬럼 유지)
+# 5) 구글시트 연결 (컬럼 고정)
 #     시간 | 이름 | 전화번호 | 언어 | 기록초 | 공유여부
 # =========================================================
 def get_sheet():
@@ -941,8 +912,6 @@ def get_sheet():
     ]
     info = dict(st.secrets["gcp_service_account"])
 
-    # Streamlit secrets에서 private_key 줄바꿈 처리(중요!)
-    # - 사용자처럼 \n이 들어가 있으면 실제 줄바꿈으로 변환해야 함
     if "private_key" in info and isinstance(info["private_key"], str):
         info["private_key"] = info["private_key"].replace("\\n", "\n")
 
@@ -953,18 +922,13 @@ def get_sheet():
     return ws
 
 def normalize_phone(phone: str) -> str:
-    # 숫자만 추출
     return re.sub(r"[^0-9]", "", phone or "")
 
 def read_all_rows(ws):
-    # 첫 행이 헤더일 수도/아닐 수도 있어 안전하게 처리
-    values = ws.get_all_values()
-    return values
+    return ws.get_all_values()
 
 def count_winners(ws) -> int:
-    # 기록초가 20.160~20.169 이면 "당첨"으로 간주
     values = read_all_rows(ws)
-    # 헤더가 있으면 첫 줄은 넘어갈 수 있게 간단 처리
     winners = 0
     for row in values[1:] if len(values) > 0 else []:
         if len(row) < 6:
@@ -990,7 +954,6 @@ def append_entry(ws, name, phone, lang, seconds, shared_bool):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ws.append_row([now_str, name, phone, lang, f"{seconds:.3f}", str(bool(shared_bool))])
 
-
 # =========================================================
 # 6) 세션 상태
 # =========================================================
@@ -1012,7 +975,6 @@ if "mbti" not in st.session_state:
 if "mbti_mode" not in st.session_state:
     st.session_state.mbti_mode = "direct"
 
-# 공유/추가시도
 if "shared" not in st.session_state:
     st.session_state.shared = False
 if "attempts_used" not in st.session_state:
@@ -1020,7 +982,6 @@ if "attempts_used" not in st.session_state:
 if "max_attempts" not in st.session_state:
     st.session_state.max_attempts = 1
 
-# 미니게임 타이머
 if "game_running" not in st.session_state:
     st.session_state.game_running = False
 if "start_time" not in st.session_state:
@@ -1028,21 +989,17 @@ if "start_time" not in st.session_state:
 if "last_time" not in st.session_state:
     st.session_state.last_time = None
 
-# 팝업 입력(당첨 시)
 if "show_win_form" not in st.session_state:
     st.session_state.show_win_form = False
 if "win_seconds" not in st.session_state:
     st.session_state.win_seconds = None
 
 # =========================================================
-# 7) 스타일 (가독성 강화 + 모바일 대응)
+# 7) 스타일 (가독성 강화)
 # =========================================================
 st.markdown("""
 <style>
-/* 모바일 상단 여백/라디오 가림 방지 */
 .block-container { padding-top: 1.2rem; padding-bottom: 2.5rem; max-width: 720px; }
-
-/* 카드 디자인 */
 .card {
   background: rgba(255,255,255,0.96);
   border-radius: 18px;
@@ -1062,7 +1019,6 @@ st.markdown("""
 }
 .hero-title { font-size: 1.5rem; font-weight: 800; margin: 0; }
 .hero-sub { font-size: 0.95rem; opacity: 0.95; margin-top: 6px; }
-
 .badge {
   display:inline-block;
   padding: 4px 10px;
@@ -1072,13 +1028,6 @@ st.markdown("""
   border: 1px solid rgba(255,255,255,0.25);
   margin-top: 10px;
 }
-
-.kv {
-  font-size: 1.02rem;
-  line-height: 1.65;
-}
-.kv b { color: #3a2a66; }
-
 .soft-box {
   background: rgba(245,245,255,0.75);
   border: 1px solid rgba(130,95,220,0.18);
@@ -1087,7 +1036,6 @@ st.markdown("""
   line-height: 1.65;
   font-size: 1.0rem;
 }
-
 .adbox {
   background: rgba(255,255,255,0.96);
   border-radius: 18px;
@@ -1097,7 +1045,6 @@ st.markdown("""
   box-shadow: 0 10px 28px rgba(0,0,0,0.08);
   text-align:center;
 }
-
 .adplaceholder {
   background: rgba(255,255,255,0.75);
   border-radius: 18px;
@@ -1107,13 +1054,11 @@ st.markdown("""
   text-align:center;
   color: rgba(60,40,110,0.85);
 }
-
 .bigbtn > button {
   border-radius: 999px !important;
   font-weight: 800 !important;
   padding: 0.75rem 1.2rem !important;
 }
-
 .small-note {
   font-size: 0.9rem;
   opacity: 0.85;
@@ -1139,9 +1084,8 @@ picked_label = st.radio(
 st.session_state.lang = lang_codes[lang_labels.index(picked_label)]
 t = T[st.session_state.lang]
 
-# SEO 메타 삽입
+# ✅ 여기서 SEO 주입 (UnboundLocalError 해결됨)
 inject_seo(st.session_state.lang)
-
 
 # =========================================================
 # 9) 입력 화면
@@ -1196,12 +1140,10 @@ def render_input():
         score = {"E": 0, "I": 0, "S": 0, "N": 0, "T": 0, "F": 0, "J": 0, "P": 0}
 
         for idx, (q, opt1, opt2) in enumerate(qlist):
-            # opt: (letter, label)
             ans = st.radio(q, [opt1[1], opt2[1]], key=f"mbti12_{idx}", horizontal=True)
             chosen = opt1[0] if ans == opt1[1] else opt2[0]
             score[chosen] += 1
 
-        # 12문항: 축당 3문항씩(각 축 3)로 구성되어 있음
         def pick(a, b):
             return a if score[a] >= score[b] else b
 
@@ -1251,26 +1193,16 @@ def render_input():
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-
 # =========================================================
-# 10) 공유 버튼 (모바일: 네이티브 공유시트 / PC: 복사)
-#      - 공유 누르면 시도 1회 추가(한국어 미니게임용)
+# 10) 공유 버튼 (모바일 share sheet / PC copy) + 공유시 1회 추가
 # =========================================================
 def render_share_button(share_text: str):
-    # 공유버튼을 HTML/JS로 (Web Share API + clipboard fallback)
-    # 버튼 반응 없는 문제 방지: Streamlit 위젯 대신 components.html 사용
-    # 공유 성공 시: URL에 파라미터로 전달 불가 -> 대신 사용자에게 안내 + 세션에서 shared True 처리:
-    # 실제 공유 여부 감지는 브라우저 권한 이슈가 있어 "버튼 클릭"을 공유로 인정.
-    btn_label = t["share_btn"]
-    hint = t["share_hint"]
-
     st.markdown('<div class="bigbtn">', unsafe_allow_html=True)
-    clicked = st.button(btn_label, use_container_width=True)
+    clicked = st.button(t["share_btn"], use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
-    st.caption(hint)
+    st.caption(t["share_hint"])
 
     if clicked:
-        # 공유 클릭 = 공유 시도 인정 -> 추가 기회 1회
         if not st.session_state.shared:
             st.session_state.shared = True
             st.session_state.max_attempts = 2
@@ -1279,7 +1211,7 @@ def render_share_button(share_text: str):
             f"""
 <script>
 (async function() {{
-  const text = {repr(share_text)};
+  const text = {json.dumps(share_text)};
   try {{
     if (navigator.share) {{
       await navigator.share({{ text }});
@@ -1301,20 +1233,11 @@ def render_share_button(share_text: str):
             height=0
         )
 
-
 # =========================================================
-# 11) 결과 화면 + 광고(한국어만 다나눔렌탈) + 미니게임(한국어만)
+# 11) 결과 화면 + 광고 + 미니게임(한국어만)
 # =========================================================
 def render_result():
     y, m, d = st.session_state.y, st.session_state.m, st.session_state.d
-    if not (1900 <= y <= 2030):
-        st.error("생년은 1900~2030 범위로 입력해주세요." if st.session_state.lang == "ko"
-                 else "Please enter a birth year between 1900 and 2030.")
-        if st.button(t["reset"], use_container_width=True):
-            st.session_state.clear()
-            st.rerun()
-        return
-
     zodiac_key = calc_zodiac_key(y)
     zodiac_label = ZODIAC_LABEL[zodiac_key].get(st.session_state.lang, ZODIAC_LABEL[zodiac_key]["en"])
     zodiac_desc = ZODIAC_TEXT[zodiac_key]["ko"] if st.session_state.lang == "ko" else ZODIAC_TEXT[zodiac_key]["en"]
@@ -1329,25 +1252,17 @@ def render_result():
     saju = get_saju(st.session_state.lang, y, m, d)
     today = seeded_daily(st.session_state.lang, zodiac_key, 0)
     tomorrow = seeded_daily(st.session_state.lang, zodiac_key, 1)
-
     overall = year_overall(st.session_state.lang, zodiac_key, mbti)
 
-    # 추가 섹션(가독성 강화)
-    love = combo_advice(st.session_state.lang, zodiac_key, mbti).splitlines()[0]
-    money = combo_advice(st.session_state.lang, zodiac_key, mbti).splitlines()[1]
-    work = combo_advice(st.session_state.lang, zodiac_key, mbti).splitlines()[2]
-    health = combo_advice(st.session_state.lang, zodiac_key, mbti).splitlines()[3]
-
-    lucky_color = random.choice(["Gold", "Blue", "Green", "Purple", "Red"])
-    if st.session_state.lang == "ko":
-        lucky_color = {"Gold": "골드", "Blue": "블루", "Green": "그린", "Purple": "퍼플", "Red": "레드"}[lucky_color]
-    lucky_item = random.choice(["Wallet", "Pen", "Plant", "Notebook", "Accessory"])
-    if st.session_state.lang == "ko":
-        lucky_item = {"Wallet": "지갑", "Pen": "펜", "Plant": "식물", "Notebook": "노트", "Accessory": "액세서리"}[lucky_item]
-
     advice = combo_advice(st.session_state.lang, zodiac_key, mbti)
+    advice_lines = advice.splitlines()
+    love = advice_lines[0] if len(advice_lines) > 0 else ""
+    money = advice_lines[1] if len(advice_lines) > 1 else ""
+    work = advice_lines[2] if len(advice_lines) > 2 else ""
+    health = advice_lines[3] if len(advice_lines) > 3 else ""
 
-    # 헤더
+    s = t["sections"]
+
     st.markdown(f"""
     <div class="header-hero">
       <p class="hero-title">{display_name} {('2026년 운세' if st.session_state.lang=='ko' else '2026 Fortune')}</p>
@@ -1356,11 +1271,10 @@ def render_result():
     </div>
     """, unsafe_allow_html=True)
 
-    # (1) 광고 자리: 결과 상단에 placeholder
+    # 결과 상단 광고 자리(placeholder)
     st.markdown(f"<div class='adplaceholder'>{t['ad_placeholder']}</div>", unsafe_allow_html=True)
 
-    # (2) 메인 카드(HTML 태그가 보이는 문제 해결: 여기서는 HTML을 쓰지 않고 텍스트 렌더)
-    s = t["sections"]
+    # 결과 카드(HTML 태그 노출 방지)
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown(f"**{s['zodiac']}**: {zodiac_desc}")
     st.markdown(f"**{s['mbti']}**: {mbti_line}")
@@ -1372,18 +1286,18 @@ def render_result():
     st.markdown(f"**{s['year_all']}**: {overall}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # (3) 디테일 카드 (가독성)
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown(f"**{s['love']}**: {love}")
     st.markdown(f"**{s['money']}**: {money}")
     st.markdown(f"**{s['work']}**: {work}")
     st.markdown(f"**{s['health']}**: {health}")
     st.markdown("---")
-    st.markdown(f"**{s['point']}**: {('럭키 컬러' if st.session_state.lang=='ko' else 'Lucky color')} **{lucky_color}**, "
-                f"{('럭키 아이템' if st.session_state.lang=='ko' else 'Lucky item')} **{lucky_item}**")
+    st.markdown(f"**{s['point']}**: "
+                f"{('럭키 컬러' if st.session_state.lang=='ko' else 'Lucky color')} **{random.choice(['Gold','Blue','Green','Purple','Red'])}**, "
+                f"{('럭키 아이템' if st.session_state.lang=='ko' else 'Lucky item')} **{random.choice(['Wallet','Pen','Plant','Notebook','Accessory'])}**")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # (4) 한국어만 다나눔렌탈 광고 복구 + 테두리
+    # 한국어만 다나눔렌탈 광고 노출
     if st.session_state.lang == "ko":
         st.markdown(f"""
         <div class="adbox">
@@ -1401,7 +1315,7 @@ def render_result():
         </div>
         """, unsafe_allow_html=True)
 
-    # (5) 타로 (정상작동 유지: 버튼 방식)
+    # 타로
     if st.button(t["tarot_btn"], use_container_width=True):
         k, meaning = pick_tarot(st.session_state.lang)
         st.markdown(f"""
@@ -1412,7 +1326,7 @@ def render_result():
         </div>
         """, unsafe_allow_html=True)
 
-    # (6) 공유 텍스트 (이모지 깨짐 최소화: 텍스트 위주)
+    # 공유 텍스트
     share_text = (
         f"{display_name} 2026 Fortune\n"
         f"{zodiac_label} + {mbti}\n\n"
@@ -1422,37 +1336,31 @@ def render_result():
         f"{s['advice']}:\n{advice}\n\n"
         f"{APP_URL}"
     )
-
     render_share_button(share_text)
 
-    # (7) 미니게임: 한국어에서만 + 광고 바로 위(요청대로 결과/타로 아래쪽에 위치)
+    # 미니게임 (한국어만)
     if st.session_state.lang == "ko":
-        st.markdown(f"<div class='card'><div style='font-weight:900;font-size:1.2rem;'>{t['mini_title']}</div>"
-                    f"<div style='margin-top:8px;' class='soft-box'>{t['mini_desc']}</div></div>",
-                    unsafe_allow_html=True)
+        st.markdown(
+            f"<div class='card'><div style='font-weight:900;font-size:1.2rem;'>{t['mini_title']}</div>"
+            f"<div style='margin-top:8px;' class='soft-box'>{t['mini_desc']}</div></div>",
+            unsafe_allow_html=True
+        )
 
-        # 구글시트 상태
         ws = get_sheet()
         sheet_ready = ws is not None
-
         if not sheet_ready:
             st.warning(t["sheet_fail"])
         else:
             st.success(t["sheet_ok"])
 
-        # 선착순 20명 마감 여부(시트 연결된 경우에만)
         closed = False
-        winners_now = 0
         if sheet_ready:
             try:
-                winners_now = count_winners(ws)
-                if winners_now >= 20:
+                if count_winners(ws) >= 20:
                     closed = True
             except Exception:
-                # 조회 실패 시엔 닫지 않음
                 closed = False
 
-        # 시도 횟수 표시
         tries_left = max(0, st.session_state.max_attempts - st.session_state.attempts_used)
         st.markdown(f"<div class='small-note'>{t['mini_try_left']}: <b>{tries_left}</b> / {st.session_state.max_attempts}</div>",
                     unsafe_allow_html=True)
@@ -1460,7 +1368,6 @@ def render_result():
         if closed:
             st.info(t["mini_closed"])
         else:
-            # 게임 UI
             colA, colB = st.columns(2)
 
             with colA:
@@ -1484,20 +1391,16 @@ def render_result():
 
                         st.markdown(f"<div class='card'><b>{t['mini_result']}</b>: {elapsed:.3f}s</div>", unsafe_allow_html=True)
 
-                        # 당첨 판정: 20.160 ~ 20.169
                         if 20.160 <= elapsed <= 20.169:
-                            # 당첨이면 폼 띄우기
                             st.session_state.show_win_form = True
                             st.session_state.win_seconds = elapsed
                         else:
                             st.info("아쉽게도 미달/초과! 다시 도전해보세요 🙂")
 
-            # 실행 중이면 현재 경과(실시간은 아니지만 상태 표시)
             if st.session_state.game_running and st.session_state.start_time is not None:
                 now_elapsed = time.monotonic() - st.session_state.start_time
                 st.markdown(f"<div class='small-note'>⏱️ 진행 중… 현재 {now_elapsed:.3f}s</div>", unsafe_allow_html=True)
 
-            # 당첨 폼 (팝업 느낌: expander 대신 컨테이너)
             if st.session_state.show_win_form and st.session_state.win_seconds is not None:
                 st.markdown("<div class='card'>", unsafe_allow_html=True)
                 st.markdown(f"### {t['win_title']}")
@@ -1509,7 +1412,6 @@ def render_result():
 
                 consent = st.checkbox(f"{t['win_consent']}  \n{t['win_consent_text']}", value=False, key="consent_chk")
 
-                # 제출
                 if st.button(t["win_submit"], use_container_width=True):
                     if not sheet_ready:
                         st.error(t["sheet_fail"])
@@ -1519,25 +1421,15 @@ def render_result():
                         st.warning("이름/전화번호를 정확히 입력해주세요.")
                     else:
                         try:
-                            # 중복 참여 방지(전화번호 기준)
                             if phone_exists(ws, ph_norm):
                                 st.warning(t["mini_dup"])
                             else:
-                                # 선착순 20명 재확인(제출 시점)
-                                winners_now2 = count_winners(ws)
-                                if winners_now2 >= 20:
+                                if count_winners(ws) >= 20:
                                     st.info(t["mini_closed"])
                                 else:
-                                    append_entry(
-                                        ws,
-                                        nm.strip(),
-                                        ph_norm,
-                                        st.session_state.lang,
-                                        float(st.session_state.win_seconds),
-                                        st.session_state.shared
-                                    )
+                                    append_entry(ws, nm.strip(), ph_norm, st.session_state.lang,
+                                                 float(st.session_state.win_seconds), st.session_state.shared)
                                     st.success(t["win_thanks"])
-                                    # 폼 닫기
                                     st.session_state.show_win_form = False
                                     st.session_state.win_seconds = None
                         except Exception as e:
@@ -1545,13 +1437,12 @@ def render_result():
 
                 st.markdown("</div>", unsafe_allow_html=True)
 
-    # 하단 리셋(중복 기능 제거: 입력화면 버튼 삭제 요청 반영 → 결과화면에만 유지)
+    # 결과 화면에만 "처음부터 다시하기"(입력 화면 하단 버튼은 없음)
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
         st.rerun()
 
     st.caption(APP_URL)
-
 
 # =========================================================
 # 12) 라우팅
