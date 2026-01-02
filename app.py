@@ -43,7 +43,7 @@ def normalize_phone(phone: str) -> str:
     return re.sub(r"[^0-9]", "", phone or "")
 
 # =========================================================
-# 2) Query param: shared=1 감지해서 추가 시도 1회 지급
+# 2) Query params
 # =========================================================
 def get_query_params():
     try:
@@ -54,17 +54,20 @@ def get_query_params():
         except Exception:
             return {}
 
-def clear_shared_param():
+def set_query_params(params: dict):
+    try:
+        st.query_params.clear()
+        for k, v in params.items():
+            st.query_params[k] = v
+    except Exception:
+        st.experimental_set_query_params(**params)
+
+def clear_param(param_key: str):
     try:
         params = get_query_params()
-        if "shared" in params:
-            params.pop("shared", None)
-            try:
-                st.query_params.clear()
-                for k, v in params.items():
-                    st.query_params[k] = v
-            except Exception:
-                st.experimental_set_query_params(**params)
+        if param_key in params:
+            params.pop(param_key, None)
+            set_query_params(params)
     except Exception:
         pass
 
@@ -77,7 +80,7 @@ def inject_seo(lang_code: str):
         "en": "Free 2026 Zodiac + MBTI + Saju + Daily/Tomorrow fortune + Tarot.",
         "ja": "2026年の干支運勢＋MBTI＋四柱＋今日/明日＋タロットを無料で。",
         "zh": "免费：2026生肖运势 + MBTI + 四柱 + 今日/明日 + 塔罗。",
-        "ru": "Бесплатно: 2026 зодиак + MBTI + саджу + сегодня/завтра + таро.",
+        "ru": "Бесплатно: 2026 зодиак + MBTI + саджу + сегодня/завтра + таро。",
         "hi": "मुफ़्त: 2026 राशि + MBTI + साजू + आज/कल + टैरो।",
     }
     kw_map = {
@@ -226,15 +229,17 @@ T = {
         "sheet_fail": "구글시트 연결이 아직 안 되어 있어요. (Secrets/requirements/시트 공유/탭 이름 확인 필요)",
         "sheet_ok": "구글시트 연결 완료",
         "faq_title": "🔎 검색/AI 노출용 정보(FAQ)",
-        "stopwatch_note": "START 후 STOP을 눌러 기록을 제출하세요.",
+        "stopwatch_note": "START 후 STOP을 눌러 기록을 자동 입력합니다.",
         "mbti_test_12_title": "MBTI 12문항 (각 축 3문항)",
         "mbti_test_16_title": "MBTI 16문항 (각 축 4문항)",
         "mbti_test_help": "각 문항에서 더 가까운 쪽을 선택하세요.",
         "try_over": "남은 시도가 없습니다.",
         "miss": "아쉽게도 미달/초과! 다시 도전해보세요 🙂",
         "share_not_supported": "이 기기에서는 시스템 공유가 지원되지 않습니다.",
+        "time_input_label": "STOP을 누르면 기록이 자동으로 들어옵니다.",
+        "submit_record": "기록 제출",
+        "no_tries_block": "남은 시도가 0이라 START/STOP이 비활성화됩니다.",
     },
-    # 다른 언어는 간단 유지
     "en": {"lang_pick":"Language","title":"2026 Zodiac + MBTI + Saju + Today/Tomorrow","subtitle":"Completely Free",
            "name":"Name (shown in result)","birth":"Birth date","year":"Year","month":"Month","day":"Day",
            "mbti_mode":"MBTI setting","mbti_direct":"Pick directly","mbti_12":"Quick test (12)","mbti_16":"Full test (16)",
@@ -242,8 +247,9 @@ T = {
            "share_link_btn":"🔗 Share link","share_link_hint":"Opens native share sheet when supported.",
            "tarot_btn":"Draw today's tarot","tarot_title":"Today's Tarot",
            "sections":{"zodiac":"Zodiac","mbti":"MBTI","saju":"Saju","today":"Today","tomorrow":"Tomorrow","year_all":"2026 Overall","advice":"Combo advice"},
-           "ad_placeholder":"AD","faq_title":"FAQ","stopwatch_note":"Press START then STOP to submit.",
-           "mbti_test_12_title":"MBTI 12 Questions","mbti_test_16_title":"MBTI 16 Questions","mbti_test_help":"Pick closer option."},
+           "ad_placeholder":"AD","faq_title":"FAQ","stopwatch_note":"Press START then STOP to auto-fill the time.",
+           "mbti_test_12_title":"MBTI 12 Questions","mbti_test_16_title":"MBTI 16 Questions","mbti_test_help":"Pick the closer option.",
+           "time_input_label":"Time will be auto-filled after STOP.","submit_record":"Submit record","share_not_supported":"Native share not supported."},
     "ja": {"lang_pick":"言語","title":"2026年 干支 + MBTI + 四柱 + 今日/明日","subtitle":"完全無料",
            "name":"名前（結果に表示）","birth":"生年月日","year":"年","month":"月","day":"日",
            "mbti_mode":"MBTI 設定","mbti_direct":"直接選択","mbti_12":"簡易テスト（12）","mbti_16":"詳細テスト（16）",
@@ -251,8 +257,9 @@ T = {
            "share_link_btn":"🔗 リンク共有","share_link_hint":"対応端末では共有シートが開きます。",
            "tarot_btn":"今日のタロット","tarot_title":"今日のタロット",
            "sections":{"zodiac":"干支運勢","mbti":"MBTI特徴","saju":"四柱コメント","today":"今日","tomorrow":"明日","year_all":"2026年総合","advice":"アドバイス"},
-           "ad_placeholder":"AD","faq_title":"FAQ","stopwatch_note":"START→STOPで記録を送信。",
-           "mbti_test_12_title":"MBTI 12問","mbti_test_16_title":"MBTI 16問","mbti_test_help":"近い方を選択してください。"},
+           "ad_placeholder":"AD","faq_title":"FAQ","stopwatch_note":"START→STOPで記録を自動入力します。",
+           "mbti_test_12_title":"MBTI 12問","mbti_test_16_title":"MBTI 16問","mbti_test_help":"近い方を選択してください。",
+           "time_input_label":"STOP後に自動入力されます。","submit_record":"送信","share_not_supported":"この端末では共有が使えません。"},
     "zh": {"lang_pick":"语言","title":"2026 生肖 + MBTI + 四柱 + 今日/明日","subtitle":"完全免费",
            "name":"姓名（结果显示）","birth":"出生日期","year":"年","month":"月","day":"日",
            "mbti_mode":"MBTI 设置","mbti_direct":"直接选择","mbti_12":"快速测试（12）","mbti_16":"详细测试（16）",
@@ -260,8 +267,9 @@ T = {
            "share_link_btn":"🔗 分享链接","share_link_hint":"支持时打开系统分享。",
            "tarot_btn":"抽今日塔罗","tarot_title":"今日塔罗",
            "sections":{"zodiac":"生肖运势","mbti":"MBTI 特点","saju":"四柱短评","today":"今天","tomorrow":"明天","year_all":"2026 总运","advice":"组合建议"},
-           "ad_placeholder":"AD","faq_title":"FAQ","stopwatch_note":"按 START 再按 STOP 提交记录。",
-           "mbti_test_12_title":"MBTI 12题","mbti_test_16_title":"MBTI 16题","mbti_test_help":"选择更符合你的选项。"},
+           "ad_placeholder":"AD","faq_title":"FAQ","stopwatch_note":"按 START 再按 STOP 自动填入时间。",
+           "mbti_test_12_title":"MBTI 12题","mbti_test_16_title":"MBTI 16题","mbti_test_help":"选择更符合你的选项。",
+           "time_input_label":"STOP 后会自动填入。","submit_record":"提交记录","share_not_supported":"此设备不支持系统分享。"},
     "ru": {"lang_pick":"Язык","title":"2026: Зодиак + MBTI + Саджу + Сегодня/Завтра","subtitle":"Бесплатно",
            "name":"Имя (в результате)","birth":"Дата рождения","year":"Год","month":"Месяц","day":"День",
            "mbti_mode":"MBTI","mbti_direct":"Выбрать","mbti_12":"Тест (12)","mbti_16":"Тест (16)",
@@ -269,8 +277,9 @@ T = {
            "share_link_btn":"🔗 Поделиться","share_link_hint":"Системное меню при поддержке.",
            "tarot_btn":"Таро дня","tarot_title":"Таро дня",
            "sections":{"zodiac":"Зодиак","mbti":"MBTI","saju":"Саджу","today":"Сегодня","tomorrow":"Завтра","year_all":"Итог 2026","advice":"Совет"},
-           "ad_placeholder":"AD","faq_title":"FAQ","stopwatch_note":"START затем STOP.",
-           "mbti_test_12_title":"MBTI 12","mbti_test_16_title":"MBTI 16","mbti_test_help":"Выберите ближе к вам."},
+           "ad_placeholder":"AD","faq_title":"FAQ","stopwatch_note":"START затем STOP — время заполнится автоматически.",
+           "mbti_test_12_title":"MBTI 12","mbti_test_16_title":"MBTI 16","mbti_test_help":"Выберите ближе к вам.",
+           "time_input_label":"После STOP заполнится автоматически.","submit_record":"Отправить","share_not_supported":"Нет системного шеринга."},
     "hi": {"lang_pick":"भाषा","title":"2026 राशि + MBTI + साजू + आज/कल","subtitle":"मुफ़्त",
            "name":"नाम","birth":"जन्मतिथि","year":"वर्ष","month":"महीना","day":"दिन",
            "mbti_mode":"MBTI","mbti_direct":"सीधे चुनें","mbti_12":"टेस्ट (12)","mbti_16":"टेस्ट (16)",
@@ -278,9 +287,18 @@ T = {
            "share_link_btn":"🔗 शेयर","share_link_hint":"समर्थित हो तो सिस्टम शेयर खुलेगा।",
            "tarot_btn":"आज का टैरो","tarot_title":"आज का टैरो",
            "sections":{"zodiac":"राशि","mbti":"MBTI","saju":"साजू","today":"आज","tomorrow":"कल","year_all":"2026","advice":"सलाह"},
-           "ad_placeholder":"AD","faq_title":"FAQ","stopwatch_note":"START फिर STOP.",
-           "mbti_test_12_title":"MBTI 12","mbti_test_16_title":"MBTI 16","mbti_test_help":"जो फिट हो चुनें।"},
+           "ad_placeholder":"AD","faq_title":"FAQ","stopwatch_note":"START फिर STOP — समय ऑटो भर जाएगा।",
+           "mbti_test_12_title":"MBTI 12","mbti_test_16_title":"MBTI 16","mbti_test_help":"जो फिट हो चुनें।",
+           "time_input_label":"STOP के बाद ऑटो भर जाएगा।","submit_record":"सबमिट","share_not_supported":"Native share समर्थित नहीं।"},
 }
+
+def qtxt(lang: str, ko: str, en: str, ja: str = None, zh: str = None, ru: str = None, hi: str = None) -> str:
+    if lang == "ko": return ko
+    if lang == "ja" and ja: return ja
+    if lang == "zh" and zh: return zh
+    if lang == "ru" and ru: return ru
+    if lang == "hi" and hi: return hi
+    return en
 
 # =========================================================
 # 5) Tarot (localized)
@@ -367,47 +385,78 @@ SAJU_MSGS = {
         "수(水) 기운 → 흐름을 타면 기회가 온다!",
     ]
 }
-DAILY = {
-    "ko":[
-        "정리하면 운이 열립니다.",
-        "사람 운이 강해요. 오늘은 대화가 열쇠!",
-        "작은 기회가 커집니다. 즉흥보다 계획!",
-        "충동구매만 막으면 재물운이 붙어요.",
-        "집중력이 좋아요. 짧게 몰입하면 성과!",
-        "무리한 일정은 금물. 컨디션 관리가 1순위!",
-    ]
-}
-YEAR_ALL = {
-    "ko":[
-        "꾸준함이 대박을 만듭니다. 작은 습관이 큰 결과로!",
-        "사람과 인연이 피어나는 해. 소개/협업운 상승!",
-        "도전하면 성과가 따라옵니다. 단, 무리한 베팅은 금지!",
-        "정리·정돈이 운을 키웁니다. 미뤄둔 일을 정리해보세요.",
-    ]
-}
+DAILY = {"ko":[
+    "정리하면 운이 열립니다.",
+    "사람 운이 강해요. 오늘은 대화가 열쇠!",
+    "작은 기회가 커집니다. 즉흥보다 계획!",
+    "충동구매만 막으면 재물운이 붙어요.",
+    "집중력이 좋아요. 짧게 몰입하면 성과!",
+    "무리한 일정은 금물. 컨디션 관리가 1순위!",
+]}
+YEAR_ALL = {"ko":[
+    "꾸준함이 대박을 만듭니다. 작은 습관이 큰 결과로!",
+    "사람과 인연이 피어나는 해. 소개/협업운 상승!",
+    "도전하면 성과가 따라옵니다. 단, 무리한 베팅은 금지!",
+    "정리·정돈이 운을 키웁니다. 미뤄둔 일을 정리해보세요.",
+]}
 
 # =========================================================
-# 7) MBTI 12/16 Questions (복구)
+# 7) MBTI 12/16 Questions (언어 적용)
+#    - 한국어 외 언어는 해당 언어(없으면 영어)로 질문/선택지 표시
 # =========================================================
-MBTI_Q_12 = [
-    ("EI","사람들과 있을 때 에너지가 더 생긴다","혼자 있을 때 에너지가 더 생긴다"),
-    ("SN","현실적인 정보가 편하다","가능성/아이디어가 편하다"),
-    ("TF","결정은 논리/원칙이 우선","결정은 사람/상황 배려가 우선"),
-    ("JP","계획대로 진행해야 마음이 편하다","유연하게 바뀌어도 괜찮다"),
-    ("EI","말하며 생각이 정리된다","생각한 뒤 말하는 편이다"),
-    ("SN","경험/사실을 믿는 편","직감/영감을 믿는 편"),
-    ("TF","피드백은 직설이 낫다","피드백은 부드럽게가 낫다"),
-    ("JP","마감 전에 미리 끝내는 편","마감 직전에 몰아서 하는 편"),
-    ("EI","주말엔 약속이 있으면 좋다","주말엔 혼자 쉬고 싶다"),
-    ("SN","설명은 구체적으로","설명은 큰그림으로"),
-    ("TF","갈등은 원인/해결이 우선","갈등은 감정/관계가 우선"),
-    ("JP","정리/정돈이 잘 되어야 편하다","어수선해도 일단 진행 가능"),
+# 각 요소: (axis, left_text_by_lang, right_text_by_lang)
+MBTI_Q_12_L10N = [
+    ("EI",
+     {"ko":"사람들과 있을 때 에너지가 더 생긴다", "en":"I gain energy with people", "ja":"人といると元気になる", "zh":"与人相处更有能量", "ru":"С людьми я заряжаюсь", "hi":"लोगों के साथ ऊर्जा बढ़ती है"},
+     {"ko":"혼자 있을 때 에너지가 더 생긴다", "en":"I gain energy alone", "ja":"一人でいると元気になる", "zh":"独处更有能量", "ru":"В одиночестве я заряжаюсь", "hi":"अकेले रहने से ऊर्जा बढ़ती है"}),
+    ("SN",
+     {"ko":"현실적인 정보가 편하다", "en":"I prefer practical facts", "ja":"現実的な情報が楽", "zh":"更偏好现实信息", "ru":"Предпочитаю факты", "hi":"व्यावहारिक तथ्य पसंद हैं"},
+     {"ko":"가능성/아이디어가 편하다", "en":"I prefer ideas/possibilities", "ja":"可能性やアイデアが楽", "zh":"更偏好可能性/想法", "ru":"Предпочитаю идеи/возможности", "hi":"विचार/संभावनाएँ पसंद हैं"}),
+    ("TF",
+     {"ko":"결정은 논리/원칙이 우선", "en":"Logic/principles first", "ja":"論理/原則が優先", "zh":"逻辑/原则优先", "ru":"Логика/принципы важнее", "hi":"तर्क/सिद्धांत पहले"},
+     {"ko":"결정은 사람/상황 배려가 우선", "en":"People/context first", "ja":"人/状況への配慮が優先", "zh":"人/情境优先", "ru":"Люди/контекст важнее", "hi":"लोग/परिस्थिति पहले"}),
+    ("JP",
+     {"ko":"계획대로 진행해야 마음이 편하다", "en":"I feel better with plans", "ja":"計画通りが安心", "zh":"按计划更安心", "ru":"С планом спокойнее", "hi":"योजना से आराम"},
+     {"ko":"유연하게 바뀌어도 괜찮다", "en":"I'm okay with changes", "ja":"柔軟に変わってもOK", "zh":"灵活改变也可以", "ru":"Нормально, если меняется", "hi":"लचीलापन ठीक"}),
+    ("EI",
+     {"ko":"말하며 생각이 정리된다", "en":"I think while speaking", "ja":"話しながら整理する", "zh":"边说边整理思路", "ru":"Думаю, говоря", "hi":"बोलते हुए सोचता/ती हूँ"},
+     {"ko":"생각한 뒤 말하는 편이다", "en":"I speak after thinking", "ja":"考えてから話す", "zh":"想好再说", "ru":"Сначала думаю, потом говорю", "hi":"सोचकर बोलता/ती हूँ"}),
+    ("SN",
+     {"ko":"경험/사실을 믿는 편", "en":"I trust experience/facts", "ja":"経験/事実を信じる", "zh":"更相信经验/事实", "ru":"Верю опыту/фактам", "hi":"अनुभव/तथ्य पर भरोसा"},
+     {"ko":"직감/영감을 믿는 편", "en":"I trust intuition", "ja":"直感/ひらめきを信じる", "zh":"更相信直觉", "ru":"Верю интуиции", "hi":"अंतर्ज्ञान पर भरोसा"}),
+    ("TF",
+     {"ko":"피드백은 직설이 낫다", "en":"Direct feedback is better", "ja":"率直な指摘が良い", "zh":"直接反馈更好", "ru":"Лучше прямо", "hi":"सीधा फीडबैक बेहतर"},
+     {"ko":"피드백은 부드럽게가 낫다", "en":"Gentle feedback is better", "ja":"やわらかい方が良い", "zh":"温和反馈更好", "ru":"Лучше мягко", "hi":"नरम फीडबैक बेहतर"}),
+    ("JP",
+     {"ko":"마감 전에 미리 끝내는 편", "en":"I finish early", "ja":"締切前に終える", "zh":"提前完成", "ru":"Заканчиваю заранее", "hi":"पहले खत्म करता/ती हूँ"},
+     {"ko":"마감 직전에 몰아서 하는 편", "en":"I do it near the deadline", "ja":"締切直前にまとめて", "zh":"临近截止再做", "ru":"Делаю перед дедлайном", "hi":"डेडलाइन पर करता/ती हूँ"}),
+    ("EI",
+     {"ko":"주말엔 약속이 있으면 좋다", "en":"I like weekend plans", "ja":"週末は予定が欲しい", "zh":"周末喜欢安排", "ru":"Хочу планы на выходные", "hi":"वीकेंड प्लान पसंद"},
+     {"ko":"주말엔 혼자 쉬고 싶다", "en":"I want to rest alone", "ja":"週末は一人で休みたい", "zh":"周末想独自休息", "ru":"Хочу отдохнуть один/одна", "hi":"अकेले आराम चाहता/ती हूँ"}),
+    ("SN",
+     {"ko":"설명은 구체적으로", "en":"I prefer concrete details", "ja":"具体的に説明", "zh":"喜欢具体说明", "ru":"Нужны детали", "hi":"ठोस विवरण"},
+     {"ko":"설명은 큰그림으로", "en":"I prefer the big picture", "ja":"全体像で説明", "zh":"喜欢大局说明", "ru":"Нужна общая картина", "hi":"बिग पिक्चर"}),
+    ("TF",
+     {"ko":"갈등은 원인/해결이 우선", "en":"Cause/solution first", "ja":"原因/解決が優先", "zh":"原因/解决优先", "ru":"Причина/решение важнее", "hi":"कारण/समाधान पहले"},
+     {"ko":"갈등은 감정/관계가 우선", "en":"Feelings/relationship first", "ja":"感情/関係が優先", "zh":"情绪/关系优先", "ru":"Чувства/отношения важнее", "hi":"भावना/रिश्ता पहले"}),
+    ("JP",
+     {"ko":"정리/정돈이 잘 되어야 편하다", "en":"I like things organized", "ja":"整理整頓が安心", "zh":"喜欢井然有序", "ru":"Люблю порядок", "hi":"व्यवस्था पसंद"},
+     {"ko":"어수선해도 일단 진행 가능", "en":"Messy is fine; keep going", "ja":"多少散らかってもOK", "zh":"乱一点也能推进", "ru":"Хаос терпим, лишь бы шло", "hi":"थोड़ा बिखरा भी चलेगा"}),
 ]
-MBTI_Q_16 = MBTI_Q_12 + [
-    ("EI","새로운 사람을 만나면 설렌다","새로운 사람은 적응 시간이 필요"),
-    ("SN","지금 필요한 현실이 중요","미래 가능성이 더 중요"),
-    ("TF","공정함이 최우선","조화로움이 최우선"),
-    ("JP","일정이 확정되어야 안심","상황에 따라 바뀌는 게 자연스러움"),
+
+MBTI_Q_16_EXTRA_L10N = [
+    ("EI",
+     {"ko":"새로운 사람을 만나면 설렌다", "en":"Meeting new people excites me", "ja":"新しい出会いにワクワクする", "zh":"结识新朋友很兴奋", "ru":"Новые люди вдохновляют", "hi":"नए लोग उत्साहित करते हैं"},
+     {"ko":"새로운 사람은 적응 시간이 필요", "en":"I need time to adapt to new people", "ja":"新しい人には慣れる時間が必要", "zh":"需要适应时间", "ru":"Нужно время привыкнуть", "hi":"अभ्यस्त होने में समय चाहिए"}),
+    ("SN",
+     {"ko":"지금 필요한 현실이 중요", "en":"Current reality matters more", "ja":"今必要な現実が重要", "zh":"当下现实更重要", "ru":"Важнее текущая реальность", "hi":"वर्तमान वास्तविकता महत्वपूर्ण"},
+     {"ko":"미래 가능성이 더 중요", "en":"Future possibilities matter more", "ja":"未来の可能性が重要", "zh":"未来可能性更重要", "ru":"Важнее будущие возможности", "hi":"भविष्य की संभावना महत्वपूर्ण"}),
+    ("TF",
+     {"ko":"공정함이 최우선", "en":"Fairness is top priority", "ja":"公平さが最優先", "zh":"公平最重要", "ru":"Справедливость важнее всего", "hi":"न्याय सबसे ऊपर"},
+     {"ko":"조화로움이 최우선", "en":"Harmony is top priority", "ja":"調和が最優先", "zh":"和谐最重要", "ru":"Гармония важнее всего", "hi":"सामंजस्य सबसे ऊपर"}),
+    ("JP",
+     {"ko":"일정이 확정되어야 안심", "en":"I feel safe when schedules are fixed", "ja":"予定が確定すると安心", "zh":"日程确定更安心", "ru":"Спокойнее при фиксированном плане", "hi":"योजना तय हो तो आराम"},
+     {"ko":"상황에 따라 바뀌는 게 자연스러움", "en":"It’s natural for plans to change", "ja":"状況で変わるのが自然", "zh":"计划变化很正常", "ru":"Нормально, если планы меняются", "hi":"बदलाव स्वाभाविक"}),
 ]
 
 def compute_mbti_from_answers(answers, default="ENFP"):
@@ -488,16 +537,13 @@ def append_entry(ws, name, phone, lang, seconds, shared_bool):
     ws.append_row([now_str, name, phone, lang, f"{seconds:.3f}", str(bool(shared_bool))])
 
 # =========================================================
-# 9) Share Button (오직 “시스템 공유창”만)
-#    - navigator.share가 있으면: 그 공유창(캡쳐처럼) 뜸
-#    - 성공(에러 없이 종료) 시에만 ?shared=1로 이동(추가 1회)
-#    - 지원 안 되면 안내만(다른 대안 UI 없음)
+# 9) Share Button (시스템 공유창만)
 # =========================================================
 def share_button_native_only(label: str, not_supported_text: str):
     st.components.v1.html(
         f"""
 <div style="margin: 8px 0;">
-  <button id="btn" style="
+  <button id="btnShare" style="
     width:100%;
     border:none;border-radius:999px;
     padding:12px 14px;
@@ -508,10 +554,9 @@ def share_button_native_only(label: str, not_supported_text: str):
 </div>
 <script>
 (function() {{
-  const btn = document.getElementById("btn");
+  const btn = document.getElementById("btnShare");
   const url = {json.dumps(APP_URL, ensure_ascii=False)};
   const notSupported = {json.dumps(not_supported_text, ensure_ascii=False)};
-
   btn.addEventListener("click", async () => {{
     if (!navigator.share) {{
       alert(notSupported);
@@ -519,10 +564,9 @@ def share_button_native_only(label: str, not_supported_text: str):
     }}
     try {{
       await navigator.share({{ title: "2026 Fortune", text: url, url }});
-      // 공유창 정상 종료(=성공으로 간주) → 보너스 지급용 파라미터
       window.location.href = url + "?shared=1";
     }} catch (e) {{
-      // 사용자가 취소한 경우 등: 아무 것도 안 함
+      // user cancelled → do nothing
     }}
   }});
 }})();
@@ -532,10 +576,13 @@ def share_button_native_only(label: str, not_supported_text: str):
     )
 
 # =========================================================
-# 10) Stopwatch Component
+# 10) Stopwatch Component (STOP 시 기록을 ?t= 로 자동 주입)
+#     + tries_left == 0이면 START/STOP 비활성화
 # =========================================================
-def stopwatch_component(note_text: str):
-    return st.components.v1.html(
+def stopwatch_component_auto_fill(note_text: str, tries_left: int):
+    disabled = "true" if tries_left <= 0 else "false"
+    # STOP 시 url?t=20.163 으로 리다이렉트 → 파이썬이 읽어서 자동 입력칸 채움
+    st.components.v1.html(
         f"""
 <div style="
   background: rgba(255,255,255,0.96);
@@ -569,7 +616,8 @@ def stopwatch_component(note_text: str):
       font-weight:900;
       background:#6b4fd6; color:white;
       cursor:pointer;
-    ">START</button>
+      opacity: { "0.45" if tries_left <= 0 else "1" };
+    ">{ "START" }</button>
 
     <button id="stopBtn" style="
       flex:1; max-width: 240px;
@@ -578,7 +626,8 @@ def stopwatch_component(note_text: str):
       font-weight:900;
       background:#ff8c50; color:white;
       cursor:pointer;
-    ">STOP</button>
+      opacity: { "0.45" if tries_left <= 0 else "1" };
+    ">{ "STOP" }</button>
   </div>
 
   <div style="margin-top:10px; font-size:0.92rem; opacity:0.85;">
@@ -588,12 +637,22 @@ def stopwatch_component(note_text: str):
 
 <script>
 (function() {{
+  const disabled = {disabled};
+  const startBtn = document.getElementById("startBtn");
+  const stopBtn = document.getElementById("stopBtn");
+  if (disabled) {{
+    startBtn.disabled = true;
+    stopBtn.disabled = true;
+    startBtn.style.cursor = "not-allowed";
+    stopBtn.style.cursor = "not-allowed";
+    return;
+  }}
+
   let running = false;
   let startTime = 0;
   let rafId = null;
   const display = document.getElementById("display");
-  const startBtn = document.getElementById("startBtn");
-  const stopBtn = document.getElementById("stopBtn");
+  const baseUrl = {json.dumps(APP_URL, ensure_ascii=False)};
 
   function fmt(ms) {{
     const total = Math.max(0, ms);
@@ -624,7 +683,16 @@ def stopwatch_component(note_text: str):
     if (rafId) cancelAnimationFrame(rafId);
     const now = performance.now();
     const elapsedSec = (now - startTime) / 1000.0;
-    alert("기록: " + elapsedSec.toFixed(3) + "s\\n아래 입력칸에 그대로 붙여넣어 제출하세요.");
+    const v = elapsedSec.toFixed(3);
+
+    // 현재 URL의 다른 파라미터(shared 등)는 유지하고 t만 갱신
+    try {{
+      const u = new URL(window.location.href);
+      u.searchParams.set("t", v);
+      window.location.href = u.toString();
+    }} catch (e) {{
+      window.location.href = baseUrl + "?t=" + v;
+    }}
   }});
 }})();
 </script>
@@ -644,12 +712,15 @@ if "stage" not in st.session_state: st.session_state.stage = "input"
 if "mbti" not in st.session_state: st.session_state.mbti = None
 if "mbti_mode" not in st.session_state: st.session_state.mbti_mode = "direct"
 
+# 미니게임 상태(리셋에서 유지할 것)
 if "shared" not in st.session_state: st.session_state.shared = False
 if "max_attempts" not in st.session_state: st.session_state.max_attempts = 1
 if "attempts_used" not in st.session_state: st.session_state.attempts_used = 0
 if "show_win_form" not in st.session_state: st.session_state.show_win_form = False
 if "win_seconds" not in st.session_state: st.session_state.win_seconds = None
+if "elapsed_input" not in st.session_state: st.session_state.elapsed_input = ""
 
+# ---- shared=1 감지(보너스 1회) ----
 qp = get_query_params()
 shared_val = qp.get("shared", "0")
 if isinstance(shared_val, list):
@@ -660,10 +731,24 @@ if str(shared_val) == "1":
         st.session_state.shared = True
         st.session_state.max_attempts = 2
         safe_toast(T["ko"]["share_bonus_done"] if st.session_state.lang == "ko" else "Share bonus applied!")
-    clear_shared_param()
+    clear_param("shared")
+
+# ---- STOP 기록 t= 감지 → 자동 입력칸 채우기 ----
+t_val = qp.get("t", None)
+if isinstance(t_val, list):
+    t_val = t_val[0] if t_val else None
+
+if t_val is not None:
+    # 숫자 검증 후 세션에 넣고 param 제거
+    try:
+        _v = float(str(t_val).strip())
+        st.session_state.elapsed_input = f"{_v:.3f}"
+    except Exception:
+        pass
+    clear_param("t")
 
 # =========================================================
-# 12) Style
+# 12) Style (디자인 변경 금지: 그대로 유지)
 # =========================================================
 st.markdown("""
 <style>
@@ -772,8 +857,21 @@ def combo_advice(lang: str, mbti: str) -> str:
     return "Love/Money/Work/Health advice."
 
 # =========================================================
-# 15) Screens
+# 15) MBTI Test Renderer (언어 적용)
 # =========================================================
+def build_mbti_questions(lang: str, mode: str):
+    base = []
+    for axis, left_map, right_map in MBTI_Q_12_L10N:
+        left = left_map.get(lang, left_map.get("en"))
+        right = right_map.get(lang, right_map.get("en"))
+        base.append((axis, left, right))
+    if mode == "16":
+        for axis, left_map, right_map in MBTI_Q_16_EXTRA_L10N:
+            left = left_map.get(lang, left_map.get("en"))
+            right = right_map.get(lang, right_map.get("en"))
+            base.append((axis, left, right))
+    return base
+
 def render_mbti_test(questions, title: str, key_prefix: str):
     st.markdown(f"<div class='card'><b>{title}</b><br><span style='opacity:0.85;'>{t['mbti_test_help']}</span></div>", unsafe_allow_html=True)
     answers = []
@@ -785,6 +883,33 @@ def render_mbti_test(questions, title: str, key_prefix: str):
         return True
     return False
 
+# =========================================================
+# 16) Reset (미니게임 시도/공유는 유지)
+# =========================================================
+def reset_input_only_keep_minigame():
+    keep_keys = {
+        "lang",
+        "shared", "max_attempts", "attempts_used", "show_win_form", "win_seconds",
+        "elapsed_input",
+    }
+    current = dict(st.session_state)
+    st.session_state.clear()
+    for k, v in current.items():
+        if k in keep_keys:
+            st.session_state[k] = v
+
+    # 입력값 초기화
+    st.session_state.name = ""
+    st.session_state.y = 2005
+    st.session_state.m = 1
+    st.session_state.d = 1
+    st.session_state.stage = "input"
+    st.session_state.mbti = None
+    st.session_state.mbti_mode = "direct"
+
+# =========================================================
+# 17) Screens
+# =========================================================
 def render_input():
     st.markdown(f"""
     <div class="header-hero">
@@ -804,9 +929,12 @@ def render_input():
 
     st.markdown(f"<div class='card'><b>{t['mbti_mode']}</b></div>", unsafe_allow_html=True)
     try:
-        mode = st.radio("", [t["mbti_direct"], t["mbti_12"], t["mbti_16"]], index=0 if st.session_state.mbti_mode=="direct" else (1 if st.session_state.mbti_mode=="12" else 2), horizontal=True)
+        mode = st.radio("", [t["mbti_direct"], t["mbti_12"], t["mbti_16"]],
+                        index=0 if st.session_state.mbti_mode=="direct" else (1 if st.session_state.mbti_mode=="12" else 2),
+                        horizontal=True)
     except TypeError:
-        mode = st.radio("", [t["mbti_direct"], t["mbti_12"], t["mbti_16"]], index=0 if st.session_state.mbti_mode=="direct" else (1 if st.session_state.mbti_mode=="12" else 2))
+        mode = st.radio("", [t["mbti_direct"], t["mbti_12"], t["mbti_16"]],
+                        index=0 if st.session_state.mbti_mode=="direct" else (1 if st.session_state.mbti_mode=="12" else 2))
 
     if mode == t["mbti_direct"]:
         st.session_state.mbti_mode = "direct"
@@ -819,10 +947,12 @@ def render_input():
         idx = MBTI_LIST.index(st.session_state.mbti) if st.session_state.mbti in MBTI_LIST else (MBTI_LIST.index("ENFP") if "ENFP" in MBTI_LIST else 0)
         st.session_state.mbti = st.selectbox("MBTI", MBTI_LIST, index=idx)
     elif st.session_state.mbti_mode == "12":
-        done = render_mbti_test(MBTI_Q_12, t["mbti_test_12_title"], "q12")
+        questions = build_mbti_questions(st.session_state.lang, "12")
+        done = render_mbti_test(questions, t["mbti_test_12_title"], "q12")
         if done: st.success(f"MBTI: {st.session_state.mbti}")
     else:
-        done = render_mbti_test(MBTI_Q_16, t["mbti_test_16_title"], "q16")
+        questions = build_mbti_questions(st.session_state.lang, "16")
+        done = render_mbti_test(questions, t["mbti_test_16_title"], "q16")
         if done: st.success(f"MBTI: {st.session_state.mbti}")
 
     st.markdown('<div class="bigbtn">', unsafe_allow_html=True)
@@ -889,7 +1019,7 @@ def render_result():
         </div>
         """, unsafe_allow_html=True)
 
-    # ---- Share (네가 말한 그 방식만) ----
+    # ---- Share (시스템 공유창만) ----
     share_button_native_only(t["share_link_btn"], t.get("share_not_supported", "Share not supported."))
     st.caption(t["share_link_hint"])
 
@@ -940,23 +1070,33 @@ def render_result():
             unsafe_allow_html=True
         )
 
+        if tries_left <= 0:
+            st.info(t["no_tries_block"])
+
         if closed:
             st.info(t["mini_closed"])
         else:
-            stopwatch_component(t["stopwatch_note"])
-            elapsed_text = st.text_input("STOP 후 뜨는 기록(예: 20.163)을 여기에 붙여넣고 제출", value="", key="elapsed_input")
+            # STOP 시 기록 자동 입력 + 남은 시도 0이면 버튼 비활성화
+            stopwatch_component_auto_fill(t["stopwatch_note"], tries_left)
 
-            if st.button("기록 제출", use_container_width=True):
+            # 자동 입력칸(사용자 타이핑 필요 없게 만들었지만, 혹시 대비해서 남겨둠)
+            st.text_input(
+                t["time_input_label"],
+                value=st.session_state.elapsed_input,
+                key="elapsed_input"
+            )
+
+            if st.button(t["submit_record"], use_container_width=True):
                 if tries_left <= 0:
                     st.warning(t["try_over"])
                 else:
                     try:
-                        elapsed_val = float(elapsed_text.strip())
+                        elapsed_val = float((st.session_state.elapsed_input or "").strip())
                     except Exception:
                         elapsed_val = None
 
                     if elapsed_val is None:
-                        st.warning("기록 숫자를 정확히 입력해주세요. (예: 20.163)")
+                        st.warning("기록이 아직 없습니다. START → STOP을 먼저 눌러주세요.")
                     else:
                         st.session_state.attempts_used += 1
                         st.markdown(f"<div class='card'><b>기록</b>: {elapsed_val:.3f}s</div>", unsafe_allow_html=True)
@@ -1017,14 +1157,15 @@ def render_result():
         st.markdown("- Free 2026 zodiac + MBTI advice + saju + today/tomorrow + tarot.")
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # ---- reset: 입력/결과만 초기화 (미니게임 시도/공유 유지) ----
     if st.button(t["reset"], use_container_width=True):
-        st.session_state.clear()
+        reset_input_only_keep_minigame()
         st.rerun()
 
     st.caption(APP_URL)
 
 # =========================================================
-# 16) Router
+# 18) Router
 # =========================================================
 if st.session_state.stage == "input":
     render_input()
