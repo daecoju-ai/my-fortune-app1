@@ -3,8 +3,6 @@ from datetime import datetime, timedelta
 import random
 import re
 import json
-import base64
-from io import BytesIO
 
 # ---- Google Sheet ----
 try:
@@ -14,20 +12,11 @@ except Exception:
     gspread = None
     Credentials = None
 
-# ---- Image (Pillow) ----
-try:
-    from PIL import Image, ImageDraw, ImageFont
-except Exception:
-    Image = None
-    ImageDraw = None
-    ImageFont = None
-
-
 # =========================================================
 # 0) App Config
 # =========================================================
 APP_URL = "https://my-fortune.streamlit.app"
-SPREADSHEET_ID = "1WvuKXx2if2WvxmQaxkqzFW-BzDEWWma9hZgCr2jJQYY"  # 고정 기억
+SPREADSHEET_ID = "1WvuKXx2if2WvxmQaxkqzFW-BzDEWWma9hZgCr2jJQYY"  # 고정
 SHEET_NAME = "시트1"  # 고정
 
 st.set_page_config(
@@ -37,7 +26,21 @@ st.set_page_config(
 )
 
 # =========================================================
-# 1) SEO Inject (안전하게: UnboundLocalError 방지)
+# 1) Safe Toast
+# =========================================================
+def safe_toast(msg: str):
+    if not msg:
+        return
+    try:
+        if hasattr(st, "toast"):
+            st.toast(msg)
+        else:
+            st.success(msg)
+    except Exception:
+        st.success(msg)
+
+# =========================================================
+# 2) SEO Inject (안전하게)
 # =========================================================
 def inject_seo(lang_code: str):
     desc_map = {
@@ -74,7 +77,6 @@ def inject_seo(lang_code: str):
         "description": description
     }
 
-    # JSON-LD FAQ는 너무 길면 역효과라 최소로 유지
     faq_ld = {
         "@context": "https://schema.org",
         "@type": "FAQPage",
@@ -83,8 +85,10 @@ def inject_seo(lang_code: str):
         ]
     }
 
-    st.components.v1.html(
-        f"""
+    # 어떤 환경에서도 에러 안 나게 try 감싸기
+    try:
+        st.components.v1.html(
+            f"""
 <script>
 (function() {{
   try {{
@@ -122,7 +126,6 @@ def inject_seo(lang_code: str):
     }}
     canonical.setAttribute('href', appUrl);
 
-    // JSON-LD WebApp
     const webappLd = {json.dumps(json.dumps(webapp_ld, ensure_ascii=False))};
     let s1 = document.head.querySelector('script[data-jsonld="fortune-webapp"]');
     if(!s1) {{
@@ -133,7 +136,6 @@ def inject_seo(lang_code: str):
     }}
     s1.text = webappLd;
 
-    // JSON-LD FAQ
     const faqLd = {json.dumps(json.dumps(faq_ld, ensure_ascii=False))};
     let s2 = document.head.querySelector('script[data-jsonld="fortune-faq"]');
     if(!s2) {{
@@ -148,11 +150,13 @@ def inject_seo(lang_code: str):
 }})();
 </script>
 """,
-        height=0
-    )
+            height=0
+        )
+    except Exception:
+        pass
 
 # =========================================================
-# 2) Language / Text
+# 3) Language / Text
 # =========================================================
 LANGS = [
     ("ko", "한국어"),
@@ -179,11 +183,10 @@ T = {
         "go_result": "2026년 운세 보기!",
         "reset": "처음부터 다시하기",
         "share_link_btn": "🔗 링크 공유하기",
-        "share_link_hint": "버튼을 누르면 캡쳐처럼 ‘링크 공유’ 창이 뜹니다. (지원 안 되면 자동으로 복사)",
+        "share_link_hint": "버튼을 누르면 ‘링크 공유’ 창이 뜹니다. (지원 안 되면 자동으로 복사)",
         "copy_done": "링크를 복사했어요!",
         "tarot_btn": "오늘의 타로 카드 뽑기",
         "tarot_title": "오늘의 타로 카드",
-        "best_combo": "최고 조합!",
         "sections": {
             "zodiac": "띠 운세",
             "mbti": "MBTI 특징",
@@ -191,11 +194,6 @@ T = {
             "today": "오늘 운세",
             "tomorrow": "내일 운세",
             "year_all": "2026 전체 운세",
-            "love": "연애운",
-            "money": "재물운",
-            "work": "일/학업운",
-            "health": "건강운",
-            "point": "행운 포인트",
             "advice": "조합 조언",
         },
         "ad_placeholder": "AD (심사 통과 후 이 위치에 광고가 표시됩니다)",
@@ -223,8 +221,9 @@ T = {
         "mbti_test_12_title": "MBTI 12문항 (각 축 3문항)",
         "mbti_test_16_title": "MBTI 16문항 (각 축 4문항)",
         "mbti_test_help": "각 문항에서 더 가까운 쪽을 선택하세요.",
+        "try_over": "남은 시도가 없습니다.",
+        "miss": "아쉽게도 미달/초과! 다시 도전해보세요 🙂",
     },
-    # 다른 언어는 라벨/문장만 (미니게임은 한국어 전용)
     "en": {
         "lang_pick": "Language",
         "title": "2026 Zodiac + MBTI + Saju + Today/Tomorrow",
@@ -244,24 +243,8 @@ T = {
         "copy_done": "Link copied!",
         "tarot_btn": "Draw today's tarot",
         "tarot_title": "Today's Tarot",
-        "best_combo": "Best combo!",
-        "sections": {
-            "zodiac": "Zodiac",
-            "mbti": "MBTI",
-            "saju": "Saju",
-            "today": "Today",
-            "tomorrow": "Tomorrow",
-            "year_all": "2026 Overall",
-            "love": "Love",
-            "money": "Money",
-            "work": "Work/Study",
-            "health": "Health",
-            "point": "Lucky point",
-            "advice": "Combo advice",
-        },
+        "sections": {"zodiac": "Zodiac", "mbti": "MBTI", "saju": "Saju", "today": "Today", "tomorrow": "Tomorrow", "year_all": "2026 Overall", "advice": "Combo advice"},
         "ad_placeholder": "AD (Ads appear here after approval)",
-        "sheet_fail": "",
-        "sheet_ok": "",
         "faq_title": "FAQ (for search visibility)",
         "stopwatch_note": "Press START then STOP to submit.",
         "mbti_test_12_title": "MBTI 12 Questions",
@@ -287,21 +270,7 @@ T = {
         "copy_done": "コピーしました！",
         "tarot_btn": "今日のタロット",
         "tarot_title": "今日のタロット",
-        "best_combo": "最高の組み合わせ！",
-        "sections": {
-            "zodiac": "干支運勢",
-            "mbti": "MBTI特徴",
-            "saju": "四柱コメント",
-            "today": "今日",
-            "tomorrow": "明日",
-            "year_all": "2026年総合",
-            "love": "恋愛",
-            "money": "金運",
-            "work": "仕事/学業",
-            "health": "健康",
-            "point": "ラッキーポイント",
-            "advice": "アドバイス",
-        },
+        "sections": {"zodiac": "干支運勢", "mbti": "MBTI特徴", "saju": "四柱コメント", "today": "今日", "tomorrow": "明日", "year_all": "2026年総合", "advice": "アドバイス"},
         "ad_placeholder": "AD（審査通過後ここに表示）",
         "faq_title": "FAQ（検索表示の強化）",
         "stopwatch_note": "START→STOPで記録を送信。",
@@ -328,21 +297,7 @@ T = {
         "copy_done": "已复制！",
         "tarot_btn": "抽今日塔罗",
         "tarot_title": "今日塔罗",
-        "best_combo": "最佳组合！",
-        "sections": {
-            "zodiac": "生肖运势",
-            "mbti": "MBTI 特点",
-            "saju": "四柱短评",
-            "today": "今天",
-            "tomorrow": "明天",
-            "year_all": "2026 总运",
-            "love": "恋爱",
-            "money": "财运",
-            "work": "工作/学习",
-            "health": "健康",
-            "point": "幸运点",
-            "advice": "组合建议",
-        },
+        "sections": {"zodiac": "生肖运势", "mbti": "MBTI 特点", "saju": "四柱短评", "today": "今天", "tomorrow": "明天", "year_all": "2026 总运", "advice": "组合建议"},
         "ad_placeholder": "AD（审核通过后显示）",
         "faq_title": "FAQ（提升搜索可见性）",
         "stopwatch_note": "按 START 再按 STOP 提交记录。",
@@ -369,23 +324,9 @@ T = {
         "copy_done": "Ссылка скопирована!",
         "tarot_btn": "Таро дня",
         "tarot_title": "Таро дня",
-        "best_combo": "Лучшая комбинация!",
-        "sections": {
-            "zodiac": "Зодиак",
-            "mbti": "MBTI",
-            "saju": "Саджу",
-            "today": "Сегодня",
-            "tomorrow": "Завтра",
-            "year_all": "Итог 2026",
-            "love": "Любовь",
-            "money": "Деньги",
-            "work": "Работа/Учёба",
-            "health": "Здоровье",
-            "point": "Удачный пункт",
-            "advice": "Совет",
-        },
-        "ad_placeholder": "AD (после одобрения)",
-        "faq_title": "FAQ (для видимости в поиске)",
+        "sections": {"zodiac": "Зодиак", "mbti": "MBTI", "saju": "Саджу", "today": "Сегодня", "tomorrow": "Завтра", "year_all": "Итог 2026", "advice": "Совет"},
+        "ad_placeholder": "AD",
+        "faq_title": "FAQ",
         "stopwatch_note": "START затем STOP для отправки.",
         "mbti_test_12_title": "MBTI 12 вопросов",
         "mbti_test_16_title": "MBTI 16 вопросов",
@@ -410,21 +351,7 @@ T = {
         "copy_done": "लिंक कॉपी हो गया!",
         "tarot_btn": "आज का टैरो",
         "tarot_title": "आज का टैरो",
-        "best_combo": "बेस्ट कॉम्बो!",
-        "sections": {
-            "zodiac": "राशि",
-            "mbti": "MBTI",
-            "saju": "साजू",
-            "today": "आज",
-            "tomorrow": "कल",
-            "year_all": "2026 समग्र",
-            "love": "प्यार",
-            "money": "धन",
-            "work": "काम/पढ़ाई",
-            "health": "स्वास्थ्य",
-            "point": "लकी पॉइंट",
-            "advice": "सलाह",
-        },
+        "sections": {"zodiac": "राशि", "mbti": "MBTI", "saju": "साजू", "today": "आज", "tomorrow": "कल", "year_all": "2026 समग्र", "advice": "सलाह"},
         "ad_placeholder": "AD",
         "faq_title": "FAQ",
         "stopwatch_note": "START फिर STOP दबाएँ।",
@@ -435,43 +362,30 @@ T = {
 }
 
 # =========================================================
-# 3) Fortune Content (6 languages)
+# 4) Tarot with localized names
 # =========================================================
 TAROT = {
-    "The Sun": {
-        "ko": "태양 - 행복, 성공, 긍정 에너지",
-        "en": "Happiness, success, positive energy",
-        "ja": "幸福・成功・前向きなエネルギー",
-        "zh": "幸福、成功、积极能量",
-        "ru": "Счастье, успех, позитив",
-        "hi": "खुशी, सफलता, सकारात्मक ऊर्जा",
-    },
     "Wheel of Fortune": {
-        "ko": "운명의 수레바퀴 - 변화, 전환점",
-        "en": "Change, turning point",
-        "ja": "変化・転機",
-        "zh": "变化、转机",
-        "ru": "Перемены, поворот",
-        "hi": "बदलाव, टर्निंग पॉइंट",
+        "name": {"ko":"운명의 수레바퀴","en":"Wheel of Fortune","ja":"運命の輪","zh":"命运之轮","ru":"Колесо Фортуны","hi":"भाग्य का पहिया"},
+        "meaning": {"ko":"변화, 전환점","en":"Change, turning point","ja":"変化・転機","zh":"变化、转机","ru":"Перемены, поворот","hi":"बदलाव, टर्निंग पॉइंट"},
+    },
+    "The Sun": {
+        "name": {"ko":"태양","en":"The Sun","ja":"太陽","zh":"太阳","ru":"Солнце","hi":"सूर्य"},
+        "meaning": {"ko":"행복, 성공, 긍정 에너지","en":"Happiness, success, positive energy","ja":"幸福・成功・前向き","zh":"幸福、成功、积极","ru":"Счастье, успех, позитив","hi":"खुशी, सफलता, सकारात्मक"},
     },
     "Strength": {
-        "ko": "힘 - 용기, 인내",
-        "en": "Courage, patience",
-        "ja": "勇気・忍耐",
-        "zh": "勇气、耐心",
-        "ru": "Смелость, терпение",
-        "hi": "साहस, धैर्य",
+        "name": {"ko":"힘","en":"Strength","ja":"力","zh":"力量","ru":"Сила","hi":"शक्ति"},
+        "meaning": {"ko":"용기, 인내","en":"Courage, patience","ja":"勇気・忍耐","zh":"勇气、耐心","ru":"Смелость, терпение","hi":"साहस, धैर्य"},
     },
     "The World": {
-        "ko": "세계 - 완성, 성취",
-        "en": "Completion, achievement",
-        "ja": "完成・達成",
-        "zh": "完成、成就",
-        "ru": "Завершение, достижение",
-        "hi": "पूर्णता, उपलब्धि",
+        "name": {"ko":"세계","en":"The World","ja":"世界","zh":"世界","ru":"Мир","hi":"विश्व"},
+        "meaning": {"ko":"완성, 성취","en":"Completion, achievement","ja":"完成・達成","zh":"完成、成就","ru":"Завершение, достижение","hi":"पूर्णता, उपलब्धि"},
     },
 }
 
+# =========================================================
+# 5) Fortune content
+# =========================================================
 ZODIAC_ORDER = ["rat", "ox", "tiger", "rabbit", "dragon", "snake", "horse", "goat", "monkey", "rooster", "dog", "pig"]
 ZODIAC_LABEL = {
     "rat":     {"ko": "쥐띠", "en": "Rat", "ja": "鼠", "zh": "鼠", "ru": "Крыса", "hi": "चूहा"},
@@ -664,8 +578,7 @@ YEAR_ALL = {
 }
 
 # =========================================================
-# 4) MBTI 12 / 16 Questions (6 languages)
-#     - 각 문항은 축(EI/SN/TF/JP)과 두 선택지(왼쪽/오른쪽)
+# 6) MBTI 12/16 Questions
 # =========================================================
 MBTI_Q_12 = [
     ("EI", {"ko":"사람들과 있을 때 에너지가 더 생긴다", "en":"I gain energy around people", "ja":"人といると元気になる", "zh":"和人相处更有能量", "ru":"С людьми энергии больше", "hi":"लोगों के साथ ऊर्जा बढ़ती है"},
@@ -708,15 +621,15 @@ MBTI_Q_16 = MBTI_Q_12 + [
 ]
 
 # =========================================================
-# 5) Helpers
+# 7) Helpers
 # =========================================================
 def calc_zodiac_key(year: int) -> str:
     idx = (year - 4) % 12
     return ZODIAC_ORDER[idx]
 
 def get_saju(lang: str, y: int, m: int, d: int) -> str:
-    base = (y + m + d) % 6
     arr = SAJU_MSGS.get(lang, SAJU_MSGS["en"])
+    base = (y + m + d) % len(arr)
     return arr[base]
 
 def seeded_daily(lang: str, zodiac_key: str, offset: int = 0) -> str:
@@ -733,12 +646,14 @@ def year_overall(lang: str, zodiac_key: str, mbti: str) -> str:
     return random.choice(arr)
 
 def pick_tarot(lang: str):
-    k = random.choice(list(TAROT.keys()))
-    meaning = TAROT[k].get(lang, TAROT[k]["en"])
-    return k, meaning
+    key = random.choice(list(TAROT.keys()))
+    name_local = TAROT[key]["name"].get(lang, TAROT[key]["name"]["en"])
+    meaning_local = TAROT[key]["meaning"].get(lang, TAROT[key]["meaning"]["en"])
+    return key, name_local, meaning_local
 
 def combo_advice(lang: str, mbti: str) -> str:
-    ei = mbti[0]; sn = mbti[1]; tf = mbti[2]; jp = mbti[3]
+    # 간단하지만 언어별 최소 대응 (영어/기타는 공통)
+    ei, sn, tf, jp = mbti[0], mbti[1], mbti[2], mbti[3]
     if lang == "ko":
         return "\n".join([
             "연애운: " + ("감정 교류가 운을 키웁니다. 오늘은 ‘공감 한 마디’를 먼저!" if tf == "F"
@@ -750,44 +665,48 @@ def combo_advice(lang: str, mbti: str) -> str:
             "건강운: " + ("대외활동 과열 주의. 수면/카페인 조절이 핵심." if ei == "E"
                       else "혼자 회복이 중요. 5분 산책+스트레칭 추천."),
         ])
-    # 간단 번역(영어 기본)
-    base = [
+    return "\n".join([
         "Love: Listen first and respond with empathy.",
         "Money: Avoid impulse buys; a simple budget helps.",
         "Work/Study: Turn strengths into a checklist and execute.",
         "Health: Keep sleep consistent; short walks help.",
-    ]
-    return "\n".join(base)
+    ])
 
 def normalize_phone(phone: str) -> str:
     return re.sub(r"[^0-9]", "", phone or "")
 
 # =========================================================
-# 6) Google Sheet (컬럼 고정)
+# 8) Google Sheet (컬럼 고정)
 #  시간 | 이름 | 전화번호 | 언어 | 기록초 | 공유여부
 # =========================================================
 def get_sheet():
-    if gspread is None or Credentials is None:
-        return None
-    if "gcp_service_account" not in st.secrets:
-        return None
+    try:
+        if gspread is None or Credentials is None:
+            return None
+        if "gcp_service_account" not in st.secrets:
+            return None
 
-    scopes = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive",
-    ]
-    info = dict(st.secrets["gcp_service_account"])
-    if "private_key" in info and isinstance(info["private_key"], str):
-        info["private_key"] = info["private_key"].replace("\\n", "\n")
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ]
+        info = dict(st.secrets["gcp_service_account"])
+        if "private_key" in info and isinstance(info["private_key"], str):
+            info["private_key"] = info["private_key"].replace("\\n", "\n")
 
-    creds = Credentials.from_service_account_info(info, scopes=scopes)
-    gc = gspread.authorize(creds)
-    sh = gc.open_by_key(SPREADSHEET_ID)
-    ws = sh.worksheet(SHEET_NAME)
-    return ws
+        creds = Credentials.from_service_account_info(info, scopes=scopes)
+        gc = gspread.authorize(creds)
+        sh = gc.open_by_key(SPREADSHEET_ID)
+        ws = sh.worksheet(SHEET_NAME)
+        return ws
+    except Exception:
+        return None
 
 def read_all_rows(ws):
-    return ws.get_all_values()
+    try:
+        return ws.get_all_values()
+    except Exception:
+        return []
 
 def count_winners(ws) -> int:
     values = read_all_rows(ws)
@@ -817,15 +736,11 @@ def append_entry(ws, name, phone, lang, seconds, shared_bool):
     ws.append_row([now_str, name, phone, lang, f"{seconds:.3f}", str(bool(shared_bool))])
 
 # =========================================================
-# 7) Share Link (캡쳐처럼 공유 시트)
+# 9) Share Link Component (반환값 타입 방어)
 # =========================================================
 def share_link_component(button_label: str, share_text: str, share_url: str, key: str):
-    """
-    navigator.share() 성공하면 true 반환.
-    실패(미지원/차단)하면 false 반환 + 자동복사 시도.
-    """
     payload = {"label": button_label, "text": share_text, "url": share_url}
-    value = st.components.v1.html(
+    return st.components.v1.html(
         f"""
 <div style="margin: 8px 0;">
   <button id="btn" style="
@@ -860,17 +775,13 @@ def share_link_component(button_label: str, share_text: str, share_url: str, key
   }}
 
   btn.addEventListener("click", async () => {{
-    // 1) web share 지원하면 우선 시도
     if (navigator.share) {{
       try {{
         await navigator.share({{ title: "2026 Fortune", text: data.text, url: data.url }});
         send({{ ok:true, mode:"share" }});
         return;
-      }} catch(e) {{
-        // 사용자가 취소했거나 차단됨 -> 복사로 폴백
-      }}
+      }} catch(e) {{}}
     }}
-    // 2) 폴백: 복사
     const okCopy = await copyToClipboard(data.url);
     send({{ ok: okCopy, mode:"copy" }});
   }});
@@ -880,17 +791,28 @@ def share_link_component(button_label: str, share_text: str, share_url: str, key
         height=70,
         key=key
     )
-    return value
+
+def parse_component_value(v):
+    """dict / JSON string / None 모두 대응"""
+    if v is None:
+        return None
+    if isinstance(v, dict):
+        return v
+    if isinstance(v, str):
+        # 간혹 JSON 문자열로 올 수 있음
+        try:
+            j = json.loads(v)
+            if isinstance(j, dict):
+                return j
+        except Exception:
+            return None
+    return None
 
 # =========================================================
-# 8) Stopwatch Component (미니게임 에러 방지: 중복 처리)
+# 10) Stopwatch Component (중복 처리 방지)
 # =========================================================
 def stopwatch_component(key: str, note_text: str):
-    """
-    STOP을 누를 때만 elapsedSec(float) 전달.
-    중복 전달(리런) 방지 위해 상위에서 last_consumed 비교.
-    """
-    elapsed = st.components.v1.html(
+    return st.components.v1.html(
         f"""
 <div style="
   background: rgba(255,255,255,0.96);
@@ -995,15 +917,11 @@ def stopwatch_component(key: str, note_text: str):
         height=270,
         key=key
     )
-    return elapsed
 
 # =========================================================
-# 9) MBTI 계산
+# 11) MBTI 계산
 # =========================================================
 def compute_mbti_from_answers(answers, default="ENFP"):
-    """
-    answers: list of tuples (axis, pick_left_bool)
-    """
     scores = {"EI":0, "SN":0, "TF":0, "JP":0}
     counts = {"EI":0, "SN":0, "TF":0, "JP":0}
     for axis, pick_left in answers:
@@ -1013,62 +931,42 @@ def compute_mbti_from_answers(answers, default="ENFP"):
         if pick_left:
             scores[axis] += 1
 
-    # 축별 과반이면 left, 아니면 right
     def decide(axis, left_char, right_char):
         if counts[axis] == 0:
             return left_char
         return left_char if scores[axis] >= (counts[axis]/2) else right_char
 
     EorI = decide("EI","E","I")
-    SorN = decide("SN","S","N")  # 왼쪽이 S(구체), 오른쪽이 N(아이디어)로 설계됨
+    SorN = decide("SN","S","N")
     TorF = decide("TF","T","F")
     JorP = decide("JP","J","P")
     mbti = f"{EorI}{SorN}{TorF}{JorP}"
-
-    if mbti not in MBTI_DESC:
-        return default
-    return mbti
+    return mbti if mbti in MBTI_DESC else default
 
 # =========================================================
-# 10) Session State
+# 12) Session State
 # =========================================================
-if "lang" not in st.session_state:
-    st.session_state.lang = "ko"
-if "name" not in st.session_state:
-    st.session_state.name = ""
-if "y" not in st.session_state:
-    st.session_state.y = 2005
-if "m" not in st.session_state:
-    st.session_state.m = 1
-if "d" not in st.session_state:
-    st.session_state.d = 1
-if "stage" not in st.session_state:
-    st.session_state.stage = "input"  # input/result
-if "mbti" not in st.session_state:
-    st.session_state.mbti = None
+if "lang" not in st.session_state: st.session_state.lang = "ko"
+if "name" not in st.session_state: st.session_state.name = ""
+if "y" not in st.session_state: st.session_state.y = 2005
+if "m" not in st.session_state: st.session_state.m = 1
+if "d" not in st.session_state: st.session_state.d = 1
+if "stage" not in st.session_state: st.session_state.stage = "input"
+if "mbti" not in st.session_state: st.session_state.mbti = None
+if "mbti_mode" not in st.session_state: st.session_state.mbti_mode = "direct"
 
-# 공유 보너스(1회 추가)
-if "shared" not in st.session_state:
-    st.session_state.shared = False
-if "max_attempts" not in st.session_state:
-    st.session_state.max_attempts = 1
+# 공유 보너스
+if "shared" not in st.session_state: st.session_state.shared = False
+if "max_attempts" not in st.session_state: st.session_state.max_attempts = 1
 
 # 미니게임
-if "attempts_used" not in st.session_state:
-    st.session_state.attempts_used = 0
-if "show_win_form" not in st.session_state:
-    st.session_state.show_win_form = False
-if "win_seconds" not in st.session_state:
-    st.session_state.win_seconds = None
-if "last_stopwatch_value" not in st.session_state:
-    st.session_state.last_stopwatch_value = None
-
-# MBTI 방식
-if "mbti_mode" not in st.session_state:
-    st.session_state.mbti_mode = "direct"  # direct/12/16
+if "attempts_used" not in st.session_state: st.session_state.attempts_used = 0
+if "show_win_form" not in st.session_state: st.session_state.show_win_form = False
+if "win_seconds" not in st.session_state: st.session_state.win_seconds = None
+if "last_stopwatch_value" not in st.session_state: st.session_state.last_stopwatch_value = None
 
 # =========================================================
-# 11) UI Style
+# 13) UI Style
 # =========================================================
 st.markdown("""
 <style>
@@ -1138,19 +1036,22 @@ hr.soft { border:0; height:1px; background: rgba(120, 90, 210, 0.15); margin: 14
 """, unsafe_allow_html=True)
 
 # =========================================================
-# 12) Language picker + SEO
+# 14) Language picker + SEO
 # =========================================================
 lang_labels = [label for _, label in LANGS]
 lang_codes = [code for code, _ in LANGS]
 current_idx = lang_codes.index(st.session_state.lang) if st.session_state.lang in lang_codes else 0
-picked = st.radio(T[st.session_state.lang]["lang_pick"], lang_labels, index=current_idx, horizontal=True)
+
+# Streamlit 버전에 따라 horizontal 인자가 TypeError를 낼 수도 있어서 방어
+try:
+    picked = st.radio(T[st.session_state.lang]["lang_pick"], lang_labels, index=current_idx, horizontal=True)
+except TypeError:
+    picked = st.radio(T[st.session_state.lang]["lang_pick"], lang_labels, index=current_idx)
+
 st.session_state.lang = lang_codes[lang_labels.index(picked)]
 t = T[st.session_state.lang]
 inject_seo(st.session_state.lang)
 
-# =========================================================
-# 13) Input Screen
-# =========================================================
 MBTI_LIST = sorted(MBTI_DESC.keys())
 
 def render_mbti_test(questions, lang_code: str, title: str, key_prefix: str):
@@ -1165,13 +1066,15 @@ def render_mbti_test(questions, lang_code: str, title: str, key_prefix: str):
             index=0,
             key=f"{key_prefix}_{i}"
         )
-        pick_left = (choice == left_txt)
-        answers.append((axis, pick_left))
+        answers.append((axis, choice == left_txt))
     if st.button(t["mbti_submit"], use_container_width=True):
         st.session_state.mbti = compute_mbti_from_answers(answers)
         return True
     return False
 
+# =========================================================
+# 15) Screens
+# =========================================================
 def render_input():
     st.markdown(f"""
     <div class="header-hero">
@@ -1190,12 +1093,21 @@ def render_input():
     st.session_state.d = c3.number_input(t["day"], 1, 31, st.session_state.d, 1)
 
     st.markdown(f"<div class='card'><b>{t['mbti_mode']}</b></div>", unsafe_allow_html=True)
-    mode = st.radio(
-        label="",
-        options=[t["mbti_direct"], t["mbti_12"], t["mbti_16"]],
-        index=0 if st.session_state.mbti_mode=="direct" else (1 if st.session_state.mbti_mode=="12" else 2),
-        horizontal=True
-    )
+
+    try:
+        mode = st.radio(
+            label="",
+            options=[t["mbti_direct"], t["mbti_12"], t["mbti_16"]],
+            index=0 if st.session_state.mbti_mode=="direct" else (1 if st.session_state.mbti_mode=="12" else 2),
+            horizontal=True
+        )
+    except TypeError:
+        mode = st.radio(
+            label="",
+            options=[t["mbti_direct"], t["mbti_12"], t["mbti_16"]],
+            index=0 if st.session_state.mbti_mode=="direct" else (1 if st.session_state.mbti_mode=="12" else 2),
+        )
+
     if mode == t["mbti_direct"]:
         st.session_state.mbti_mode = "direct"
     elif mode == t["mbti_12"]:
@@ -1204,8 +1116,8 @@ def render_input():
         st.session_state.mbti_mode = "16"
 
     if st.session_state.mbti_mode == "direct":
-        picked_mbti = st.selectbox("MBTI", MBTI_LIST, index=MBTI_LIST.index(st.session_state.mbti) if st.session_state.mbti in MBTI_LIST else (MBTI_LIST.index("ENFP") if "ENFP" in MBTI_LIST else 0))
-        st.session_state.mbti = picked_mbti
+        idx = MBTI_LIST.index(st.session_state.mbti) if st.session_state.mbti in MBTI_LIST else (MBTI_LIST.index("ENFP") if "ENFP" in MBTI_LIST else 0)
+        st.session_state.mbti = st.selectbox("MBTI", MBTI_LIST, index=idx)
     elif st.session_state.mbti_mode == "12":
         done = render_mbti_test(MBTI_Q_12, st.session_state.lang, t["mbti_test_12_title"], "q12")
         if done:
@@ -1223,9 +1135,6 @@ def render_input():
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-# =========================================================
-# 14) Result Screen
-# =========================================================
 def render_result():
     lang = st.session_state.lang
     s = t["sections"]
@@ -1247,13 +1156,12 @@ def render_result():
     tomorrow = seeded_daily(lang, zodiac_key, 1)
     overall = year_overall(lang, zodiac_key, mbti)
     advice = combo_advice(lang, mbti)
-    advice_lines = advice.splitlines()
 
     st.markdown(f"""
     <div class="header-hero">
       <p class="hero-title">{display_name} {('2026년 운세' if lang=='ko' else '2026 Fortune')}</p>
       <p class="hero-sub">{zodiac_label} · {mbti}</p>
-      <span class="badge">{t["best_combo"]}</span>
+      <span class="badge">2026</span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1272,32 +1180,37 @@ def render_result():
     st.markdown(f"**{s['advice']}**:\n\n{advice}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 타로
-    if st.button(t["tarot_btn"], use_container_width=True):
-        k, meaning = pick_tarot(lang)
-        st.markdown(f"""
-        <div class="card" style="text-align:center;">
-          <div style="font-weight:900;color:#6b4fd6;">{t["tarot_title"]}</div>
-          <div style="font-size:1.6rem;font-weight:900;margin-top:6px;">{k}</div>
-          <div style="margin-top:8px;" class="soft-box">{meaning}</div>
-        </div>
-        """, unsafe_allow_html=True)
+    # ---- Tarot (TypeError 방지: try 감싸기) ----
+    try:
+        if st.button(t["tarot_btn"], use_container_width=True):
+            eng_key, local_name, local_meaning = pick_tarot(lang)
+            st.markdown(f"""
+            <div class="card" style="text-align:center;">
+              <div style="font-weight:900;color:#6b4fd6;">{t["tarot_title"]}</div>
+              <div style="font-size:1.45rem;font-weight:900;margin-top:6px;">{local_name}</div>
+              <div style="opacity:0.75;margin-top:2px;">{eng_key}</div>
+              <div style="margin-top:10px;" class="soft-box">{local_meaning}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    except Exception:
+        # 타로는 절대 앱 전체를 죽이면 안 됨
+        st.warning("타로 표시 중 오류가 발생했어요. 새로고침 후 다시 시도해주세요.")
 
-    # ✅ 링크 공유 (캡쳐 방식)
+    # ---- Share (캡쳐 방식) ----
     share_text = f"{display_name} {zodiac_label} {mbti} | {APP_URL}".strip()
-    result = share_link_component(t["share_link_btn"], share_text, APP_URL, key="share_link_component")
+    raw_val = share_link_component(t["share_link_btn"], share_text, APP_URL, key="share_link_component")
+    val = parse_component_value(raw_val)
 
-    # share 결과 처리 + 공유 1회 추가
-    if isinstance(result, dict) and result.get("ok") is True:
+    if isinstance(val, dict) and val.get("ok") is True:
         if not st.session_state.shared:
             st.session_state.shared = True
             st.session_state.max_attempts = 2
-        if result.get("mode") == "copy":
-            st.toast(t["copy_done"])
+        if val.get("mode") == "copy":
+            safe_toast(t.get("copy_done", "Copied!"))
 
     st.caption(t["share_link_hint"])
 
-    # ✅ 광고 위치: “미니게임 바로 위”
+    # ---- 광고 위치: 미니게임 바로 위 ----
     st.markdown(f"<div class='adplaceholder'>{t['ad_placeholder']}</div>", unsafe_allow_html=True)
     if lang == "ko":
         st.markdown(f"""
@@ -1316,7 +1229,7 @@ def render_result():
         </div>
         """, unsafe_allow_html=True)
 
-    # ✅ 미니게임 (한국어만)
+    # ---- 미니게임 (한국어만) ----
     if lang == "ko":
         st.markdown(
             f"<div class='card'><div style='font-weight:900;font-size:1.2rem;'>{t['mini_title']}</div>"
@@ -1347,9 +1260,8 @@ def render_result():
         if closed:
             st.info(t["mini_closed"])
         else:
-            elapsed = stopwatch_component("stopwatch_v3", t["stopwatch_note"])
+            elapsed = stopwatch_component("stopwatch_v4", t["stopwatch_note"])
 
-            # ✅ 여기에서 “중복 처리/리런 버그” 차단
             if elapsed is not None:
                 try:
                     elapsed_val = float(elapsed)
@@ -1357,14 +1269,12 @@ def render_result():
                     elapsed_val = None
 
                 if elapsed_val is not None:
-                    # 이미 처리한 값이면 무시(리런 중복 방지)
-                    if st.session_state.last_stopwatch_value == elapsed_val:
-                        pass
-                    else:
+                    # 리런 중복 처리 방지
+                    if st.session_state.last_stopwatch_value != elapsed_val:
                         st.session_state.last_stopwatch_value = elapsed_val
 
                         if tries_left <= 0:
-                            st.warning("남은 시도가 없습니다.")
+                            st.warning(t.get("try_over", "No tries left."))
                         else:
                             st.session_state.attempts_used += 1
                             st.markdown(f"<div class='card'><b>기록</b>: {elapsed_val:.3f}s</div>", unsafe_allow_html=True)
@@ -1373,7 +1283,7 @@ def render_result():
                                 st.session_state.show_win_form = True
                                 st.session_state.win_seconds = elapsed_val
                             else:
-                                st.info("아쉽게도 미달/초과! 다시 도전해보세요 🙂")
+                                st.info(t.get("miss", "Miss."))
 
             if st.session_state.show_win_form and st.session_state.win_seconds is not None:
                 st.markdown("<div class='card'>", unsafe_allow_html=True)
@@ -1414,7 +1324,7 @@ def render_result():
 
                 st.markdown("</div>", unsafe_allow_html=True)
 
-    # 검색/AI 노출 섹션
+    # ---- 검색/AI 노출 섹션 ----
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown(f"### {t['faq_title']}")
     if lang == "ko":
@@ -1425,7 +1335,7 @@ def render_result():
         st.markdown("- Free 2026 zodiac + MBTI-based advice + saju + today/tomorrow + tarot.")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 리셋 버튼
+    # ---- Reset (결과 화면만) ----
     if st.button(t["reset"], use_container_width=True):
         st.session_state.clear()
         st.rerun()
@@ -1433,7 +1343,7 @@ def render_result():
     st.caption(APP_URL)
 
 # =========================================================
-# 15) Router
+# 16) Router
 # =========================================================
 if st.session_state.stage == "input":
     render_input()
