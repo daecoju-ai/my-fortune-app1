@@ -3,8 +3,32 @@ from datetime import datetime, timedelta
 import random
 import time
 import hashlib
+import json
 
-# (선택) 구글시트 사용: requirements.txt에 gspread/google-auth 추가 + Streamlit Secrets 설정 필요
+import streamlit.components.v1 as components
+
+# =========================
+# 0) 설정값 (필수만 바꿔서 쓰면 됨)
+# =========================
+APP_URL = "https://my-fortune.streamlit.app"  # 배포 URL
+
+# ✅ 사용자 요청: 구글시트 ID 고정 적용
+SHEET_ID = "1WvuKXx2if2WvxmQaxkqzFW-BzDEWWma9hZgCr2jJQYY"
+WORKSHEET_NAME = "Sheet1"  # 시트 탭 이름
+
+# 이벤트(한국어에서만)
+EVENT_ENABLED = True
+EVENT_LANGUAGE_ONLY = "ko"
+WINNER_LIMIT = 20
+TARGET_SECONDS = 20.26
+PASS_TOLERANCE = 0.15
+
+BASE_ATTEMPTS = 1
+EXTRA_ATTEMPTS_ON_SHARE = 1
+
+DATA_RETENTION_DAYS = 90  # 개인정보 보관 기간(문구에 사용)
+
+# 구글시트 사용
 USE_GOOGLE_SHEETS = True
 try:
     import gspread
@@ -14,37 +38,17 @@ except Exception:
 
 
 # =========================
-# 0) 설정값 (여기만 네 걸로 바꾸면 됨)
+# 1) 텍스트/번역(핵심 UI 위주)
 # =========================
-APP_URL = "https://my-fortune.streamlit.app"  # 배포 URL
+LANGS = ["ko", "en", "ja", "zh", "ru"]
 
-# 구글시트 저장용
-SHEET_ID = "여기에_너의_구글시트_ID를_넣어줘"   # https://docs.google.com/spreadsheets/d/1WvuKXx2if2WvxmQaxkqzFW-BzDEWWma9hZgCr2jJQYY/edit?gid=0#gid=0
-WORKSHEET_NAME = "Sheet1"                    # 첫 시트 이름(기본 Sheet1)
-
-# 쿠폰 이벤트 옵션
-EVENT_ENABLED = True
-EVENT_LANGUAGE_ONLY = "ko"    # 한국어에서만 이벤트 표시
-WINNER_LIMIT = 20
-TARGET_SECONDS = 20.26
-PASS_TOLERANCE = 0.15         # 허용 오차(초): 0.15면 20.11~20.41
-BASE_ATTEMPTS = 1             # 기본 기회 1회
-EXTRA_ATTEMPTS_ON_SHARE = 1   # 친구공유 클릭 시 +1회
-
-# 개인정보 보관 기간(문구/실제 운영 정책에 맞춰 조정)
-DATA_RETENTION_DAYS = 90      # 90일 보관 예시
-
-
-# =========================
-# 1) 다국어 텍스트 (핵심 UI 텍스트만)
-# =========================
 translations = {
     "ko": {
         "lang_label": "언어 / Language",
         "title": "2026 띠 + MBTI + 사주 + 오늘/내일 운세",
         "caption": "완전 무료",
-        "birth": "### 생년월일 입력",
-        "name_placeholder": "이름 입력 (결과에 표시돼요)",
+        "birth": "생년월일 입력",
+        "name_placeholder": "이름 입력 (선택)",
         "mbti_mode": "MBTI 어떻게 할까?",
         "direct": "직접 입력",
         "test12": "간단 테스트 (12문항)",
@@ -71,15 +75,17 @@ translations = {
         "lucky_color_title": "럭키 컬러",
         "lucky_item_title": "럭키 아이템",
         "tip_title": "팁",
+        "copied": "결과가 복사됐어요! 카톡/메시지에 붙여넣기 해주세요.",
+        "share_hint": "모바일은 공유창이 열려요. PC는 자동 복사돼요.",
 
-        # 한국어에서만 노출할 광고(요청 반영)
+        # 한국어 광고
         "ad_title": "정수기렌탈 궁금할 때?",
-        "ad_body": "다나눔렌탈 제휴카드 시 월 0원부터 + 설치당일 최대 현금 50만원 페이백!",
+        "ad_body": "<b>다나눔렌탈</b> 제휴카드 시 <b>월 0원부터</b> + <b>설치당일 최대 현금 50만원 페이백</b>!",
         "ad_btn": "보러가기",
 
-        # 이벤트(커피쿠폰)
+        # 이벤트(미니게임)
         "event_title": "🎁 미니게임: 선착순 20명 커피쿠폰 도전!",
-        "event_desc": "타이머를 정확히 20.26초에 맞추면 응모 가능! (기본 1회, 친구공유 누르면 1회 추가)",
+        "event_desc": "스톱워치를 <b>20.26초</b>에 맞추면 응모 가능! (기본 1회, 친구공유 누르면 1회 추가)",
         "event_closed": "😢 선착순 20명이 마감되었습니다. 다음 이벤트를 기대해주세요!",
         "event_attempts_left": "남은 기회",
         "event_start": "시작",
@@ -87,20 +93,21 @@ translations = {
         "event_success": "✅ 성공! (기준 시간에 매우 근접했어요)",
         "event_fail": "❌ 아쉽게 실패! 다시 도전해보세요.",
         "event_elapsed": "기록",
-        "event_need_share": "추가기회를 원하면 ‘친구에게 결과 공유하기’를 한 번 눌러주세요.",
+        "event_need_share": "추가기회가 필요하면 위의 ‘친구에게 결과 공유하기’를 눌러주세요.",
         "event_form_title": "☕ 커피쿠폰 응모 정보 입력",
+
         "consent_title": "개인정보 수집·이용 동의",
         "consent_check": "위 내용을 읽었으며, 개인정보 수집·이용에 동의합니다. (필수)",
         "consent_more": "동의하지 않으면 쿠폰 응모는 할 수 없지만, 운세 서비스 이용은 가능합니다.",
         "submit_entry": "응모하기",
-        "entry_ok": "🎉 응모가 완료되었습니다! (선착순 여부는 시트에 기록된 순서로 확정됩니다.)",
+        "entry_ok": "🎉 응모가 완료되었습니다! (선착순 여부는 시트 기록 순서로 확정됩니다.)",
         "entry_dup": "이미 응모하신 전화번호입니다. (중복 응모 불가)",
         "entry_error": "저장 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
         "phone_label": "전화번호(쿠폰 발송용)",
         "name_label": "이름(응모자)",
         "phone_hint": "예: 01012345678 (하이픈 없이)",
 
-        # MBTI 12문항(각 축 3문항)
+        # 12문항(축별 3문항)
         "q12_ei": [
             "주말에 친구가 갑자기 나오자고 하면?",
             "모임에서 처음 본 사람들과 대화하는 건?",
@@ -130,7 +137,7 @@ translations = {
         "a12_j": ["일정 촘촘히(J)", "미리미리(J)", "정리정돈 확실(J)"],
         "a12_p": ["즉흥/유동(P)", "몰아서 한다(P)", "대충해도 OK(P)"],
 
-        # 16문항(각 축 4문항)
+        # 16문항(축별 4문항)
         "q_energy": ["주말에 친구들이 갑자기 '놀자!' 하면?", "모임에서 처음 본 사람들과 대화하는 거?", "하루 종일 사람 만난 후에?", "생각이 떠오르면?"],
         "q_info": ["새로운 카페 가면 뭐가 먼저 눈에 들어?", "친구가 고민 상담하면?", "책이나 영화 볼 때?", "쇼핑할 때?"],
         "q_decision": ["친구가 늦어서 화날 때?", "팀 프로젝트에서 의견 충돌 시?", "누가 울면서 상담하면?", "거짓말 탐지 시?"],
@@ -143,59 +150,18 @@ translations = {
         "options_f": ["기분 상할까 봐 부드럽게 말함 (F)", "다른 사람 기분 상하지 않게 조율 (F)", "일단 공감하고 들어줌 (F)", "상처 줄까 봐 넘김 (F)"],
         "options_j": ["일정 꽉꽉 짜서 효율적으로 (J)", "미리미리 끝냄 (J)", "정해진 기준으로 깔끔히 (J)", "빨리 결정하고 넘김 (J)"],
         "options_p": ["그때그때 기분 따라 즉흥적으로 (P)", "마감 직전에 몰아서 함 (P)", "대충 써도 괜찮아 (P)", "옵션 더 알아보고 싶어 (P)"],
-
-        # 콘텐츠(간단)
-        "overall_fortunes": [
-            "성장과 재물이 함께하는 해! 기회가 자주 와요.",
-            "안정과 행복이 커지는 해! 관계운이 좋아요.",
-            "도전과 성과의 해! 실력이 인정받아요.",
-            "인연과 사랑운이 강해지는 해! 마음이 따뜻해져요.",
-            "변화와 새출발의 해! 아이디어가 빛나요."
-        ],
-        "lucky_colors": ["골드", "레드", "블루", "그린", "퍼플"],
-        "lucky_items": ["황금 액세서리", "빨간 지갑", "파란 목걸이", "초록 식물", "보라색 펜"],
-        "tips": [
-            "작은 약속을 지키면 큰 운이 따라와요.",
-            "과감한 결정보단 ‘검증 후 실행’이 유리해요.",
-            "컨디션 관리가 곧 운 관리! 수면을 챙겨요.",
-            "가까운 사람과의 대화가 행운의 열쇠예요.",
-            "배움/취미 하나를 시작하면 흐름이 바뀌어요."
-        ],
-        "daily_msgs": [
-            "재물운이 좋아요! 작은 선택이 이득으로 이어져요.",
-            "연애/인연운이 좋아요! 먼저 연락해도 좋아요.",
-            "건강운 체크! 무리하지 말고 리듬을 지켜요.",
-            "전체운 상승! 타이밍이 좋아요.",
-            "인간관계운 호조! 도움 받을 일이 생겨요.",
-            "일/학업운 호조! 집중력이 올라가요.",
-            "이동/여행운 좋음! 기분전환 추천!",
-            "기분 좋은 하루! 웃음이 더 큰 운을 불러요."
-        ],
-        "tarot_cards": {
-            "The Fool": "새로운 시작, 모험, 순수한 믿음",
-            "The Magician": "창조력, 능력 발휘, 집중",
-            "The High Priestess": "직감, 신비, 내면의 목소리",
-            "The Empress": "풍요, 사랑, 창작",
-            "The Emperor": "안정, 구조, 권위",
-            "The Lovers": "사랑, 조화, 선택",
-            "The Chariot": "승리, 의지, 방향",
-            "Strength": "용기, 인내, 부드러운 통제",
-            "Wheel of Fortune": "변화, 운, 사이클",
-            "The Sun": "행복, 성공, 긍정 에너지",
-        },
     },
 
-    # 영어(최소 유지)
     "en": {
         "lang_label": "Language",
-        "title": "2026 Zodiac + MBTI + Fortune (Today/Tomorrow)",
+        "title": "2026 Zodiac + MBTI + Fortune",
         "caption": "Completely Free",
-        "birth": "### Enter Birth Date",
-        "name_placeholder": "Enter name (shown in result)",
+        "birth": "Birth date",
+        "name_placeholder": "Name (optional)",
         "mbti_mode": "How to do MBTI?",
         "direct": "Direct input",
-        "test12": "Quick test (12 Q)",
-        "test16": "Detailed test (16 Q)",
+        "test12": "Quick test (12)",
+        "test16": "Detailed test (16)",
         "test_start_12": "Quick test starts!",
         "test_start_16": "Detailed test starts!",
         "energy": "Energy (E/I)",
@@ -218,58 +184,22 @@ translations = {
         "lucky_color_title": "Lucky color",
         "lucky_item_title": "Lucky item",
         "tip_title": "Tip",
-        "overall_fortunes": [
-            "A year of growth and opportunities!",
-            "A stable year with stronger relationships!",
-            "A year of challenges and achievements!",
-            "A warmer year with love and connections!",
-            "A year of change and fresh starts!"
-        ],
-        "lucky_colors": ["Gold", "Red", "Blue", "Green", "Purple"],
-        "lucky_items": ["Golden accessory", "Red wallet", "Blue necklace", "Green plant", "Purple pen"],
-        "tips": [
-            "Small consistency brings big luck.",
-            "Validate before acting; it pays off.",
-            "Health is luck: protect your sleep.",
-            "Talk with close people; it opens doors.",
-            "Start a hobby; it changes the flow."
-        ],
-        "daily_msgs": [
-            "Wealth luck is good; small choices pay off.",
-            "Love/connection luck is good; reach out first.",
-            "Mind your health; keep your rhythm.",
-            "Overall luck rises; timing is on your side.",
-            "Relationships are smooth; help comes in.",
-            "Work/study luck is good; focus increases.",
-            "Travel/move luck is good; refresh yourself!",
-            "A happy day: laughter attracts luck."
-        ],
-        "tarot_cards": {
-            "The Fool": "New beginnings, adventure, trust",
-            "The Magician": "Power, focus, manifestation",
-            "The High Priestess": "Intuition, inner voice",
-            "The Empress": "Abundance, love, creativity",
-            "The Emperor": "Stability, structure",
-            "The Lovers": "Love, harmony, choice",
-            "The Chariot": "Victory, will, direction",
-            "Strength": "Courage, patience",
-            "Wheel of Fortune": "Change, cycles",
-            "The Sun": "Joy, success, positivity",
-        },
+        "copied": "Copied! Paste it anywhere.",
+        "share_hint": "Mobile opens share sheet. PC copies text.",
 
-        # 간단한 12/16문항은 영어로 유지(필수 텍스트만)
+        # 12/16 질문(영어로 유지)
         "q12_ei": ["Weekend invite?", "Talking to strangers?", "After social day?"],
-        "q12_sn": ["New cafe first notice?", "In movies/books?", "When shopping?"],
+        "q12_sn": ["New cafe first notice?", "In books/movies?", "When shopping?"],
         "q12_tf": ["Friend late?", "When conflict?", "When someone cries?"],
-        "q12_jp": ["Planning trips?", "Before deadlines?", "Cleaning room?"],
+        "q12_jp": ["Trip planning?", "Before deadlines?", "Cleaning room?"],
         "a12_e": ["Go out (E)", "Enjoy (E)", "Still energized (E)"],
         "a12_i": ["Stay home (I)", "A bit tired (I)", "Need alone time (I)"],
-        "a12_s": ["Practical (S)", "Details (S)", "Buy essentials (S)"],
+        "a12_s": ["Practical (S)", "Details (S)", "Essentials (S)"],
         "a12_n": ["Vibe (N)", "Meaning (N)", "Imagine future (N)"],
-        "a12_t": ["Be direct (T)", "Use logic (T)", "Offer solutions (T)"],
-        "a12_f": ["Be gentle (F)", "Mediate (F)", "Empathize (F)"],
-        "a12_j": ["Plan tight (J)", "Finish early (J)", "Organize (J)"],
-        "a12_p": ["Go with flow (P)", "Last-minute (P)", "Messy ok (P)"],
+        "a12_t": ["Direct (T)", "Logic (T)", "Offer solutions (T)"],
+        "a12_f": ["Gentle (F)", "Mediate (F)", "Empathize (F)"],
+        "a12_j": ["Plan (J)", "Finish early (J)", "Neat (J)"],
+        "a12_p": ["Spontaneous (P)", "Last-minute (P)", "Messy ok (P)"],
 
         "q_energy": ["Weekend invite?", "Talk to strangers?", "After social day?", "When you think?"],
         "q_info": ["New cafe first notice?", "Friend worries?", "Books/movies?", "Shopping?"],
@@ -279,40 +209,48 @@ translations = {
         "options_i": ["Stay home (I)", "A bit tired (I)", "Need alone time (I)", "Process in head (I)"],
         "options_s": ["Prices/items (S)", "Facts (S)", "Details (S)", "Buy essentials (S)"],
         "options_n": ["Vibe/concept (N)", "Possibilities (N)", "Symbols (N)", "Imagine future use (N)"],
-        "options_t": ["Be direct (T)", "Logic (T)", "Suggest fix (T)", "Point out (T)"],
-        "options_f": ["Be gentle (F)", "Mediate (F)", "Empathize (F)", "Let it pass (F)"],
-        "options_j": ["Plan tight (J)", "Finish early (J)", "Neat (J)", "Decide fast (J)"],
+        "options_t": ["Direct (T)", "Logic (T)", "Suggest fix (T)", "Point out (T)"],
+        "options_f": ["Gentle (F)", "Mediate (F)", "Empathize (F)", "Let it pass (F)"],
+        "options_j": ["Plan (J)", "Finish early (J)", "Neat (J)", "Decide fast (J)"],
         "options_p": ["Spontaneous (P)", "Last-minute (P)", "Messy ok (P)", "Explore more (P)"],
     },
 
-    # 다른 언어는 “기능 유지용” 최소 텍스트만 (원하면 나중에 번역 풀셋 확장 가능)
-    "ja": {"lang_label": "言語", "title": "2026 運勢 + MBTI", "caption": "無料", "birth": "### 生年月日", "name_placeholder": "名前", "mbti_mode": "MBTI", "direct": "直接入力", "test12": "簡単テスト(12)", "test16": "詳細テスト(16)", "test_start_12": "簡単テスト開始", "test_start_16": "詳細テスト開始", "result_btn": "結果", "fortune_btn": "運勢を見る", "reset": "最初から", "share_btn": "共有", "tarot_btn": "タロット", "tarot_title": "今日のタロット", "zodiac_title": "干支", "mbti_title": "MBTI", "saju_title": "一言", "today_title": "今日", "tomorrow_title": "明日", "overall_title": "2026 全体", "combo_title": "アドバイス", "lucky_color_title": "ラッキーカラー", "lucky_item_title": "ラッキーアイテム", "tip_title": "ヒント",
-           "overall_fortunes": ["良い年です!"], "lucky_colors": ["Gold"], "lucky_items": ["Pen"], "tips": ["Smile"], "daily_msgs": ["Good day"], "tarot_cards": {"The Sun": "Joy"}},
-    "zh": {"lang_label": "语言", "title": "2026 运势 + MBTI", "caption": "免费", "birth": "### 出生日期", "name_placeholder": "姓名", "mbti_mode": "MBTI", "direct": "直接输入", "test12": "简测(12)", "test16": "详测(16)", "test_start_12": "简测开始", "test_start_16": "详测开始", "result_btn": "结果", "fortune_btn": "查看运势", "reset": "重新开始", "share_btn": "分享", "tarot_btn": "塔罗", "tarot_title": "今日塔罗", "zodiac_title": "生肖", "mbti_title": "MBTI", "saju_title": "一句话", "today_title": "今天", "tomorrow_title": "明天", "overall_title": "2026 总体", "combo_title": "建议", "lucky_color_title": "幸运色", "lucky_item_title": "幸运物", "tip_title": "提示",
-           "overall_fortunes": ["祝你好运!"], "lucky_colors": ["Gold"], "lucky_items": ["Pen"], "tips": ["Smile"], "daily_msgs": ["Good day"], "tarot_cards": {"The Sun": "Joy"}},
-    "ru": {"lang_label": "Язык", "title": "2026 Удача + MBTI", "caption": "Бесплатно", "birth": "### Дата рождения", "name_placeholder": "Имя", "mbti_mode": "MBTI", "direct": "Ввести", "test12": "Тест 12", "test16": "Тест 16", "test_start_12": "Старт 12", "test_start_16": "Старт 16", "result_btn": "Результат", "fortune_btn": "Удача", "reset": "Сначала", "share_btn": "Поделиться", "tarot_btn": "Таро", "tarot_title": "Таро", "zodiac_title": "Знак", "mbti_title": "MBTI", "saju_title": "Комментарий", "today_title": "Сегодня", "tomorrow_title": "Завтра", "overall_title": "2026", "combo_title": "Совет", "lucky_color_title": "Цвет", "lucky_item_title": "Предмет", "tip_title": "Совет",
-           "overall_fortunes": ["Удачи!"], "lucky_colors": ["Gold"], "lucky_items": ["Pen"], "tips": ["Smile"], "daily_msgs": ["Good day"], "tarot_cards": {"The Sun": "Joy"}},
+    # 다른 언어는 최소 UI만(깨지지 않게)
+    "ja": {"lang_label": "言語", "title": "2026 運勢 + MBTI", "caption": "無料", "birth": "生年月日", "name_placeholder": "名前(任意)",
+           "mbti_mode": "MBTI", "direct": "直接入力", "test12": "簡単(12)", "test16": "詳細(16)",
+           "test_start_12": "開始(12)", "test_start_16": "開始(16)", "energy":"E/I","info":"S/N","decision":"T/F","life":"J/P",
+           "result_btn":"結果","fortune_btn":"運勢","reset":"最初から","share_btn":"共有","tarot_btn":"タロット","tarot_title":"今日のタロット",
+           "zodiac_title":"干支","mbti_title":"MBTI","saju_title":"一言","today_title":"今日","tomorrow_title":"明日","overall_title":"2026",
+           "combo_title":"助言","lucky_color_title":"色","lucky_item_title":"物","tip_title":"ヒント","copied":"コピーしました","share_hint":"共有/コピー"},
+    "zh": {"lang_label": "语言", "title": "2026 运势 + MBTI", "caption": "免费", "birth": "出生日期", "name_placeholder": "姓名(可选)",
+           "mbti_mode": "MBTI", "direct": "直接输入", "test12": "简测(12)", "test16": "详测(16)",
+           "test_start_12": "开始(12)", "test_start_16": "开始(16)", "energy":"E/I","info":"S/N","decision":"T/F","life":"J/P",
+           "result_btn":"结果","fortune_btn":"查看运势","reset":"重新开始","share_btn":"分享","tarot_btn":"塔罗","tarot_title":"今日塔罗",
+           "zodiac_title":"生肖","mbti_title":"MBTI","saju_title":"一句话","today_title":"今天","tomorrow_title":"明天","overall_title":"2026",
+           "combo_title":"建议","lucky_color_title":"幸运色","lucky_item_title":"幸运物","tip_title":"提示","copied":"已复制","share_hint":"分享/复制"},
+    "ru": {"lang_label": "Язык", "title": "2026 Удача + MBTI", "caption": "Бесплатно", "birth": "Дата рождения", "name_placeholder": "Имя(необяз.)",
+           "mbti_mode": "MBTI", "direct": "Ввести", "test12": "Тест(12)", "test16": "Тест(16)",
+           "test_start_12": "Старт(12)", "test_start_16": "Старт(16)", "energy":"E/I","info":"S/N","decision":"T/F","life":"J/P",
+           "result_btn":"Результат","fortune_btn":"Удача","reset":"Сначала","share_btn":"Поделиться","tarot_btn":"Таро","tarot_title":"Таро",
+           "zodiac_title":"Знак","mbti_title":"MBTI","saju_title":"Комментарий","today_title":"Сегодня","tomorrow_title":"Завтра","overall_title":"2026",
+           "combo_title":"Совет","lucky_color_title":"Цвет","lucky_item_title":"Предмет","tip_title":"Совет","copied":"Скопировано","share_hint":"Share/Copy"},
 }
 
-LANGS = ["ko", "en", "ja", "zh", "ru"]
-
 
 # =========================
-# 2) MBTI / 띠 / 사주(간단)
+# 2) 데이터(띠/MBTI/문구)
 # =========================
-MBTI_LABELS = {
-    "ko": {
-        "INTJ": "냉철 전략가", "INTP": "아이디어 천재", "ENTJ": "리더형", "ENTP": "토론왕",
-        "INFJ": "마음 마스터", "INFP": "감성 예술가", "ENFJ": "모두 선생님", "ENFP": "인간 비타민",
-        "ISTJ": "규칙 지킴이", "ISFJ": "세상 따뜻함", "ESTJ": "현실 리더", "ESFJ": "분위기 메이커",
-        "ISTP": "고치는 장인", "ISFP": "감성 힐러", "ESTP": "모험왕", "ESFP": "파티 주인공"
-    },
-    "en": {
-        "INTJ": "Strategist", "INTP": "Thinker", "ENTJ": "Commander", "ENTP": "Debater",
-        "INFJ": "Advocate", "INFP": "Mediator", "ENFJ": "Protagonist", "ENFP": "Campaigner",
-        "ISTJ": "Logistician", "ISFJ": "Defender", "ESTJ": "Executive", "ESFJ": "Consul",
-        "ISTP": "Virtuoso", "ISFP": "Adventurer", "ESTP": "Entrepreneur", "ESFP": "Entertainer"
-    }
+MBTI_LABELS_KO = {
+    "INTJ": "냉철 전략가", "INTP": "아이디어 천재", "ENTJ": "리더형", "ENTP": "토론왕",
+    "INFJ": "마음 마스터", "INFP": "감성 예술가", "ENFJ": "모두 선생님", "ENFP": "인간 비타민",
+    "ISTJ": "규칙 지킴이", "ISFJ": "세상 따뜻함", "ESTJ": "현실 리더", "ESFJ": "분위기 메이커",
+    "ISTP": "고치는 장인", "ISFP": "감성 힐러", "ESTP": "모험왕", "ESFP": "파티 주인공"
+}
+MBTI_LABELS_EN = {
+    "INTJ": "Strategist", "INTP": "Thinker", "ENTJ": "Commander", "ENTP": "Debater",
+    "INFJ": "Advocate", "INFP": "Mediator", "ENFJ": "Protagonist", "ENFP": "Campaigner",
+    "ISTJ": "Logistician", "ISFJ": "Defender", "ESTJ": "Executive", "ESFJ": "Consul",
+    "ISTP": "Virtuoso", "ISFP": "Adventurer", "ESTP": "Entrepreneur", "ESFP": "Entertainer"
 }
 
 ZODIAC_NAMES = {
@@ -349,6 +287,10 @@ SAJU_MSG_KO = [
     "음기 강함 → 내면 정리/관계 정리가 행운입니다."
 ]
 
+
+# =========================
+# 3) 유틸 함수
+# =========================
 def get_zodiac(year: int, lang: str):
     z_list = ZODIAC_NAMES.get(lang, ZODIAC_NAMES["en"])
     if 1900 <= year <= 2030:
@@ -357,27 +299,26 @@ def get_zodiac(year: int, lang: str):
 
 def get_saju(year: int, month: int, day: int, lang: str):
     if lang != "ko":
-        # 최소 기능 유지용
         return "A calm and balanced message."
     total = year + month + day
     return SAJU_MSG_KO[total % len(SAJU_MSG_KO)]
 
-def deterministic_daily_msg(lang: str, zodiac_index: int, offset_days: int, msgs: list[str]):
+def deterministic_daily_msg(zodiac_index: int, offset_days: int, msgs: list[str]):
     now = datetime.now() + timedelta(days=offset_days)
     seed = int(now.strftime("%Y%m%d")) + zodiac_index * 97 + 13
     random.seed(seed)
     return random.choice(msgs)
 
 def sha_phone(phone: str) -> str:
-    normalized = "".join([c for c in phone if c.isdigit()])
-    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+    digits = "".join([c for c in phone if c.isdigit()])
+    return hashlib.sha256(digits.encode("utf-8")).hexdigest()
 
 
 # =========================
-# 3) 구글시트 연결
+# 4) 구글시트
 # =========================
 def get_sheet():
-    if not (USE_GOOGLE_SHEETS and SHEET_ID and SHEET_ID != "여기에_너의_구글시트_ID를_넣어줘"):
+    if not USE_GOOGLE_SHEETS:
         return None
     try:
         creds = Credentials.from_service_account_info(
@@ -392,105 +333,128 @@ def get_sheet():
         return None
 
 def sheet_get_stats(ws):
-    # 시트 구조:
-    # A: 이름, B: 전화(원문), C: 전화해시, D: 언어, E: 참여시간, F: 기록(초), G: 메모
     values = ws.get_all_values()
     if len(values) <= 1:
         return 0, set()
     rows = values[1:]
-    hashed_set = set()
+    hashed = set()
     for r in rows:
         if len(r) >= 3 and r[2]:
-            hashed_set.add(r[2])
-    return len(rows), hashed_set
+            hashed.add(r[2])
+    return len(rows), hashed
 
 def sheet_append_entry(ws, name, phone, lang, elapsed):
     phone_hash = sha_phone(phone)
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # A:이름 B:전화 C:해시 D:언어 E:시간 F:기록 G:메모
     ws.append_row([name, phone, phone_hash, lang, ts, f"{elapsed:.3f}", "coffee_coupon"])
     return phone_hash
 
 
 # =========================
-# 4) Streamlit 세션 초기화
+# 5) 세션 초기화
 # =========================
 st.set_page_config(page_title="2026 Fortune", layout="centered")
 
-if "lang" not in st.session_state:
-    st.session_state.lang = "ko"
-if "step" not in st.session_state:
-    st.session_state.step = "input"   # input | result
-if "name" not in st.session_state:
-    st.session_state.name = ""
-if "year" not in st.session_state:
-    st.session_state.year = 2005
-if "month" not in st.session_state:
-    st.session_state.month = 1
-if "day" not in st.session_state:
-    st.session_state.day = 1
-if "mbti" not in st.session_state:
-    st.session_state.mbti = None
+defaults = {
+    "lang": "ko",
+    "step": "input",  # input | result
+    "name": "",
+    "year": 2005,
+    "month": 1,
+    "day": 1,
+    "mbti": None,
 
-# 공유 클릭 여부(추가기회용)
-if "share_clicked" not in st.session_state:
-    st.session_state.share_clicked = False
+    # 공유/추가기회
+    "share_clicked": False,
 
-# 미니게임 상태
-if "mg_attempts_used" not in st.session_state:
-    st.session_state.mg_attempts_used = 0
-if "mg_started_at" not in st.session_state:
-    st.session_state.mg_started_at = None
-if "mg_last_elapsed" not in st.session_state:
-    st.session_state.mg_last_elapsed = None
-if "mg_passed" not in st.session_state:
-    st.session_state.mg_passed = False
-if "mg_entry_done" not in st.session_state:
-    st.session_state.mg_entry_done = False
+    # 미니게임 상태
+    "mg_attempts_used": 0,
+    "mg_started_at": None,
+    "mg_last_elapsed": None,
+    "mg_passed": False,
+    "mg_entry_done": False,
+}
+for k, v in defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
 
 
 # =========================
-# 5) 공통 CSS (모바일 가독성 강화)
+# 6) 공유 버튼 무반응 복구 방식
+#   - HTML(JS) 버튼 클릭 → URL에 ?shared=1 붙이고 리로드
+#   - Python에서 shared=1 감지 → share_clicked=True 적용 → 파라미터 제거
+# =========================
+qp = st.experimental_get_query_params()
+if qp.get("shared", ["0"])[0] == "1":
+    st.session_state.share_clicked = True
+    # 파라미터 제거(무한 루프 방지)
+    st.experimental_set_query_params()
+
+
+# =========================
+# 7) CSS (결과 가독성 + 배경색 개선)
 # =========================
 st.markdown("""
 <style>
+    :root{
+        --bg: #f5f7fb;
+        --card: #ffffff;
+        --text: #1f2a37;
+        --muted: #6b7280;
+        --border: rgba(0,0,0,0.08);
+        --shadow: 0 10px 28px rgba(0,0,0,0.08);
+        --accent: #8e44ad;
+        --accent2: #2d6cdf;
+        --ok: #16a34a;
+        --bad: #dc2626;
+        --warn: #f59e0b;
+    }
     html, body, [class*="css"] {font-family: 'Noto Sans KR', sans-serif;}
-    .app-wrap {max-width: 820px; margin: 0 auto;}
-    .hero {text-align:center; padding: 16px 10px 6px;}
-    .hero h1 {margin: 0; font-size: 1.75rem; line-height: 1.25;}
-    .hero p {margin: 8px 0 0; color: #666; font-size: 0.95rem;}
-    .card {
-        background: #ffffff;
-        border: 1px solid rgba(0,0,0,0.08);
+    body {background: var(--bg);}
+    .wrap {max-width: 860px; margin: 0 auto; padding: 6px 10px 30px;}
+    .hero {text-align:center; padding: 10px 8px 6px;}
+    .hero h1 {margin: 0; font-size: 1.65rem; line-height: 1.2; color: var(--text);}
+    .hero p {margin: 8px 0 0; color: var(--muted); font-size: 0.95rem;}
+    .card{
+        background: var(--card);
+        border: 1px solid var(--border);
         border-radius: 18px;
         padding: 16px 14px;
         margin: 12px 0;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+        box-shadow: var(--shadow);
     }
-    .result-bg{
-        background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
-        border-radius: 20px;
-        padding: 14px;
-        margin-top: 10px;
-    }
-    .title-white{
-        color: #fff;
-        text-shadow: 2px 2px 10px rgba(0,0,0,0.25);
+    .result-head{
+        background: linear-gradient(180deg, #ffffff 0%, #faf7ff 100%);
+        border: 1px solid rgba(142,68,173,0.18);
+        border-radius: 18px;
+        padding: 16px 14px;
+        margin: 12px 0;
+        box-shadow: 0 12px 30px rgba(142,68,173,0.10);
         text-align:center;
-        margin: 6px 0 10px;
-        font-size: 1.55rem;
-        line-height: 1.25;
     }
-    .sub-white{
-        color: #fff;
-        text-shadow: 2px 2px 10px rgba(0,0,0,0.20);
-        text-align:center;
-        margin: 0 0 10px;
-        font-size: 1.15rem;
+    .result-title{
+        font-size: 1.45rem;
+        font-weight: 900;
+        color: #2b1a3a;
+        margin: 0 0 6px;
+        line-height:1.25;
     }
-    .kpi {font-size: 1.02rem; line-height: 1.75; color: #111;}
-    .kpi b {color: #111;}
+    .result-sub{
+        font-size: 1.05rem;
+        color: var(--muted);
+        margin: 0;
+        line-height:1.35;
+    }
+    .kv{
+        font-size: 1.02rem;
+        color: var(--text);
+        line-height: 1.75;
+    }
+    .kv b{color: var(--text);}
+    .divider{height:1px;background:rgba(0,0,0,0.06);margin:10px 0;}
     .ad-box{
-        border: 2px solid rgba(230,126,34,0.65);
+        border: 2px solid rgba(230,126,34,0.55);
         border-radius: 18px;
         padding: 14px 12px;
         background: rgba(255,252,240,0.92);
@@ -499,52 +463,42 @@ st.markdown("""
     }
     .ad-box h3{margin: 0 0 6px; color:#d35400; font-size: 1.05rem;}
     .ad-box p{margin: 0 0 10px; color:#333; font-size: 0.95rem; line-height:1.45;}
-    .btn-like{
+    .btn-link{
         display:inline-block;
         background:#e67e22;
         color:white;
         padding:10px 18px;
         border-radius:14px;
         text-decoration:none;
-        font-weight:700;
+        font-weight:900;
     }
-    .mini-grid{
-        display:flex;
-        gap:10px;
-        flex-wrap:wrap;
-        justify-content:center;
-    }
-    .pill{
-        display:inline-block;
-        padding:6px 10px;
-        border-radius:999px;
-        background: rgba(0,0,0,0.06);
-        font-size:0.9rem;
-        margin: 0 6px 6px 0;
+    .hint{
+        text-align:center;
+        font-size:0.92rem;
+        color: var(--muted);
+        margin-top: 6px;
     }
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("<div class='wrap'>", unsafe_allow_html=True)
+
 
 # =========================
-# 6) 언어 선택
+# 8) 언어 선택
 # =========================
-with st.container():
-    st.markdown('<div class="app-wrap">', unsafe_allow_html=True)
-
 lang = st.radio(
-    translations[st.session_state.lang]["lang_label"],
+    translations.get(st.session_state.lang, translations["en"])["lang_label"],
     LANGS,
     index=LANGS.index(st.session_state.lang) if st.session_state.lang in LANGS else 0,
     horizontal=True
 )
 st.session_state.lang = lang
 t = translations.get(lang, translations["en"])
-mbti_dict = MBTI_LABELS["ko"] if lang == "ko" else MBTI_LABELS["en"]
 
 
 # =========================
-# 7) 입력 화면
+# 9) 화면 전환 유틸
 # =========================
 def go_result(mbti_code: str):
     st.session_state.mbti = mbti_code
@@ -555,286 +509,334 @@ def reset_all():
     st.session_state.clear()
     st.rerun()
 
+
+# =========================
+# 10) 입력 화면
+# =========================
 if st.session_state.step == "input":
     st.markdown(f"""
     <div class="hero">
-        <h1>{t['title']}</h1>
-        <p>{t['caption']}</p>
+        <h1>{t.get("title","2026 Fortune")}</h1>
+        <p>{t.get("caption","")}</p>
     </div>
     """, unsafe_allow_html=True)
 
-    # (한국어만) 광고 박스 + 테두리
+    # 한국어만 광고
     if lang == "ko":
         st.markdown(f"""
         <div class="ad-box">
-            <h3>{t['ad_title']}</h3>
-            <p>{t['ad_body']}</p>
-            <a class="btn-like" href="https://www.다나눔렌탈.com" target="_blank">{t['ad_btn']}</a>
+            <h3>{t["ad_title"]}</h3>
+            <p>{t["ad_body"]}</p>
+            <a class="btn-link" href="https://www.다나눔렌탈.com" target="_blank">{t["ad_btn"]}</a>
         </div>
         """, unsafe_allow_html=True)
 
-    st.session_state.name = st.text_input(t["name_placeholder"], value=st.session_state.name)
+    st.session_state.name = st.text_input(t.get("name_placeholder","Name"), value=st.session_state.name)
 
-    st.markdown(f"<div class='card'>{t['birth']}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='card'><b>{t.get('birth','Birth')}</b></div>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
     st.session_state.year = c1.number_input("Year" if lang != "ko" else "년", 1900, 2030, st.session_state.year, 1)
     st.session_state.month = c2.number_input("Month" if lang != "ko" else "월", 1, 12, st.session_state.month, 1)
     st.session_state.day = c3.number_input("Day" if lang != "ko" else "일", 1, 31, st.session_state.day, 1)
 
-    choice = st.radio(t["mbti_mode"], [t["direct"], t["test12"], t["test16"]])
+    mbti_choice = st.radio(t.get("mbti_mode","MBTI"), [t.get("direct","Direct"), t.get("test12","12"), t.get("test16","16")])
 
-    if choice == t["direct"]:
-        mbti_input = st.selectbox("MBTI", sorted(mbti_dict.keys()))
-        if st.button(t["fortune_btn"], use_container_width=True):
+    mbti_keys = sorted(MBTI_LABELS_KO.keys())
+
+    if mbti_choice == t.get("direct","Direct"):
+        mbti_input = st.selectbox("MBTI", mbti_keys)
+        if st.button(t.get("fortune_btn","Go"), use_container_width=True):
             go_result(mbti_input)
 
-    elif choice == t["test12"]:
-        st.markdown(f"<div class='card'><b>{t['test_start_12']}</b></div>", unsafe_allow_html=True)
+    elif mbti_choice == t.get("test12","12"):
+        st.markdown(f"<div class='card'><b>{t.get('test_start_12','Start')}</b></div>", unsafe_allow_html=True)
 
-        # 12문항: EI/SN/TF/JP 각각 3문항씩
         ei = sn = tf = jp = 0
 
-        st.subheader(t["energy"])
+        st.subheader(t.get("energy","Energy"))
         for i in range(3):
             ans = st.radio(t["q12_ei"][i], [t["a12_e"][i], t["a12_i"][i]], key=f"t12_ei_{i}")
             if ans == t["a12_e"][i]:
                 ei += 1
 
-        st.subheader(t["info"])
+        st.subheader(t.get("info","Info"))
         for i in range(3):
             ans = st.radio(t["q12_sn"][i], [t["a12_s"][i], t["a12_n"][i]], key=f"t12_sn_{i}")
             if ans == t["a12_s"][i]:
                 sn += 1
 
-        st.subheader(t["decision"])
+        st.subheader(t.get("decision","Decision"))
         for i in range(3):
             ans = st.radio(t["q12_tf"][i], [t["a12_t"][i], t["a12_f"][i]], key=f"t12_tf_{i}")
             if ans == t["a12_t"][i]:
                 tf += 1
 
-        st.subheader(t["life"])
+        st.subheader(t.get("life","Life"))
         for i in range(3):
             ans = st.radio(t["q12_jp"][i], [t["a12_j"][i], t["a12_p"][i]], key=f"t12_jp_{i}")
             if ans == t["a12_j"][i]:
                 jp += 1
 
-        if st.button(t["result_btn"], use_container_width=True):
+        if st.button(t.get("result_btn","Result"), use_container_width=True):
             mbti_code = ("E" if ei >= 2 else "I") + ("S" if sn >= 2 else "N") + ("T" if tf >= 2 else "F") + ("J" if jp >= 2 else "P")
             go_result(mbti_code)
 
     else:
-        st.markdown(f"<div class='card'><b>{t['test_start_16']}</b></div>", unsafe_allow_html=True)
-
+        st.markdown(f"<div class='card'><b>{t.get('test_start_16','Start')}</b></div>", unsafe_allow_html=True)
         e_i = s_n = t_f = j_p = 0
 
-        st.subheader(t["energy"])
+        st.subheader(t.get("energy","Energy"))
         for i in range(4):
             ans = st.radio(t["q_energy"][i], [t["options_e"][i], t["options_i"][i]], key=f"t16_ei_{i}")
             if ans == t["options_e"][i]:
                 e_i += 1
 
-        st.subheader(t["info"])
+        st.subheader(t.get("info","Info"))
         for i in range(4):
             ans = st.radio(t["q_info"][i], [t["options_s"][i], t["options_n"][i]], key=f"t16_sn_{i}")
             if ans == t["options_s"][i]:
                 s_n += 1
 
-        st.subheader(t["decision"])
+        st.subheader(t.get("decision","Decision"))
         for i in range(4):
             ans = st.radio(t["q_decision"][i], [t["options_t"][i], t["options_f"][i]], key=f"t16_tf_{i}")
             if ans == t["options_t"][i]:
                 t_f += 1
 
-        st.subheader(t["life"])
+        st.subheader(t.get("life","Life"))
         for i in range(4):
             ans = st.radio(t["q_life"][i], [t["options_j"][i], t["options_p"][i]], key=f"t16_jp_{i}")
             if ans == t["options_j"][i]:
                 j_p += 1
 
-        if st.button(t["result_btn"], use_container_width=True):
+        if st.button(t.get("result_btn","Result"), use_container_width=True):
             mbti_code = ("E" if e_i >= 3 else "I") + ("S" if s_n >= 3 else "N") + ("T" if t_f >= 3 else "F") + ("J" if j_p >= 3 else "P")
             go_result(mbti_code)
 
-    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
-    if st.button(t["reset"], use_container_width=True):
+    if st.button(t.get("reset","Reset"), use_container_width=True):
         reset_all()
 
 
 # =========================
-# 8) 결과 화면
+# 11) 결과 화면
 # =========================
 if st.session_state.step == "result":
     mbti = st.session_state.mbti
     zodiac = get_zodiac(st.session_state.year, lang)
     if zodiac is None:
         st.error("Please enter a birth year between 1900 and 2030!" if lang != "ko" else "생년은 1900~2030년 사이로 입력해주세요!")
-        if st.button(t["reset"], use_container_width=True):
+        if st.button(t.get("reset","Reset"), use_container_width=True):
             reset_all()
         st.stop()
 
-    # MBTI 표시 텍스트
-    mbti_desc = (MBTI_LABELS["ko"].get(mbti) if lang == "ko" else MBTI_LABELS["en"].get(mbti)) or mbti
+    # MBTI 설명
+    mbti_desc = (MBTI_LABELS_KO.get(mbti) if lang == "ko" else MBTI_LABELS_EN.get(mbti)) or mbti
 
-    # 띠 설명(한국어만 풍부)
+    # 띠 설명(한국어는 풍부)
     if lang == "ko":
         zodiac_desc = ZODIAC_DESC_KO.get(zodiac, "")
-        zodiac_display = zodiac
         zodiac_index = ZODIAC_NAMES["ko"].index(zodiac)
     else:
         zodiac_desc = zodiac
-        zodiac_display = zodiac
         zodiac_index = ZODIAC_NAMES.get(lang, ZODIAC_NAMES["en"]).index(zodiac)
+
+    # 운세 문구
+    daily_msgs = translations["ko"]["options_e"]  # placeholder 방지(아래서 교체)
+    if lang == "ko":
+        daily_pool = [
+            "재물운이 좋아요! 작은 선택이 이득으로 이어져요.",
+            "연애/인연운이 좋아요! 먼저 연락해도 좋아요.",
+            "건강운 체크! 무리하지 말고 리듬을 지켜요.",
+            "전체운 상승! 타이밍이 좋아요.",
+            "인간관계운 호조! 도움 받을 일이 생겨요.",
+            "일/학업운 호조! 집중력이 올라가요.",
+            "이동/여행운 좋음! 기분전환 추천!",
+            "기분 좋은 하루! 웃음이 더 큰 운을 불러요."
+        ]
+    else:
+        daily_pool = [
+            "Wealth luck is good; small choices pay off.",
+            "Love/connection luck is good; reach out first.",
+            "Mind your health; keep your rhythm.",
+            "Overall luck rises; timing is on your side.",
+            "Relationships are smooth; help comes in.",
+            "Work/study luck is good; focus increases.",
+            "Travel/move luck is good; refresh yourself!",
+            "A happy day: laughter attracts luck."
+        ]
+
+    overall_pool = ([
+        "성장과 재물이 함께하는 해! 기회가 자주 와요.",
+        "안정과 행복이 커지는 해! 관계운이 좋아요.",
+        "도전과 성과의 해! 실력이 인정받아요.",
+        "인연과 사랑운이 강해지는 해! 마음이 따뜻해져요.",
+        "변화와 새출발의 해! 아이디어가 빛나요."
+    ] if lang == "ko" else [
+        "A year of growth and opportunities!",
+        "A stable year with stronger relationships!",
+        "A year of challenges and achievements!",
+        "A warmer year with love and connections!",
+        "A year of change and fresh starts!"
+    ])
+
+    tips_pool = ([
+        "작은 약속을 지키면 큰 운이 따라와요.",
+        "과감한 결정보단 ‘검증 후 실행’이 유리해요.",
+        "컨디션 관리가 곧 운 관리! 수면을 챙겨요.",
+        "가까운 사람과의 대화가 행운의 열쇠예요.",
+        "배움/취미 하나를 시작하면 흐름이 바뀌어요."
+    ] if lang == "ko" else [
+        "Small consistency brings big luck.",
+        "Validate before acting; it pays off.",
+        "Health is luck: protect your sleep.",
+        "Talk with close people; it opens doors.",
+        "Start a hobby; it changes the flow."
+    ])
 
     saju = get_saju(st.session_state.year, st.session_state.month, st.session_state.day, lang)
 
-    today_msg = deterministic_daily_msg(lang, zodiac_index, 0, t["daily_msgs"])
-    tomorrow_msg = deterministic_daily_msg(lang, zodiac_index, 1, t["daily_msgs"])
+    today_msg = deterministic_daily_msg(zodiac_index, 0, daily_pool)
+    tomorrow_msg = deterministic_daily_msg(zodiac_index, 1, daily_pool)
 
-    overall = random.choice(t["overall_fortunes"])
-    lucky_color = random.choice(t["lucky_colors"])
-    lucky_item = random.choice(t["lucky_items"])
-    tip = random.choice(t["tips"])
+    overall = random.choice(overall_pool)
+    lucky_color = random.choice((["골드","레드","블루","그린","퍼플"] if lang == "ko" else ["Gold","Red","Blue","Green","Purple"]))
+    lucky_item = random.choice((["황금 액세서리","빨간 지갑","파란 목걸이","초록 식물","보라색 펜"] if lang == "ko" else ["Golden accessory","Red wallet","Blue necklace","Green plant","Purple pen"]))
+    tip = random.choice(tips_pool)
 
-    # 조합 조언(요청: MBTI가 운세에 미치는 영향 형태)
+    # 조합 조언(요청: MBTI 영향 반영)
     if lang == "ko":
         combo_advice = (
-            f"'{mbti}' 성향은 {('계획/통제' if 'J' in mbti else '유연/즉흥')}에 강점이 있어요. "
-            f"올해 '{zodiac_display}' 흐름에서는 "
-            f"{('루틴을 만들면 운이 폭발' if 'J' in mbti else '기회를 잡는 순발력이 복' )}합니다. "
-            f"{('결정 전에 1번 더 검증' if 'T' in mbti else '감정 소진 방지선부터 확보')}이 핵심!"
+            f"'{mbti}'는 {('계획/정리' if 'J' in mbti else '유연/즉흥')}에 강점이 있어요. "
+            f"올해 '{zodiac}' 흐름에서는 "
+            f"{('루틴을 만들면 운이 커지고' if 'J' in mbti else '기회를 잡는 순발력이 복이 되고')} "
+            f"{('결정 전 1번 더 검증' if 'T' in mbti else '감정 소진 방지선 확보')}이 핵심이에요."
         )
     else:
-        combo_advice = (
-            f"Your MBTI ({mbti}) affects your decision style. "
-            f"Use your strength (planning vs flexibility) to ride this year's flow."
-        )
+        combo_advice = f"Your MBTI ({mbti}) shapes your decision style. Use your strengths to ride this year's flow."
 
+    # 이름 표시
     name_display = st.session_state.name.strip()
     if lang == "ko" and name_display:
         name_display = f"{name_display}님"
 
+    # 결과 헤더(가독성 강화)
     st.markdown(f"""
-    <div class="result-bg">
-        <div class="title-white">{name_display + " " if name_display else ""}2026 {("운세" if lang=="ko" else "Fortune")}</div>
-        <div class="sub-white">{zodiac_display} + {mbti}</div>
+    <div class="result-head">
+        <div class="result-title">{(name_display + " " if name_display else "")}{("2026 운세" if lang=="ko" else "2026 Fortune")}</div>
+        <div class="result-sub">{zodiac}  ·  {mbti} ({mbti_desc})</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # 메인 카드
+    # 결과 카드
     st.markdown(f"""
-    <div class="card kpi">
-        <div class="pill"><b>{t['zodiac_title']}</b>: {zodiac_desc}</div>
-        <div class="pill"><b>{t['mbti_title']}</b>: {mbti_desc}</div>
-        <div class="pill"><b>{t['saju_title']}</b>: {saju}</div>
-        <hr style="border:none;border-top:1px solid rgba(0,0,0,0.08); margin:10px 0;">
-        <div><b>{t['today_title']}</b>: {today_msg}</div>
-        <div><b>{t['tomorrow_title']}</b>: {tomorrow_msg}</div>
-        <hr style="border:none;border-top:1px solid rgba(0,0,0,0.08); margin:10px 0;">
-        <div><b>{t['overall_title']}</b>: {overall}</div>
-        <div><b>{t['combo_title']}</b>: {combo_advice}</div>
-        <div><b>{t['lucky_color_title']}</b>: {lucky_color}  |  <b>{t['lucky_item_title']}</b>: {lucky_item}</div>
-        <div><b>{t['tip_title']}</b>: {tip}</div>
+    <div class="card kv">
+        <div><b>{t.get("zodiac_title","Zodiac")}</b>: {zodiac_desc}</div>
+        <div><b>{t.get("mbti_title","MBTI")}</b>: {mbti_desc}</div>
+        <div><b>{t.get("saju_title","Comment")}</b>: {saju}</div>
+        <div class="divider"></div>
+        <div><b>{t.get("today_title","Today")}</b>: {today_msg}</div>
+        <div><b>{t.get("tomorrow_title","Tomorrow")}</b>: {tomorrow_msg}</div>
+        <div class="divider"></div>
+        <div><b>{t.get("overall_title","Overall")}</b>: {overall}</div>
+        <div><b>{t.get("combo_title","Advice")}</b>: {combo_advice}</div>
+        <div><b>{t.get("lucky_color_title","Color")}</b>: {lucky_color}  |  <b>{t.get("lucky_item_title","Item")}</b>: {lucky_item}</div>
+        <div><b>{t.get("tip_title","Tip")}</b>: {tip}</div>
     </div>
     """, unsafe_allow_html=True)
 
     # =========================
-    # 8-1) 공유 버튼 (모바일: 공유 시트, PC: 복사)
+    # 11-1) 공유 버튼(복구)
+    #  - HTML 버튼 클릭 시 navigator.share(모바일) / clipboard(PC)
+    #  - 그리고 URL에 ?shared=1 붙여서 Python이 share_clicked=True로 인식
     # =========================
     share_text = (
-        f"{(name_display + ' ' if name_display else '')}2026 운세\n\n"
-        f"{zodiac_display} + {mbti}\n\n"
-        f"{t['today_title']}: {today_msg}\n"
-        f"{t['tomorrow_title']}: {tomorrow_msg}\n\n"
-        f"{t['overall_title']}: {overall}\n"
-        f"{t['combo_title']}: {combo_advice}\n"
-        f"{t['lucky_color_title']}: {lucky_color} / {t['lucky_item_title']}: {lucky_item}\n"
-        f"{t['tip_title']}: {tip}\n\n"
+        f"{(name_display + ' ' if name_display else '')}{('2026 운세' if lang=='ko' else '2026 Fortune')}\n\n"
+        f"{zodiac} + {mbti}\n\n"
+        f"{t.get('today_title','Today')}: {today_msg}\n"
+        f"{t.get('tomorrow_title','Tomorrow')}: {tomorrow_msg}\n\n"
+        f"{t.get('overall_title','Overall')}: {overall}\n"
+        f"{t.get('combo_title','Advice')}: {combo_advice}\n"
+        f"{t.get('lucky_color_title','Color')}: {lucky_color} / {t.get('lucky_item_title','Item')}: {lucky_item}\n"
+        f"{t.get('tip_title','Tip')}: {tip}\n\n"
         f"{APP_URL}"
     )
 
-    # 버튼 UI(스트림릿 버튼 + JS)
-    # - 클릭 시: navigator.share 지원이면 공유 시트 호출
-    # - 아니면 클립보드 복사
-    # - 추가기회: 클릭만 해도 1회 추가(요청대로 "공유 버튼 누르면" 기준)
-    st.markdown(f"""
-    <div class="card" style="text-align:center;">
-        <button id="shareBtn"
-            style="background:#ffffff; color:#8e44ad; padding:14px 22px; border:none; border-radius:999px;
-                   font-size:1.05rem; font-weight:800; box-shadow: 0 8px 22px rgba(142,68,173,0.18);
-                   width:100%; max-width:520px; cursor:pointer;">
-            {t["share_btn"]}
-        </button>
-        <div style="margin-top:10px; font-size:0.92rem; color:#666;">
-            {("공유를 누르면 미니게임 기회가 1회 늘어나요!" if lang=="ko" else "Sharing gives +1 extra attempt for the mini game.")}
+    share_payload = json.dumps({"text": share_text, "title": "2026 Fortune", "url": APP_URL}, ensure_ascii=False)
+
+    components.html(
+        f"""
+        <div style="width:100%; text-align:center; margin: 8px 0 0;">
+          <button id="shareBtn"
+            style="width:100%; max-width:640px; background:#ffffff; color:#8e44ad; padding:14px 18px; border:none;
+                   border-radius:999px; font-size:1.05rem; font-weight:900;
+                   box-shadow: 0 10px 22px rgba(142,68,173,0.18); cursor:pointer;">
+            {t.get("share_btn","Share")}
+          </button>
+          <div style="margin-top:8px; font-size:0.92rem; color:#6b7280;">
+            {t.get("share_hint","")}
+          </div>
         </div>
-    </div>
 
-    <script>
-    const shareText = {repr(share_text)};
-    const shareBtn = document.getElementById("shareBtn");
+        <script>
+          const payload = {share_payload};
+          const btn = document.getElementById("shareBtn");
 
-    function notifyStreamlitShareClicked(){{
-        const ev = new CustomEvent("share-clicked");
-        window.dispatchEvent(ev);
-    }}
-
-    shareBtn.addEventListener("click", async () => {{
-        try {{
-            if (navigator.share) {{
-                await navigator.share({{ text: shareText, title: "2026 Fortune", url: "{APP_URL}" }});
-            }} else {{
-                await navigator.clipboard.writeText(shareText);
-                alert("{'결과가 복사됐어요! 카톡/메시지에 붙여넣기 해주세요.' if lang=='ko' else 'Copied! Paste it anywhere.'}");
+          btn.addEventListener("click", async () => {{
+            try {{
+              if (navigator.share) {{
+                await navigator.share(payload);
+              }} else {{
+                await navigator.clipboard.writeText(payload.text);
+                alert({json.dumps(t.get("copied","Copied!"), ensure_ascii=False)});
+              }}
+            }} catch(e) {{
+              // 사용자가 공유 취소해도 아래 로직으로 추가기회는 부여(요청 반영)
             }}
-        }} catch (e) {{
-            // 사용자가 공유 취소해도 기회는 준다(요청 기준)
-        }}
-        notifyStreamlitShareClicked();
-    }});
-    </script>
-    """, unsafe_allow_html=True)
 
-    # JS 이벤트를 Streamlit로 받기 위한 간단 트릭:
-    # streamlit은 window event 직접 수신이 어려워서, share_clicked는 "다음 rerun 시"에 반영되게 버튼도 하나 둠.
-    # (모바일 공유 후 돌아오면 rerun이 자주 발생함. 혹시 안 되면 아래 숨은 버튼을 한 번 누르게 안내)
-    # 실사용에서 무반응 방지: '공유 완료 체크' 버튼 제공(겉으로는 작게)
-    cA, cB = st.columns([3, 1])
-    with cB:
-        if st.button("✓", help="공유를 눌렀다면 한번만 눌러주세요 (추가기회 체크)", use_container_width=True):
-            st.session_state.share_clicked = True
-            st.toast("추가기회 +1 적용!", icon="🎁")
+            // 공유 클릭 기록: URL에 shared=1 붙여 리로드 → Python에서 share_clicked=True 처리
+            const base = window.location.origin + window.location.pathname;
+            window.location.href = base + "?shared=1";
+          }});
+        </script>
+        """,
+        height=120
+    )
 
     # =========================
-    # 8-2) 타로(정상 작동 유지)
+    # 11-2) 타로
     # =========================
-    if st.button(t["tarot_btn"], use_container_width=True):
-        tarot_card = random.choice(list(t["tarot_cards"].keys()))
-        tarot_meaning = t["tarot_cards"][tarot_card]
+    tarot_cards = (translations["ko"]["tarot_cards"] if "tarot_cards" in translations["ko"] else {
+        "The Sun": "행복, 성공, 긍정 에너지"
+    })
+    if st.button(t.get("tarot_btn","Tarot"), use_container_width=True):
+        tarot_card = random.choice(list(tarot_cards.keys()))
+        tarot_meaning = tarot_cards[tarot_card]
         st.markdown(f"""
         <div class="card" style="text-align:center;">
-            <h3 style="margin:0; color:#9b59b6;">{t['tarot_title']}</h3>
-            <h2 style="margin:8px 0 4px; color:#333;">{tarot_card}</h2>
-            <p style="margin:0; font-size:1.05rem; line-height:1.6; color:#111;">{tarot_meaning}</p>
+            <h3 style="margin:0; color:#8e44ad;">{t.get("tarot_title","Tarot")}</h3>
+            <div style="font-size:1.5rem; font-weight:900; margin-top:8px; color:#111;">{tarot_card}</div>
+            <div style="margin-top:6px; color:#333; font-size:1.05rem; line-height:1.6;">{tarot_meaning}</div>
         </div>
         """, unsafe_allow_html=True)
 
     # =========================
-    # 8-3) (한국어만) 미니게임 + 선착순20 + 중복방지 + 개인정보 동의 + 시트저장
+    # 11-3) (한국어만) 미니게임 + 선착순 + 중복방지 + 구글시트 저장
+    #  - 스톱워치: JS로 "이미지처럼 큰 디지털 표시"
     # =========================
     if EVENT_ENABLED and lang == EVENT_LANGUAGE_ONLY:
         st.markdown(f"""
         <div class="card">
-            <h3 style="margin:0 0 6px;">{t["event_title"]}</h3>
-            <div style="color:#444; font-size:0.95rem; line-height:1.5;">
-                {t["event_desc"]}<br>
-                <span style="color:#666;">목표: <b>{TARGET_SECONDS:.2f}s</b> / 허용오차: <b>±{PASS_TOLERANCE:.2f}s</b></span>
+            <div style="font-weight:900; font-size:1.15rem; color:#111;">{t["event_title"]}</div>
+            <div style="margin-top:6px; color:#374151; font-size:0.98rem; line-height:1.55;">
+              {t["event_desc"]}<br>
+              <span style="color:#6b7280;">목표: <b>{TARGET_SECONDS:.2f}s</b> / 허용오차: <b>±{PASS_TOLERANCE:.2f}s</b></span>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
         ws = get_sheet()
         if ws is None:
-            st.warning("구글시트 연결이 아직 안 되어 있어요. (SHEET_ID/Secrets/requirements 확인 필요)")
+            st.warning("구글시트 연결이 아직 안 되어 있어요. (Secrets/requirements/시트 공유 확인 필요)")
         else:
             try:
                 current_count, hashed_set = sheet_get_stats(ws)
@@ -847,53 +849,110 @@ if st.session_state.step == "result":
                 total_attempts = BASE_ATTEMPTS + (EXTRA_ATTEMPTS_ON_SHARE if st.session_state.share_clicked else 0)
                 attempts_left = max(0, total_attempts - st.session_state.mg_attempts_used)
 
-                st.markdown(f"<div class='card'><b>{t['event_attempts_left']}</b>: {attempts_left} / {total_attempts}</div>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div class="card">
+                    <b>{t["event_attempts_left"]}</b>: {attempts_left} / {total_attempts}
+                    <div style="margin-top:6px; color:#6b7280; font-size:0.92rem;">
+                        {"(공유 클릭됨: 추가 기회 +1 적용)" if st.session_state.share_clicked else t["event_need_share"]}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-                if not st.session_state.share_clicked:
-                    st.caption(t["event_need_share"])
+                # --- 스톱워치 디지털 표시(이미지처럼 보이게) ---
+                start_ts = st.session_state.mg_started_at
+                start_ts_js = "null" if start_ts is None else str(float(start_ts))
 
-                # 미니게임 UI
-                mg_box = st.container()
-                with mg_box:
-                    cols = st.columns(2)
-                    with cols[0]:
-                        start_clicked = st.button(t["event_start"], use_container_width=True, disabled=(attempts_left <= 0 or st.session_state.mg_started_at is not None))
-                    with cols[1]:
-                        stop_clicked = st.button(t["event_stop"], use_container_width=True, disabled=(st.session_state.mg_started_at is None or attempts_left <= 0))
+                components.html(
+                    f"""
+                    <div style="width:100%; display:flex; justify-content:center; margin: 6px 0 0;">
+                      <div id="watch"
+                        style="
+                          width:100%;
+                          max-width:640px;
+                          background: linear-gradient(180deg, #0b1220 0%, #111827 100%);
+                          border: 1px solid rgba(255,255,255,0.10);
+                          border-radius: 18px;
+                          padding: 18px 16px;
+                          box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+                          text-align:center;
+                        ">
+                        <div style="color: rgba(255,255,255,0.75); font-size:0.92rem; margin-bottom:10px;">
+                          STOPWATCH
+                        </div>
+                        <div id="time"
+                          style="
+                            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+                            font-size: 3.2rem;
+                            font-weight: 900;
+                            letter-spacing: 0.06em;
+                            color: #e5e7eb;
+                            text-shadow: 0 0 18px rgba(45,108,223,0.35);
+                            line-height:1;
+                          ">00.000</div>
+                        <div style="margin-top:10px; color: rgba(255,255,255,0.65); font-size:0.92rem;">
+                          Target: <b style="color:#fff;">{TARGET_SECONDS:.2f}s</b>
+                        </div>
+                      </div>
+                    </div>
 
-                    if start_clicked:
+                    <script>
+                      const startTs = {start_ts_js};
+                      const timeEl = document.getElementById("time");
+                      let raf = null;
+
+                      function tick(){{
+                        if(startTs === null){{
+                          timeEl.textContent = "00.000";
+                          return;
+                        }}
+                        const now = Date.now()/1000.0;
+                        const elapsed = Math.max(0, now - startTs);
+                        timeEl.textContent = elapsed.toFixed(3).padStart(6,'0');
+                        raf = requestAnimationFrame(tick);
+                      }}
+
+                      if(startTs !== null) {{
+                        tick();
+                      }}
+                    </script>
+                    """,
+                    height=170
+                )
+
+                # 버튼
+                cA, cB = st.columns(2)
+                start_disabled = (attempts_left <= 0) or (st.session_state.mg_started_at is not None)
+                stop_disabled = (st.session_state.mg_started_at is None) or (attempts_left <= 0)
+
+                with cA:
+                    if st.button(t["event_start"], use_container_width=True, disabled=start_disabled):
                         st.session_state.mg_started_at = time.time()
                         st.session_state.mg_last_elapsed = None
                         st.session_state.mg_passed = False
                         st.rerun()
 
-                    if stop_clicked and st.session_state.mg_started_at is not None:
+                with cB:
+                    if st.button(t["event_stop"], use_container_width=True, disabled=stop_disabled):
                         elapsed = time.time() - st.session_state.mg_started_at
                         st.session_state.mg_started_at = None
                         st.session_state.mg_last_elapsed = elapsed
                         st.session_state.mg_attempts_used += 1
-
-                        if abs(elapsed - TARGET_SECONDS) <= PASS_TOLERANCE:
-                            st.session_state.mg_passed = True
-                        else:
-                            st.session_state.mg_passed = False
+                        st.session_state.mg_passed = (abs(elapsed - TARGET_SECONDS) <= PASS_TOLERANCE)
                         st.rerun()
 
-                    if st.session_state.mg_last_elapsed is not None:
-                        st.markdown(
-                            f"<div class='card'><b>{t['event_elapsed']}</b>: {st.session_state.mg_last_elapsed:.3f}s</div>",
-                            unsafe_allow_html=True
-                        )
-                        if st.session_state.mg_passed:
-                            st.success(t["event_success"])
-                        else:
-                            st.error(t["event_fail"])
+                # 결과 표시
+                if st.session_state.mg_last_elapsed is not None:
+                    st.markdown(
+                        f"<div class='card'><b>{t['event_elapsed']}</b>: {st.session_state.mg_last_elapsed:.3f}s</div>",
+                        unsafe_allow_html=True
+                    )
+                    if st.session_state.mg_passed:
+                        st.success(t["event_success"])
+                    else:
+                        st.error(t["event_fail"])
 
-                # 통과 시 응모 폼
-                if st.session_state.mg_passed and not st.session_state.mg_entry_done:
-                    st.markdown(f"<div class='card'><h3 style='margin:0 0 8px;'>{t['event_form_title']}</h3></div>", unsafe_allow_html=True)
-
-                    # 개인정보 동의 문구 (필수 고지 항목 포함)
+                # 통과하면 응모 폼
+                if st.session_state.mg_passed and (not st.session_state.mg_entry_done):
                     consent_text = f"""
 - **수집 항목**: 이름, 휴대폰번호  
 - **이용 목적**: 커피쿠폰 당첨자 확인 및 쿠폰 발송, 문의 응대  
@@ -902,6 +961,7 @@ if st.session_state.step == "result":
 - **처리/보관 방식**: 구글 스프레드시트에 저장되며, 목적 달성 후 지체 없이 파기합니다.  
                     """.strip()
 
+                    st.markdown(f"<div class='card'><b>{t['event_form_title']}</b></div>", unsafe_allow_html=True)
                     st.markdown(f"<div class='card'><b>{t['consent_title']}</b><br><br>{consent_text}</div>", unsafe_allow_html=True)
 
                     consent_ok = st.checkbox(t["consent_check"], value=False)
@@ -911,7 +971,6 @@ if st.session_state.step == "result":
                     entry_phone = st.text_input(t["phone_label"], placeholder=t["phone_hint"])
 
                     if st.button(t["submit_entry"], use_container_width=True, disabled=not consent_ok):
-                        # 입력 검증
                         phone_digits = "".join([c for c in entry_phone if c.isdigit()])
                         if len(phone_digits) < 10 or len(phone_digits) > 11:
                             st.error("전화번호를 정확히 입력해주세요. (숫자만 10~11자리)")
@@ -919,7 +978,7 @@ if st.session_state.step == "result":
                             st.error("이름을 입력해주세요.")
                         else:
                             try:
-                                # 최신 상태 재조회(동시성 대비)
+                                # 최신 상태 재조회
                                 current_count2, hashed_set2 = sheet_get_stats(ws)
                                 if current_count2 >= WINNER_LIMIT:
                                     st.info(t["event_closed"])
@@ -937,10 +996,10 @@ if st.session_state.step == "result":
                 if st.session_state.mg_entry_done:
                     st.markdown("<div class='card'><b>✅ 응모 완료</b><br>선착순/중복 여부는 시트 기록 순서로 확정됩니다.</div>", unsafe_allow_html=True)
 
-    # 하단 URL + 리셋
-    st.markdown(f"<div style='text-align:center; margin-top:8px; color:#666; font-size:0.9rem;'>{APP_URL}</div>", unsafe_allow_html=True)
+    # 하단 URL
+    st.markdown(f"<div class='hint'>{APP_URL}</div>", unsafe_allow_html=True)
 
-    if st.button(t["reset"], use_container_width=True):
+    if st.button(t.get("reset","Reset"), use_container_width=True):
         reset_all()
 
-    st.markdown("</div>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
