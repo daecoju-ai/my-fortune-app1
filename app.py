@@ -15,12 +15,10 @@ st.set_page_config(page_title="2026 Fortune × MBTI", layout="centered")
 st.markdown(
     """
 <style>
-/* Streamlit 기본 여백/헤더로 가려지는 문제 완화 */
 header, footer {visibility:hidden;}
 .block-container {padding-top: 0.7rem; padding-bottom: 2rem; max-width: 880px;}
 html, body, [class*="css"] {font-family: system-ui, -apple-system, "Noto Sans KR", "Segoe UI", Arial, sans-serif;}
 
-/* 상단 그라데이션 헤더 */
 .hero {
   background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
   border-radius: 22px;
@@ -33,7 +31,6 @@ html, body, [class*="css"] {font-family: system-ui, -apple-system, "Noto Sans KR
 .hero-title {font-size: 1.85rem; font-weight: 900; margin: 0;}
 .hero-sub {opacity: 0.88; font-size: 0.98rem; margin-top: 6px;}
 
-/* 카드 */
 .card {
   background: rgba(255,255,255,0.96);
   border-radius: 20px;
@@ -45,7 +42,6 @@ html, body, [class*="css"] {font-family: system-ui, -apple-system, "Noto Sans KR
 .card-title {font-weight: 900; margin-bottom: 8px;}
 .mini {font-size: 0.92rem; opacity: 0.78;}
 
-/* 광고 카드 */
 .ad-reserved {
   border: 2px dashed rgba(160,120,220,0.55);
   border-radius: 18px;
@@ -53,6 +49,7 @@ html, body, [class*="css"] {font-family: system-ui, -apple-system, "Noto Sans KR
   text-align: center;
   margin: 10px 0 14px 0;
 }
+
 .ad-ko {
   background: #fffbe6;
   border: 2px solid rgba(230,126,34,0.35);
@@ -162,6 +159,8 @@ T = {
         "lucky_color": "럭키 컬러",
         "lucky_item": "럭키 아이템",
         "lucky_num": "럭키 넘버",
+        "mbti_influence": "MBTI가 운세에 미치는 영향",
+        "combo_advice": "띠 + MBTI 조합 조언",
         "err_year": "생년은 1900~2030년 사이로 입력해주세요!",
         "err_birth": "생년월일이 올바르지 않아요. 날짜를 다시 확인해 주세요!",
         "ad_badge": "광고",
@@ -211,6 +210,8 @@ T = {
         "lucky_color": "Lucky color",
         "lucky_item": "Lucky item",
         "lucky_num": "Lucky number",
+        "mbti_influence": "How MBTI affects your fortune",
+        "combo_advice": "Zodiac + MBTI combo advice",
         "err_year": "Birth year must be 1900–2030!",
         "err_birth": "Invalid birth date. Please check again!",
         "ad_reserved": "AD (Ads will appear here after approval)",
@@ -255,6 +256,8 @@ T = {
         "lucky_color": "幸运色",
         "lucky_item": "幸运物",
         "lucky_num": "幸运数字",
+        "mbti_influence": "MBTI 对运势的影响",
+        "combo_advice": "生肖 + MBTI 组合建议",
         "err_year": "出生年份需在 1900–2030！",
         "err_birth": "生日不正确，请重新检查！",
         "ad_reserved": "AD（审核通过后此处显示广告）",
@@ -299,6 +302,8 @@ T = {
         "lucky_color": "ラッキーカラー",
         "lucky_item": "ラッキーアイテム",
         "lucky_num": "ラッキーナンバー",
+        "mbti_influence": "MBTI が運勢に与える影響",
+        "combo_advice": "干支 + MBTI 組み合わせアドバイス",
         "err_year": "1900〜2030年の範囲で入力してください！",
         "err_birth": "生年月日が正しくありません。確認してください！",
         "ad_reserved": "AD（承認後ここに広告が表示されます）",
@@ -343,6 +348,8 @@ T = {
         "lucky_color": "Цвет",
         "lucky_item": "Талисман",
         "lucky_num": "Число",
+        "mbti_influence": "Как MBTI влияет на удачу",
+        "combo_advice": "Совет по сочетанию",
         "err_year": "Год рождения должен быть 1900–2030!",
         "err_birth": "Неверная дата рождения. Проверьте!",
         "ad_reserved": "AD (после одобрения здесь будет реклама)",
@@ -387,6 +394,8 @@ T = {
         "lucky_color": "रंग",
         "lucky_item": "आइटम",
         "lucky_num": "नंबर",
+        "mbti_influence": "MBTI का असर",
+        "combo_advice": "कॉम्बो सलाह",
         "err_year": "वर्ष 1900–2030 के बीच होना चाहिए!",
         "err_birth": "जन्मतिथि गलत है। कृपया जाँचें!",
         "ad_reserved": "AD (स्वीकृति के बाद यहाँ विज्ञापन दिखेगा)",
@@ -517,108 +526,196 @@ FORTUNE = {
         "colors": ["Gold","Red","Blue","Green","Purple","White","Black"],
         "items": ["Golden accessory","Red wallet","Blue keyring","Green plant","Purple pen","Minimal watch"],
     },
-    "zh": {
+    "zh": {  # non-ko/en은 en fallback이지만, 간단 메시지는 유지
         "saju_line": "五行均衡 → 不要过度用力，整体更顺。",
-        "today": ["整理会打开好运：先完成一件拖延的事。", "主动联系更顺利。", "别急躁就大吉。", "30分钟沉浸就能改变节奏。", "小小善意会换来大人缘。"],
-        "tomorrow": ["人际运强：约会/会议里会出现关键提示。", "比较后再决定更划算。", "把睡眠当投资。", "先定优先级，一切会更顺。", "适度放松OK。"],
-        "annual": ["复利成长的一年：小改进带来大成果。", "机会来自人：关系就是资产。", "整理与取舍让好运加速。", "坚持就是爆发点。", "年底会收获明确结果。"],
+        "today": ["整理会打开好运：先完成一件拖延的事。", "主动联系更顺利。", "别急躁就大吉。"],
+        "tomorrow": ["人际运强：约会/会议里会出现关键提示。", "比较后再决定更划算。", "把睡眠当投资。"],
+        "annual": ["复利成长的一年：小改进带来大成果。", "机会来自人：关系就是资产。", "整理与取舍让好运加速。"],
         "love": ["先发个问候。", "别急着下结论，保持温度。"],
         "money": ["先堵住漏财：订阅/固定支出检查。", "减少冲动消费，财运上升。"],
         "work": ["协作运佳：多同步一次更快。", "用基本功稳扎稳打最有效。"],
         "health": ["注意咖啡因过量。", "轻松散步能提升能量。"],
-        "tips": ["桌面整理3分钟", "早晨散步10分钟", "记一行支出", "今天只完成一件事"],
+        "tips": ["桌面整理3分钟", "早晨散步10分钟", "记一行支出"],
         "cautions": ["冲动购物", "熬夜/过劳", "情绪爆发"],
         "colors": ["金色","红色","蓝色","绿色","紫色","白色","黑色"],
         "items": ["金色饰品","红色钱包","蓝色挂件","绿植","紫色笔","简约手表"],
     },
     "ja": {
         "saju_line": "五行バランス → 無理しなければ全体運◎。",
-        "today": ["片付けが運を開く。後回しを1つ終える。", "先に連絡で対人運UP。", "焦り注意、落ち着いて大吉。", "30分の没頭が一日を変える。", "小さな優しさがご縁に。"],
-        "tomorrow": ["人運が強い。約束にヒント。", "比較して決めると◎。", "睡眠に投資を。", "優先順位でスムーズ。", "気分転換OK。"],
-        "annual": ["小さな改善が大きな成果へ。", "チャンスは人から来る。", "整理と選択が運を開く。", "継続が爆発点。", "年末に結果が残る。"],
+        "today": ["片付けが運を開く。後回しを1つ終える。", "先に連絡で対人運UP。", "焦り注意、落ち着いて大吉。"],
+        "tomorrow": ["人運が強い。約束にヒント。", "比較して決めると◎。", "睡眠に投資を。"],
+        "annual": ["小さな改善が大きな成果へ。", "チャンスは人から来る。", "整理と選択が運を開く。"],
         "love": ["まず一言。", "結論を急がず温度感を大切に。"],
         "money": ["サブスク/固定費の見直し。", "衝動買いを抑えると金運UP。"],
         "work": ["共有をもう一回で加速。", "基礎で勝負が一番強い。"],
         "health": ["カフェイン過多に注意。", "軽い散歩が気を上げる。"],
-        "tips": ["机を3分整理", "朝10分散歩", "支出を1行記録", "今日は1つだけ終える"],
+        "tips": ["机を3分整理", "朝10分散歩", "支出を1行記録"],
         "cautions": ["衝動買い", "過労/夜更かし", "感情の爆発"],
         "colors": ["ゴールド","レッド","ブルー","グリーン","パープル","ホワイト","ブラック"],
         "items": ["金のアクセ","赤い財布","青いキーホルダー","観葉植物","紫のペン","シンプル時計"],
     },
     "ru": {
         "saju_line": "Баланс элементов → не перегружай себя, и всё сложится.",
-        "today": ["Порядок открывает удачу: закройте одну задачу.", "Напишите первым — это даст шанс.", "Решайте быстро, действуйте спокойно.", "30 минут фокуса меняют день.", "Доброта вернётся поддержкой."],
-        "tomorrow": ["Встреча даст подсказку.", "Сравните перед выбором.", "Вложитесь в сон.", "Приоритеты — и всё легче.", "Умеренно — можно и потратить."],
-        "annual": ["Малые улучшения дают большой эффект.", "Возможности приходят через людей.", "Расхламление ускоряет удачу.", "Ещё один шаг — и прорыв.", "К концу года будет результат."],
+        "today": ["Порядок открывает удачу: закройте одну задачу.", "Напишите первым — это даст шанс.", "Решайте быстро, действуйте спокойно."],
+        "tomorrow": ["Встреча даст подсказку.", "Сравните перед выбором.", "Вложитесь в сон."],
+        "annual": ["Малые улучшения дают большой эффект.", "Возможности приходят через людей.", "Расхламление ускоряет удачу."],
         "love": ["Короткое сообщение — лучший старт.", "Не торопите выводы, держите тепло."],
         "money": ["Проверьте подписки и расходы.", "Меньше импульсивных покупок — больше удачи."],
         "work": ["Ещё одно обновление команде — быстрее пойдёт.", "Ставка на базу — сильнее всего."],
         "health": ["Осторожно с кофеином.", "Лёгкая прогулка поднимет энергию."],
-        "tips": ["3 минуты на порядок", "10 минут прогулки", "Запишите 1 расход", "Закройте 1 задачу"],
-        "cautions": ["Импульсивные покупки", "Переутомление/ночные перекусы", "Эмоциональные всплески"],
+        "tips": ["3 минуты на порядок", "10 минут прогулки", "Запишите 1 расход"],
+        "cautions": ["Импульсивные покупки", "Переутомление", "Эмоциональные всплески"],
         "colors": ["Золото","Красный","Синий","Зелёный","Фиолетовый","Белый","Чёрный"],
-        "items": ["Золотой аксессуар","Красный кошелёк","Синий брелок","Зелёное растение","Фиолетовая ручка","Минималистичные часы"],
+        "items": ["Золотой аксессуар","Красный кошелёк","Синий брелок","Зелёное растение","Фиолетовая ручка","Часы"],
     },
     "hi": {
         "saju_line": "तत्व संतुलित → ज़्यादा दबाव न लें, सब बेहतर होगा।",
-        "today": ["सफाई से भाग्य खुलता है: एक काम पूरा करें।", "पहले संपर्क करें—मौका बढ़ेगा।", "जल्दबाज़ी से बचें, सब अच्छा होगा।", "30 मिनट फोकस काफी है।", "छोटी मदद बड़ा सहारा बनती है।"],
-        "tomorrow": ["मुलाकात में संकेत मिलेगा।", "तुलना करके निर्णय लें।", "नींद में निवेश करें।", "प्राथमिकता तय करें।", "थोड़ा आराम ठीक है।"],
-        "annual": ["छोटे सुधार बड़ा परिणाम देंगे।", "मौके लोगों से आते हैं।", "अनावश्यक चीज़ें हटाएँ।", "लगातार प्रयास से ब्रेकथ्रू।", "साल के अंत में स्पष्ट परिणाम।"],
+        "today": ["सफाई से भाग्य खुलता है: एक काम पूरा करें।", "पहले संपर्क करें—मौका बढ़ेगा।", "जल्दबाज़ी से बचें, सब अच्छा होगा।"],
+        "tomorrow": ["मुलाकात में संकेत मिलेगा।", "तुलना करके निर्णय लें।", "नींद में निवेश करें।"],
+        "annual": ["छोटे सुधार बड़ा परिणाम देंगे।", "मौके लोगों से आते हैं।", "अनावश्यक चीज़ें हटाएँ।"],
         "love": ["हल्का सा संदेश भेजें।", "जल्दी निष्कर्ष न निकालें।"],
         "money": ["सब्सक्रिप्शन/फिक्स्ड खर्च देखें।", "इम्पल्स खरीद कम करें।"],
         "work": ["एक बार और साझा करें—स्पीड बढ़ेगी।", "बेसिक्स सबसे मजबूत।"],
         "health": ["कैफीन कम रखें।", "हल्की वॉक मदद करेगी।"],
-        "tips": ["3 मिनट डेस्क साफ", "10 मिनट वॉक", "1 लाइन खर्च लिखें", "एक काम पूरा करें"],
-        "cautions": ["इम्पल्स खरीद", "ओवरवर्क/लेट नाइट", "भावनात्मक उछाल"],
+        "tips": ["3 मिनट डेस्क साफ", "10 मिनट वॉक", "1 लाइन खर्च लिखें"],
+        "cautions": ["इम्पल्स खरीद", "ओवरवर्क", "भावनात्मक उछाल"],
         "colors": ["गोल्ड","रेड","ब्लू","ग्रीन","पर्पल","व्हाइट","ब्लैक"],
-        "items": ["गोल्ड एक्सेसरी","लाल वॉलेट","नीला की-रिंग","हरा पौधा","पर्पल पेन","मिनिमल घड़ी"],
+        "items": ["गोल्ड एक्सेसरी","लाल वॉलेट","नीला की-रिंग","हरा पौधा","पर्पल पेन","घड़ी"],
     },
 }
 
 TAROT = {
-    "The Fool": {
-        "ko": "새로운 시작, 모험, 순수한 믿음",
-        "en": "New beginnings, adventure, innocence",
-        "zh": "新的开始、冒险、纯粹的信念",
-        "ja": "新しい始まり、冒険、純粋な信頼",
-        "ru": "Новые начала, приключение, искренность",
-        "hi": "नई शुरुआत, साहसिकता, सरल विश्वास",
-    },
-    "The Magician": {
-        "ko": "창조력, 능력 발휘, 집중",
-        "en": "Skill, manifestation, focus",
-        "zh": "创造力、能力发挥、专注",
-        "ja": "創造力、才能の発揮、集中",
-        "ru": "Навык, проявление силы, фокус",
-        "hi": "कौशल, क्षमता, एकाग्रता",
-    },
-    "The High Priestess": {
-        "ko": "직감, 내면의 목소리",
-        "en": "Intuition, inner voice",
-        "zh": "直觉、内在声音",
-        "ja": "直感、内なる声",
-        "ru": "Интуиция, внутренний голос",
-        "hi": "अंतर्ज्ञान, भीतर की आवाज़",
-    },
-    "The Sun": {
-        "ko": "행복, 성공, 긍정 에너지",
-        "en": "Joy, success, positivity",
-        "zh": "幸福、成功、正能量",
-        "ja": "幸福、成功、ポジティブ",
-        "ru": "Радость, успех, позитив",
-        "hi": "खुशी, सफलता, सकारात्मकता",
-    },
-    "Wheel of Fortune": {
-        "ko": "변화, 운, 사이클",
-        "en": "Change, luck, cycles",
-        "zh": "变化、运气、周期",
-        "ja": "変化、運、サイクル",
-        "ru": "Перемены, удача, циклы",
-        "hi": "परिवर्तन, भाग्य, चक्र",
-    },
+    "The Fool": {"ko":"새로운 시작, 모험, 순수한 믿음","en":"New beginnings, adventure, innocence","zh":"新的开始、冒险、纯粹的信念","ja":"新しい始まり、冒険、純粋な信頼","ru":"Новые начала, приключение, искренность","hi":"नई शुरुआत, साहसिकता, सरल विश्वास"},
+    "The Magician": {"ko":"창조력, 능력 발휘, 집중","en":"Skill, manifestation, focus","zh":"创造力、能力发挥、专注","ja":"創造力、才能の発揮、集中","ru":"Навык, проявление силы, фокус","hi":"कौशल, क्षमता, एकाग्रता"},
+    "The High Priestess": {"ko":"직감, 내면의 목소리","en":"Intuition, inner voice","zh":"直觉、内在声音","ja":"直感、内なる声","ru":"Интуиция, внутренний голос","hi":"अंतर्ज्ञान, भीतर की आवाज़"},
+    "The Sun": {"ko":"행복, 성공, 긍정 에너지","en":"Joy, success, positivity","zh":"幸福、成功、正能量","ja":"幸福、成功、ポジティブ","ru":"Радость, успех, позитив","hi":"खुशी, सफलता, सकारात्मकता"},
+    "Wheel of Fortune": {"ko":"변화, 운, 사이클","en":"Change, luck, cycles","zh":"变化、运气、周期","ja":"変化、運、サイクル","ru":"Перемены, удача, циклы","hi":"परिवर्तन, भाग्य, चक्र"},
 }
 
 APP_URL = "https://my-fortune.streamlit.app"
+
+# =========================================================
+# MBTI 영향/조언 로직 (핵심 업데이트)
+# =========================================================
+def mbti_profile(mbti: str):
+    """
+    MBTI 4글자를 '행동 패턴'으로 변환.
+    이후 운세(연애/재물/일/건강)에서 조언을 조합한다.
+    """
+    E = mbti[0] == "E"
+    S = mbti[1] == "S"
+    Tt = mbti[2] == "T"
+    J = mbti[3] == "J"
+    return {"E": E, "S": S, "T": Tt, "J": J}
+
+MBTI_ADVICE = {
+    "ko": {
+        "love": {
+            "E": "표현이 강점이에요. ‘먼저 제안’하면 연애운이 빨리 열려요.",
+            "I": "깊이가 강점이에요. ‘짧고 진심’ 한 문장이 가장 먹혀요.",
+            "T": "팩트로만 말하면 차갑게 보일 수 있어요. 결론 전에 ‘공감 1줄’ 추가!",
+            "F": "배려가 강점이에요. 다만 ‘좋다/싫다’ 기준을 한 번은 분명히 말해줘요.",
+            "J": "관계도 계획하면 안정적이에요. 다음 약속 날짜를 잡아두면 좋아요.",
+            "P": "즉흥이 매력! 대신 약속 변경이 잦으면 운이 샐 수 있어요.",
+        },
+        "money": {
+            "S": "현실 감각이 강점. 지출을 ‘항목별 1줄’만 기록해도 돈이 모여요.",
+            "N": "아이디어가 돈이 돼요. 다만 실행 전 ‘비용/리스크 3줄 체크’가 필요!",
+            "T": "분석력이 강점. 가격 비교/조건 확인에서 이득을 봐요.",
+            "F": "사람 때문에 쓰는 돈이 늘 수 있어요. ‘기분 소비’는 예산을 정해요.",
+            "J": "예산/루틴이 돈운을 지켜요. 자동이체/구독 정리 추천.",
+            "P": "타이밍 감이 좋아요. 대신 충동구매 방지로 ‘24시간 룰’ 추천.",
+        },
+        "work": {
+            "E": "네트워킹이 운을 키워요. 공유/보고 한 번 더가 기회로 연결!",
+            "I": "혼자 집중할 때 성과가 커요. ‘방해 없는 30분 블록’이 핵심.",
+            "S": "디테일로 신뢰를 얻어요. 체크리스트가 승진운을 끌어옵니다.",
+            "N": "큰그림으로 방향을 잡아요. 단, 마감은 ‘작은 단위’로 쪼개야 승부!",
+            "T": "결정/판단이 강점. 다만 표현은 ‘근거+배려’ 조합이 최고.",
+            "F": "팀 분위기를 살려요. 다만 ‘부담 떠안기’는 끊어야 운이 올라요.",
+            "J": "계획/관리로 성과를 만듭니다. 일정 고정이 행운.",
+            "P": "위기 대처가 강해요. 대신 ‘마감 24시간 전’ 미리 점검 추천.",
+        },
+        "health": {
+            "E": "외부 활동이 기운을 올려요. 가벼운 산책/운동이 효과적.",
+            "I": "수면/회복이 운의 핵심. 혼자 쉬는 시간을 ‘일정’으로 확보!",
+            "S": "몸 신호를 잘 느껴요. 수분/식단 루틴을 잡으면 좋아요.",
+            "N": "생각이 많아 피곤해질 수 있어요. ‘멍 때리기 5분’이 약이에요.",
+            "T": "무리해서 버틸 수 있어요. 컨디션도 데이터처럼 체크하세요.",
+            "F": "감정이 컨디션을 좌우해요. 스트레스 배출 루틴이 중요.",
+            "J": "루틴이 건강을 지켜요. 정해진 시간 수면 추천.",
+            "P": "리듬이 흔들리기 쉬워요. 카페인/야식만 줄여도 급상승!",
+        },
+        "combo": [
+            "올해는 ‘{zodiac}의 흐름’ 위에 ‘{mbti}의 습관’이 결과를 좌우해요. **강점은 더 쓰고, 약점은 규칙으로 막기!**",
+            "{mbti}는 결정의 속도가 강점이에요. {zodiac} 운세는 ‘타이밍’이 핵심이라, **결정→바로 실행**이 최고의 조합!",
+            "{zodiac} 운은 사람/기회가 중요해요. {mbti} 성향대로 **연락·공유·협업**을 하면 운이 2배로 커져요.",
+        ],
+        "influence_summary": {
+            "E": "기회는 ‘사람’에서 빠르게 들어옵니다.",
+            "I": "기회는 ‘몰입’에서 크게 터집니다.",
+            "S": "운이 ‘디테일/관리’로 굳어집니다.",
+            "N": "운이 ‘아이디어/전략’으로 확장됩니다.",
+            "T": "운이 ‘판단/조건’에서 갈립니다.",
+            "F": "운이 ‘관계/감정’에서 흐름이 바뀝니다.",
+            "J": "운이 ‘계획/루틴’으로 지켜집니다.",
+            "P": "운이 ‘유연/즉흥’으로 열리지만 샐 수 있습니다.",
+        }
+    },
+    "en": {
+        "love": {
+            "E": "Your strength is expression—ask first and luck opens fast.",
+            "I": "Depth is your strength—a short sincere line works best.",
+            "T": "Pure facts can feel cold—add one empathy sentence first.",
+            "F": "Warmth is your strength—state your boundaries once clearly.",
+            "J": "Stability helps—set the next plan/date.",
+            "P": "Spontaneity is attractive—avoid frequent last-minute changes.",
+        },
+        "money": {
+            "S": "Practical sense wins—write one expense line per category.",
+            "N": "Ideas can monetize—check cost/risk in 3 lines before action.",
+            "T": "Comparison & terms checking pay off.",
+            "F": "Mood-spending can grow—set a small ‘fun budget’.",
+            "J": "Budget + routines protect money luck.",
+            "P": "Timing is great—use a 24-hour rule to block impulses.",
+        },
+        "work": {
+            "E": "Networking multiplies luck—share one more update.",
+            "I": "Deep work is key—protect a 30-min focus block.",
+            "S": "Details earn trust—checklists pull promotions.",
+            "N": "Big picture guides—break deadlines into smaller chunks.",
+            "T": "Decisions are strong—combine reasons + care.",
+            "F": "You lift the team—stop taking extra burdens.",
+            "J": "Planning creates results—fixed schedule brings luck.",
+            "P": "Crisis handling is strong—review 24h before deadline.",
+        },
+        "health": {
+            "E": "Activity boosts energy—light walk helps.",
+            "I": "Recovery is key—schedule alone time.",
+            "S": "Body signals are clear—keep water/food routines.",
+            "N": "Overthinking drains—5 minutes doing nothing helps.",
+            "T": "You can overpush—track condition like data.",
+            "F": "Emotions affect body—use a stress-release routine.",
+            "J": "Routine protects health—consistent sleep time helps.",
+            "P": "Rhythm can slip—reduce late snacks/caffeine.",
+        },
+        "combo": [
+            "This year, your {mbti} habits decide outcomes on top of {zodiac} flow. Use strengths, block weaknesses with rules.",
+            "{mbti} is fast at deciding; {zodiac} favors timing—decide and execute quickly.",
+            "{zodiac} brings people/opportunities; follow {mbti} style to reach out and collaborate to double luck.",
+        ],
+        "influence_summary": {
+            "E": "Opportunities come through people.",
+            "I": "Opportunities come through deep focus.",
+            "S": "Luck solidifies via management and details.",
+            "N": "Luck expands via ideas and strategy.",
+            "T": "Luck changes with conditions and decisions.",
+            "F": "Luck shifts with relationships and emotions.",
+            "J": "Luck is protected by planning and routines.",
+            "P": "Luck opens by flexibility but can leak without guardrails.",
+        }
+    }
+}
 
 # =========================================================
 # Helpers
@@ -642,7 +739,6 @@ def get_zodiac(year: int, lang: str):
     return ZODIAC_KO[idx] if lang == "ko" else ZODIAC_EN[idx]
 
 def get_desc(dic, lang, key):
-    # ko/en만 상세 설명, 나머지는 en fallback
     if lang in dic and key in dic[lang]:
         return dic[lang][key]
     return dic.get("en", {}).get(key, "")
@@ -727,7 +823,7 @@ def share_component(t, share_text: str):
     )
 
 # =========================================================
-# Tests (12 / 16) - 6개 언어 모두 제공
+# Tests (12 / 16) - 6개 언어 제공
 # =========================================================
 SIMPLE_12 = {
     "ko": [
@@ -817,48 +913,35 @@ SIMPLE_12 = {
 }
 
 DETAIL_16 = {
-    "ko": {
-        "E": ("사람을 만나면 에너지가 채워진다", "그렇다", "아니다"),
-        "S": ("구체적 사실/디테일을 먼저 본다", "그렇다", "아니다"),
-        "T": ("결정 시 논리가 감정보다 우선이다", "그렇다", "아니다"),
-        "J": ("계획이 있어야 마음이 편하다", "그렇다", "아니다"),
-    },
-    "en": {
-        "E": ("Socializing recharges me", "Yes", "No"),
-        "S": ("I notice concrete details first", "Yes", "No"),
-        "T": ("Logic comes before feelings in decisions", "Yes", "No"),
-        "J": ("I feel comfortable with plans", "Yes", "No"),
-    },
-    "zh": {
-        "E": ("社交会让我充电", "是", "否"),
-        "S": ("我会先注意具体细节", "是", "否"),
-        "T": ("做决定时逻辑优先", "是", "否"),
-        "J": ("有计划会更安心", "是", "否"),
-    },
-    "ja": {
-        "E": ("人と会うと元気になる", "はい", "いいえ"),
-        "S": ("具体的な事実や細部を先に見る", "はい", "いいえ"),
-        "T": ("決定では論理が感情より優先", "はい", "いいえ"),
-        "J": ("計画があると安心する", "はい", "いいえ"),
-    },
-    "ru": {
-        "E": ("Общение меня заряжает", "Да", "Нет"),
-        "S": ("Сначала замечаю конкретные детали", "Да", "Нет"),
-        "T": ("В решениях логика важнее эмоций", "Да", "Нет"),
-        "J": ("С планом мне спокойнее", "Да", "Нет"),
-    },
-    "hi": {
-        "E": ("लोगों से मिलकर ऊर्जा मिलती है", "हाँ", "नहीं"),
-        "S": ("मैं पहले ठोस डिटेल देखता/देखती हूँ", "हाँ", "नहीं"),
-        "T": ("निर्णय में लॉजिक पहले", "हाँ", "नहीं"),
-        "J": ("प्लान होने पर मन शांत रहता है", "हाँ", "नहीं"),
-    },
+    "ko": {"E": ("사람을 만나면 에너지가 채워진다", "그렇다", "아니다"),
+           "S": ("구체적 사실/디테일을 먼저 본다", "그렇다", "아니다"),
+           "T": ("결정 시 논리가 감정보다 우선이다", "그렇다", "아니다"),
+           "J": ("계획이 있어야 마음이 편하다", "그렇다", "아니다")},
+    "en": {"E": ("Socializing recharges me", "Yes", "No"),
+           "S": ("I notice concrete details first", "Yes", "No"),
+           "T": ("Logic comes before feelings in decisions", "Yes", "No"),
+           "J": ("I feel comfortable with plans", "Yes", "No")},
+    "zh": {"E": ("社交会让我充电", "是", "否"),
+           "S": ("我会先注意具体细节", "是", "否"),
+           "T": ("做决定时逻辑优先", "是", "否"),
+           "J": ("有计划会更安心", "是", "否")},
+    "ja": {"E": ("人と会うと元気になる", "はい", "いいえ"),
+           "S": ("具体的な事実や細部を先に見る", "はい", "いいえ"),
+           "T": ("決定では論理が感情より優先", "はい", "いいえ"),
+           "J": ("計画があると安心する", "はい", "いいえ")},
+    "ru": {"E": ("Общение меня заряжает", "Да", "Нет"),
+           "S": ("Сначала замечаю конкретные детали", "Да", "Нет"),
+           "T": ("В решениях логика важнее эмоций", "Да", "Нет"),
+           "J": ("С планом мне спокойнее", "Да", "Нет")},
+    "hi": {"E": ("लोगों से मिलकर ऊर्जा मिलती है", "हाँ", "नहीं"),
+           "S": ("मैं पहले ठोस डिटेल देखता/देखती हूँ", "हाँ", "नहीं"),
+           "T": ("निर्णय में लॉजिक पहले", "हाँ", "नहीं"),
+           "J": ("प्लान होने पर मन शांत रहता है", "हाँ", "नहीं")},
 }
 
 # =========================================================
 # UI Header
 # =========================================================
-# Language selector (가려짐 방지: horizontal + 카드 위)
 lang_labels = [x[0] for x in LANGS]
 lang_codes = [x[1] for x in LANGS]
 cur_idx = lang_codes.index(st.session_state.lang) if st.session_state.lang in lang_codes else 0
@@ -886,10 +969,22 @@ st.markdown(
 render_reserved_ad(t.get("ad_reserved", "AD"))
 
 # =========================================================
+# Navigation / Validation
+# =========================================================
+def go_result():
+    if not (1900 <= st.session_state.y <= 2030):
+        st.error(t["err_year"])
+        return
+    if not validate_birth(st.session_state.y, st.session_state.m, st.session_state.d):
+        st.error(t["err_birth"])
+        return
+    st.session_state.step = "result"
+    st.rerun()
+
+# =========================================================
 # Input Screen
 # =========================================================
 def input_screen():
-    # 한국어 버전에서만 다나눔렌탈 광고 (복구)
     if st.session_state.lang == "ko":
         render_korean_ad(T["ko"])
 
@@ -931,25 +1026,11 @@ def input_screen():
             st.rerun()
 
 # =========================================================
-# Navigation / Validation
-# =========================================================
-def go_result():
-    if not (1900 <= st.session_state.y <= 2030):
-        st.error(t["err_year"])
-        return
-    if not validate_birth(st.session_state.y, st.session_state.m, st.session_state.d):
-        st.error(t["err_birth"])
-        return
-    st.session_state.step = "result"
-    st.rerun()
-
-# =========================================================
-# Test 12 Screen (form submit = 무반응 해결)
+# Test 12
 # =========================================================
 def test12_screen():
     qs = SIMPLE_12.get(st.session_state.lang, SIMPLE_12["en"])
-
-    st.markdown("<div class='card'><div class='card-title'>MBTI – 12</div><div class='mini'>Submit을 누르면 바로 결과로 넘어갑니다.</div></div>", unsafe_allow_html=True)
+    st.markdown("<div class='card'><div class='card-title'>MBTI – 12</div><div class='mini'>제출하면 바로 결과로 넘어갑니다.</div></div>", unsafe_allow_html=True)
 
     with st.form("form_test12", clear_on_submit=False):
         answers = []
@@ -970,12 +1051,11 @@ def test12_screen():
         go_result()
 
 # =========================================================
-# Test 16 Screen (form submit = 무반응 해결)
+# Test 16
 # =========================================================
 def test16_screen():
     d = DETAIL_16.get(st.session_state.lang, DETAIL_16["en"])
-
-    st.markdown("<div class='card'><div class='card-title'>MBTI – 16</div><div class='mini'>각 축 4문항씩, 제출하면 결과로 넘어갑니다.</div></div>", unsafe_allow_html=True)
+    st.markdown("<div class='card'><div class='card-title'>MBTI – 16</div><div class='mini'>각 축 4문항씩. 제출하면 결과로 넘어갑니다.</div></div>", unsafe_allow_html=True)
 
     with st.form("form_test16", clear_on_submit=False):
         scores = {"E":0, "S":0, "T":0, "J":0}
@@ -994,6 +1074,58 @@ def test16_screen():
         go_result()
 
 # =========================================================
+# MBTI 영향 문장 생성
+# =========================================================
+def build_mbti_influence(lang: str, mbti: str, rng: random.Random):
+    pack = MBTI_ADVICE.get(lang, MBTI_ADVICE["en"])
+    profile = mbti_profile(mbti)
+
+    # 요약 4줄(각 축 영향)
+    summary = []
+    summary_map = pack["influence_summary"]
+    summary.append(summary_map["E"] if profile["E"] else summary_map["I"])
+    summary.append(summary_map["S"] if profile["S"] else summary_map["N"])
+    summary.append(summary_map["T"] if profile["T"] else summary_map["F"])
+    summary.append(summary_map["J"] if profile["J"] else summary_map["P"])
+
+    # 카테고리별 조언(축 조합)
+    love = []
+    money = []
+    work = []
+    health = []
+
+    love.append(pack["love"]["E"] if profile["E"] else pack["love"]["I"])
+    love.append(pack["love"]["T"] if profile["T"] else pack["love"]["F"])
+    love.append(pack["love"]["J"] if profile["J"] else pack["love"]["P"])
+
+    money.append(pack["money"]["S"] if profile["S"] else pack["money"]["N"])
+    money.append(pack["money"]["T"] if profile["T"] else pack["money"]["F"])
+    money.append(pack["money"]["J"] if profile["J"] else pack["money"]["P"])
+
+    work.append(pack["work"]["E"] if profile["E"] else pack["work"]["I"])
+    work.append(pack["work"]["S"] if profile["S"] else pack["work"]["N"])
+    work.append(pack["work"]["T"] if profile["T"] else pack["work"]["F"])
+    work.append(pack["work"]["J"] if profile["J"] else pack["work"]["P"])
+
+    health.append(pack["health"]["E"] if profile["E"] else pack["health"]["I"])
+    health.append(pack["health"]["S"] if profile["S"] else pack["health"]["N"])
+    health.append(pack["health"]["T"] if profile["T"] else pack["health"]["F"])
+    health.append(pack["health"]["J"] if profile["J"] else pack["health"]["P"])
+
+    return {
+        "summary": summary,
+        "love": love,
+        "money": money,
+        "work": work,
+        "health": health,
+    }
+
+def build_combo_advice(lang: str, zodiac: str, mbti: str, rng: random.Random):
+    pack = MBTI_ADVICE.get(lang, MBTI_ADVICE["en"])
+    tpl = rng.choice(pack["combo"])
+    return tpl.format(zodiac=zodiac, mbti=mbti)
+
+# =========================================================
 # Result Screen
 # =========================================================
 def result_screen():
@@ -1003,8 +1135,9 @@ def result_screen():
     y, m, d = st.session_state.y, st.session_state.m, st.session_state.d
     mbti = st.session_state.mbti
     zodiac = get_zodiac(y, lang)
+    if zodiac is None:
+        zodiac = get_zodiac(y, "en")
 
-    # 랜덤이지만 "날짜/생일/mbti/언어"로 안정적(새로고침해도 유지)
     today_key = datetime.now().strftime("%Y%m%d")
     seed = stable_seed(lang, y, m, d, mbti, today_key)
     rng = random.Random(seed)
@@ -1025,7 +1158,6 @@ def result_screen():
     name = st.session_state.name.strip()
     name_prefix = (name + ("님의" if lang == "ko" else "")) if name else ""
 
-    # 헤더
     st.markdown(
         f"""
 <div class="hero">
@@ -1036,11 +1168,22 @@ def result_screen():
         unsafe_allow_html=True
     )
 
-    # 결과 카드 (HTML 태그 없이 Markdown만)
-    z_desc = get_desc(ZODIAC_DESC, lang, zodiac) if zodiac else ""
+    # 기본 정보
+    z_desc = get_desc(ZODIAC_DESC, lang, zodiac)
+    if not z_desc:
+        z_desc = get_desc(ZODIAC_DESC, "en", zodiac)
+
     m_desc = get_desc(MBTI_DESC, lang, mbti)
+    if not m_desc:
+        m_desc = get_desc(MBTI_DESC, "en", mbti)
+
     saju_line = b["saju_line"]
 
+    # MBTI 영향/조언 생성
+    infl = build_mbti_influence(lang if lang in ["ko", "en"] else "en", mbti, rng)
+    combo_line = build_combo_advice(lang if lang in ["ko", "en"] else "en", zodiac, mbti, rng)
+
+    # 결과 카드 (태그 없이 Markdown)
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown(
         f"""
@@ -1065,13 +1208,36 @@ def result_screen():
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # ✅ MBTI 영향 카드 (핵심 업데이트)
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown(f"### {t['mbti_influence']}")
+    st.markdown(
+        "- " + "\n- ".join(infl["summary"])
+    )
+    st.markdown("---")
+    st.markdown(f"**{t['love']}**")
+    st.markdown("- " + "\n- ".join(infl["love"]))
+    st.markdown(f"**{t['money']}**")
+    st.markdown("- " + "\n- ".join(infl["money"]))
+    st.markdown(f"**{t['work']}**")
+    st.markdown("- " + "\n- ".join(infl["work"]))
+    st.markdown(f"**{t['health']}**")
+    st.markdown("- " + "\n- ".join(infl["health"]))
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ✅ 띠 + MBTI 조합 조언 카드
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown(f"### {t['combo_advice']}")
+    st.markdown(combo_line)
+    st.markdown("</div>", unsafe_allow_html=True)
+
     # 광고 (한국어만 다나눔렌탈)
     if lang == "ko":
         render_korean_ad(T["ko"])
     else:
         render_reserved_ad(t.get("ad_reserved", "AD"))
 
-    # 타로(정상 작동)
+    # 타로
     with st.expander(t["tarot_btn"], expanded=False):
         tarot_key = rng.choice(list(TAROT.keys()))
         tarot_mean = TAROT[tarot_key].get(lang, TAROT[tarot_key]["en"])
@@ -1081,27 +1247,19 @@ def result_screen():
         st.markdown(tarot_mean)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # 공유 텍스트
+    # 공유 텍스트 (MBTI 영향/조합 조언 포함)
     share_text = (
         f"{t['title']}\n"
         f"{name_prefix} {zodiac} / {mbti}\n\n"
         f"{t['today']}: {today_msg}\n"
         f"{t['tomorrow']}: {tomorrow_msg}\n\n"
         f"{t['annual']}: {annual_msg}\n\n"
-        f"{t['love']}: {love_msg}\n"
-        f"{t['money']}: {money_msg}\n"
-        f"{t['work']}: {work_msg}\n"
-        f"{t['health']}: {health_msg}\n\n"
-        f"{t['luck']}: {t['lucky_color']} {lucky_color} / {t['lucky_item']} {lucky_item} / {t['lucky_num']} {lucky_num}\n"
-        f"{t['tip']}: {tip_msg}\n"
-        f"{t['caution']}: {caution_msg}\n\n"
+        f"{t['combo_advice']}: {combo_line}\n\n"
         f"{APP_URL}"
     )
 
-    # 공유 버튼 (모바일: 공유창 / PC: 복사)
     share_component(t, share_text)
 
-    # ✅ “입력화면으로” 버튼은 삭제됨 (요청 반영)
     if st.button(t["reset"], use_container_width=True):
         keep_lang = st.session_state.lang
         st.session_state.clear()
