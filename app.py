@@ -18,8 +18,7 @@ APP_URL = "https://my-fortune.streamlit.app"
 SPREADSHEET_ID = "1WvuKXx2if2WvxmQaxkqzFW-BzDEWWma9hZgCr2jJQYY"
 SHEET_NAME = "시트1"
 
-DB_PATH = Path(__file__).parent / "fortune_db" / "fortunes_ko.json"  # 파일명 고정(변경 X)
-
+DB_PATH = "data/fortunes_ko.json"
 st.set_page_config(
     page_title="2026 운세 | 띠+MBTI+사주+오늘/내일",
     page_icon="🔮",
