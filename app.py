@@ -1,8 +1,8 @@
 import streamlit as st
 from datetime import datetime
+import json
 import random
 import re
-import json
 from pathlib import Path
 
 # ---- Google Sheet ----
@@ -18,10 +18,12 @@ except Exception:
 # =========================================================
 APP_URL = "https://my-fortune.streamlit.app"
 
+# 구글시트(미니게임 당첨자 저장)
 SPREADSHEET_ID = "1WvuKXx2if2WvxmQaxkqzFW-BzDEWWma9hZgCr2jJQYY"
 SHEET_NAME = "시트1"
 
-FORTUNE_DB_PATH = Path(__file__).parent / "data" / "fortunes_ko.json"
+# DB 파일(한국어 단일)
+DB_PATH = Path(__file__).parent / "data" / "fortunes_ko.json"
 
 st.set_page_config(
     page_title="2026 운세 | 띠 + MBTI + 사주 + 오늘/내일",
@@ -30,7 +32,7 @@ st.set_page_config(
 )
 
 # =========================================================
-# 1) Helpers
+# 1) Small helpers
 # =========================================================
 def safe_toast(msg: str):
     if not msg:
@@ -45,21 +47,6 @@ def safe_toast(msg: str):
 
 def normalize_phone(phone: str) -> str:
     return re.sub(r"[^0-9]", "", phone or "")
-
-def norm_combo_key(s: str) -> str:
-    """
-    조합키 비교용 정규화:
-    - 공백 제거
-    - 하이픈/슬래시 등 구분자 통일
-    - 연속 언더스코어 정리
-    """
-    if s is None:
-        return ""
-    s = str(s).strip()
-    s = s.replace(" ", "")
-    s = s.replace("-", "_").replace("/", "_")
-    s = re.sub(r"_+", "_", s)
-    return s
 
 # =========================================================
 # 2) Query params (Streamlit 버전 호환)
@@ -93,8 +80,8 @@ def clear_param(param_key: str):
 # =========================================================
 # 3) SEO Inject (한국어만)
 # =========================================================
-def inject_seo_korean_only():
-    description = "2026년 띠운세 + MBTI + 사주 + 오늘/내일 운세 + 타로까지 무료로!"
+def inject_seo_ko():
+    description = "2026년 띠운세 + MBTI + 사주 + 오늘/내일 운세 + 타로까지 무료로! (미니게임 이벤트 포함)"
     keywords = "2026 운세, 띠운세, MBTI 운세, 사주, 오늘 운세, 내일 운세, 무료 운세, 타로, 연애운, 재물운, 건강운"
     title = "2026 운세 | 띠 + MBTI + 사주 + 오늘/내일 운세"
 
@@ -168,16 +155,14 @@ def inject_seo_korean_only():
         pass
 
 # =========================================================
-# 4) Text (한국어만)
+# 4) UI Text (한국어만)
 # =========================================================
 T = {
     "title": "2026 띠 + MBTI + 사주 + 오늘/내일 운세",
     "subtitle": "완전 무료",
     "name": "이름 입력 (결과에 표시돼요)",
     "birth": "생년월일 입력",
-    "year": "년",
-    "month": "월",
-    "day": "일",
+    "year": "년", "month": "월", "day": "일",
     "mbti_mode": "MBTI를 어떻게 할까요?",
     "mbti_direct": "직접 선택",
     "mbti_12": "간단 테스트 (12문항)",
@@ -193,15 +178,14 @@ T = {
     "sections": {
         "zodiac": "띠 운세",
         "mbti": "MBTI 특징",
-        "mbti_inf": "MBTI 영향",
         "saju": "사주 한 마디",
         "today": "오늘 운세",
         "tomorrow": "내일 운세",
         "year_all": "2026 전체 운세",
-        "love": "연애운 조언",
-        "money": "재물운 조언",
-        "work": "일/학업운 조언",
-        "health": "건강운 조언",
+        "love": "연애운",
+        "money": "재물운",
+        "work": "일/학업운",
+        "health": "건강운",
         "lucky": "행운 포인트",
         "action": "오늘의 액션팁",
         "caution": "주의할 점",
@@ -213,7 +197,7 @@ T = {
     "ad_kr_link": "다나눔렌탈.com 바로가기",
     "ad_kr_url": "https://www.다나눔렌탈.com",
     "mini_title": "🎁 미니게임: 선착순 20명 커피쿠폰 도전!",
-    "mini_desc": "스톱워치를 **20.16초**에 맞추면 당첨!\n\n- 기본 1회\n- **링크 공유하기**를 누르면 1회 추가\n- 목표 구간: **20.160 ~ 20.169초**",
+    "mini_desc": "스톱워치를 **20.16초**에 맞추면 당첨!\n\n- 기본 1회\n- **링크 공유하기**를 누르면 1회 추가\n- 목표 구간: **20.160 ~ 20.169초**\n\n※ **START → STOP 한 번**으로 자동 판정됩니다. (기록제출 버튼 없음)",
     "mini_try_left": "남은 시도",
     "mini_closed": "이벤트가 종료되었습니다. (선착순 20명 마감)",
     "mini_dup": "이미 참여한 번호입니다. (중복 참여 불가)",
@@ -227,64 +211,71 @@ T = {
     "sheet_fail": "구글시트 연결이 아직 안 되어 있어요. (Secrets/requirements/시트 공유/탭 이름 확인 필요)",
     "sheet_ok": "구글시트 연결 완료",
     "faq_title": "🔎 검색/AI 노출용 정보(FAQ)",
-    "stopwatch_note": "START 후 STOP을 누르면 즉시 판정됩니다. (추가 제출 버튼 없음)",
-    "mbti_test_12_title": "MBTI 12문항 (각 축 3문항)",
-    "mbti_test_16_title": "MBTI 16문항 (각 축 4문항)",
-    "mbti_test_help": "각 문항에서 더 가까운 쪽을 선택하세요.",
+    "stopwatch_note": "START 후 STOP을 누르면 기록이 자동으로 판정됩니다.",
     "try_over": "남은 시도가 없습니다.",
-    "miss": "아쉽게도 미달/초과! 다시 도전해보세요 🙂",
+    "miss": "아쉽게도 미달/초과! 다음 기회에 도전해보세요 🙂",
     "share_not_supported": "이 기기에서는 시스템 공유가 지원되지 않습니다.",
-    "db_file_missing": "운세 DB 파일을 찾지 못했습니다: data/fortunes_ko.json",
-    "db_json_invalid": "운세 DB JSON 파싱에 실패했습니다. (형식 오류)",
+    "db_missing": "DB 파일을 찾을 수 없습니다: data/fortunes_ko.json",
+    "db_invalid": "DB 형식/내용이 올바르지 않습니다. (아래 오류를 확인하세요)",
 }
 
 # =========================================================
-# 5) Tarot
+# 5) Tarot (간단)
 # =========================================================
-TAROT = [
-    ("운명의 수레바퀴", "변화, 전환점"),
-    ("태양", "행복, 성공, 긍정 에너지"),
-    ("힘", "용기, 인내"),
-    ("세계", "완성, 성취"),
-]
+TAROT = {
+    "Wheel of Fortune": {"name": "운명의 수레바퀴", "meaning": "변화, 전환점"},
+    "The Sun": {"name": "태양", "meaning": "행복, 성공, 긍정 에너지"},
+    "Strength": {"name": "힘", "meaning": "용기, 인내"},
+    "The World": {"name": "세계", "meaning": "완성, 성취"},
+}
+
 def pick_tarot():
-    return random.choice(TAROT)
+    key = random.choice(list(TAROT.keys()))
+    return key, TAROT[key]["name"], TAROT[key]["meaning"]
 
 # =========================================================
-# 6) MBTI
+# 6) Zodiac / MBTI
 # =========================================================
-MBTI_LIST = sorted([
+ZODIAC_ORDER = ["rat","ox","tiger","rabbit","dragon","snake","horse","goat","monkey","rooster","dog","pig"]
+ZODIAC_LABEL_KO = {
+    "rat":"쥐", "ox":"소", "tiger":"호랑이", "rabbit":"토끼",
+    "dragon":"용", "snake":"뱀", "horse":"말", "goat":"양",
+    "monkey":"원숭이", "rooster":"닭", "dog":"개", "pig":"돼지"
+}
+MBTI_LIST = [
     "INTJ","INTP","ENTJ","ENTP",
     "INFJ","INFP","ENFJ","ENFP",
     "ISTJ","ISFJ","ESTJ","ESFJ",
-    "ISTP","ISFP","ESTP","ESFP",
-])
+    "ISTP","ISFP","ESTP","ESFP"
+]
 
+# =========================================================
+# 7) MBTI Test (12/16) — 한국어만
+# =========================================================
 MBTI_Q_12 = [
-    ("EI", "사람들과 있을 때 에너지가 더 생긴다", "혼자 있을 때 에너지가 더 생긴다"),
-    ("SN", "현실적인 정보가 편하다", "가능성/아이디어가 편하다"),
-    ("TF", "결정은 논리/원칙이 우선", "결정은 사람/상황 배려가 우선"),
-    ("JP", "계획대로 진행해야 마음이 편하다", "유연하게 바뀌어도 괜찮다"),
-    ("EI", "말하며 생각이 정리된다", "생각한 뒤 말하는 편이다"),
-    ("SN", "경험/사실을 믿는 편", "직감/영감을 믿는 편"),
-    ("TF", "피드백은 직설이 낫다", "피드백은 부드럽게가 낫다"),
-    ("JP", "마감 전에 미리 끝내는 편", "마감 직전에 몰아서 하는 편"),
-    ("EI", "주말엔 약속이 있으면 좋다", "주말엔 혼자 쉬고 싶다"),
-    ("SN", "설명은 구체적으로", "설명은 큰그림으로"),
-    ("TF", "갈등은 원인/해결이 우선", "갈등은 감정/관계가 우선"),
-    ("JP", "정리/정돈이 잘 되어야 편하다", "어수선해도 일단 진행 가능"),
+    ("EI","사람들과 있을 때 에너지가 더 생긴다","혼자 있을 때 에너지가 더 생긴다"),
+    ("SN","현실적인 정보가 편하다","가능성/아이디어가 편하다"),
+    ("TF","결정은 논리/원칙이 우선","결정은 사람/상황 배려가 우선"),
+    ("JP","계획대로 진행해야 마음이 편하다","유연하게 바뀌어도 괜찮다"),
+    ("EI","말하며 생각이 정리된다","생각한 뒤 말하는 편이다"),
+    ("SN","경험/사실을 믿는 편","직감/영감을 믿는 편"),
+    ("TF","피드백은 직설이 낫다","피드백은 부드럽게가 낫다"),
+    ("JP","마감 전에 미리 끝내는 편","마감 직전에 몰아서 하는 편"),
+    ("EI","주말엔 약속이 있으면 좋다","주말엔 혼자 쉬고 싶다"),
+    ("SN","설명은 구체적으로","설명은 큰그림으로"),
+    ("TF","갈등은 원인/해결이 우선","갈등은 감정/관계가 우선"),
+    ("JP","정리/정돈이 잘 되어야 편하다","어수선해도 일단 진행 가능"),
 ]
 MBTI_Q_16_EXTRA = [
-    ("EI", "새로운 사람을 만나면 설렌다", "새로운 사람은 적응 시간이 필요"),
-    ("SN", "지금 필요한 현실이 중요", "미래 가능성이 더 중요"),
-    ("TF", "공정함이 최우선", "조화로움이 최우선"),
-    ("JP", "일정이 확정되어야 안심", "상황에 따라 바뀌는 게 자연스러움"),
+    ("EI","새로운 사람을 만나면 설렌다","새로운 사람은 적응 시간이 필요"),
+    ("SN","지금 필요한 현실이 중요","미래 가능성이 더 중요"),
+    ("TF","공정함이 최우선","조화로움이 최우선"),
+    ("JP","일정이 확정되어야 안심","상황에 따라 바뀌는 게 자연스러움"),
 ]
 
 def compute_mbti_from_answers(answers, default="ENFP"):
     scores = {"EI":0, "SN":0, "TF":0, "JP":0}
     counts = {"EI":0, "SN":0, "TF":0, "JP":0}
-
     for axis, pick_left in answers:
         counts[axis] += 1
         if pick_left:
@@ -298,15 +289,13 @@ def compute_mbti_from_answers(answers, default="ENFP"):
     mbti = f"{decide('EI','E','I')}{decide('SN','S','N')}{decide('TF','T','F')}{decide('JP','J','P')}"
     return mbti if mbti in MBTI_LIST else default
 
-def render_mbti_test(questions, title: str, key_prefix: str):
-    st.markdown(
-        f"<div class='card'><b>{title}</b><br>"
-        f"<span style='opacity:0.85;'>{T['mbti_test_help']}</span></div>",
-        unsafe_allow_html=True
-    )
+def render_mbti_test(mode: str):
+    questions = MBTI_Q_12[:] + (MBTI_Q_16_EXTRA[:] if mode == "16" else [])
+    st.markdown(f"<div class='card'><b>{'MBTI 12문항' if mode=='12' else 'MBTI 16문항'}</b><br>"
+                f"<span style='opacity:0.85;'>각 문항에서 더 가까운 쪽을 선택하세요.</span></div>", unsafe_allow_html=True)
     answers = []
     for i, (axis, left_txt, right_txt) in enumerate(questions, start=1):
-        choice = st.radio(f"{i}. {axis}", options=[left_txt, right_txt], index=0, key=f"{key_prefix}_{i}")
+        choice = st.radio(f"{i}. {axis}", options=[left_txt, right_txt], index=0, key=f"mbtiq_{mode}_{i}")
         answers.append((axis, choice == left_txt))
     if st.button(T["mbti_submit"], use_container_width=True):
         st.session_state.mbti = compute_mbti_from_answers(answers)
@@ -314,115 +303,144 @@ def render_mbti_test(questions, title: str, key_prefix: str):
     return False
 
 # =========================================================
-# 7) 띠 계산
+# 8) Fortune DB Loader (v2 정석 + v1 호환 변환)
+#     - 절대 "없으면 생성" 안 함
 # =========================================================
-ZODIAC_KO_ORDER = ["쥐","소","호랑이","토끼","용","뱀","말","양","원숭이","닭","개","돼지"]
+ZODIAC_KO_TO_ID = {
+    "쥐":"rat", "소":"ox", "호랑이":"tiger", "토끼":"rabbit",
+    "용":"dragon", "뱀":"snake", "말":"horse", "양":"goat",
+    "원숭이":"monkey", "닭":"rooster", "개":"dog", "돼지":"pig",
+}
 
-def calc_zodiac_ko(year: int) -> str:
-    idx = (year - 4) % 12
-    return ZODIAC_KO_ORDER[idx]
+REQUIRED_RECORD_KEYS = [
+    "zodiac_fortune","mbti_trait","mbti_influence","saju_message",
+    "today","tomorrow","year_2026",
+    "love","money","work","health",
+    "lucky_point","action_tip","caution"
+]
+REQUIRED_LUCKY_KEYS = ["color","item","number","direction"]
 
-# =========================================================
-# 8) fortunes_ko.json 로드 + "조합 테이블" 위치 자동 탐지
-#    (근본원인: 파일 구조가 다르면 키가 있어도 못 찾음 → 여기서 해결)
-# =========================================================
-@st.cache_data(show_spinner=False)
-def load_fortune_db_and_combos():
-    if not FORTUNE_DB_PATH.exists():
-        return None, None, ("missing", T["db_file_missing"])
-
+def _load_json_file(path: Path):
+    if not path.exists():
+        return None, [T["db_missing"]]
     try:
-        raw = FORTUNE_DB_PATH.read_text(encoding="utf-8")
-        db = json.loads(raw)
-    except Exception:
-        return None, None, ("invalid", T["db_json_invalid"])
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data, []
+    except Exception as e:
+        return None, [f"JSON 파싱 실패: {e}"]
 
-    if not isinstance(db, dict):
-        return None, None, ("invalid", T["db_json_invalid"])
+def _convert_v1_to_v2(db_v1: dict):
+    # v1 예상: meta.schema == fortune-db-v1, combos: { "닭_ENFP": {...}, ...}
+    combos = db_v1.get("combos")
+    if not isinstance(combos, dict):
+        return None, ["v1 변환 실패: combos가 없습니다."]
 
-    # 1) 흔한 구조: fortunes 키 아래에 조합 dict
-    candidates = []
-    for k in ["fortunes", "records", "data", "db", "items"]:
-        v = db.get(k)
-        if isinstance(v, dict):
-            candidates.append(v)
+    # v2 기본 뼈대
+    v2 = {
+        "meta": {
+            "schema": "fortune-db-v2",
+            "lang": "ko",
+            "updated": datetime.now().strftime("%Y-%m-%d"),
+            "notes": "auto-converted from fortune-db-v1 at runtime (please migrate file to v2)"
+        },
+        "zodiacs": [{"id": zid, "label": ZODIAC_LABEL_KO[zid]} for zid in ZODIAC_ORDER],
+        "mbti": [{"id": m, "label": m} for m in MBTI_LIST],
+        "content": {zid: {} for zid in ZODIAC_ORDER}
+    }
 
-    # 2) 최상단에 조합키들이 섞여 있는 구조(meta/zodiacs + 조합키)
-    #    조합키 패턴: "<띠>_<MBTI>" 형태가 상당수 존재할 것
-    top_level_combo_like = {}
-    for k, v in db.items():
-        if isinstance(k, str) and "_" in k and isinstance(v, dict):
-            # 대충 MBTI 형태(4글자, 마지막 4글자) 검사
-            parts = k.split("_")
-            if len(parts) >= 2 and len(parts[-1]) == 4:
-                top_level_combo_like[k] = v
+    errors = []
+    for k, rec in combos.items():
+        # k 예: "닭_ENFP"
+        if not isinstance(k, str) or "_" not in k:
+            continue
+        zko, mbti = k.split("_", 1)
+        zko = zko.strip()
+        mbti = mbti.strip().upper()
 
-    if candidates:
-        # 가장 큰 dict를 조합 테이블로 채택
-        combos = max(candidates, key=lambda d: len(d))
-    elif len(top_level_combo_like) >= 10:
-        combos = top_level_combo_like
-    else:
-        combos = None
-
-    if not isinstance(combos, dict) or len(combos) == 0:
-        return db, None, ("invalid", "fortunes_ko.json에서 조합 데이터(예: 닭_ENFP)를 찾지 못했습니다. 파일 구조를 확인해주세요.")
-
-    # 정규화 인덱스 생성
-    norm_index = {norm_combo_key(k): k for k in combos.keys() if isinstance(k, str)}
-
-    return db, (combos, norm_index), None
-
-def debug_keys_for_zodiac(combos: dict, zodiac_ko: str, limit: int = 12):
-    """DB 안에 해당 띠로 시작하는 키들을 보여주기(근거 제공용)"""
-    pref = zodiac_ko + "_"
-    out = [k for k in combos.keys() if isinstance(k, str) and k.startswith(pref)]
-    out = sorted(out)[:limit]
-    return out
-
-def get_combo_record_or_stop(combos_pack, zodiac_ko: str, mbti: str):
-    combos, norm_index = combos_pack
-    expected = f"{zodiac_ko}_{mbti}"
-    expected_norm = norm_combo_key(expected)
-
-    # 1) 정확 일치
-    if expected in combos:
-        rec = combos[expected]
+        zid = ZODIAC_KO_TO_ID.get(zko)
+        if zid is None:
+            errors.append(f"v1 변환: 알 수 없는 띠 라벨 '{zko}' (키: {k})")
+            continue
+        if mbti not in MBTI_LIST:
+            errors.append(f"v1 변환: 알 수 없는 MBTI '{mbti}' (키: {k})")
+            continue
         if not isinstance(rec, dict):
-            st.error(f"DB 레코드 형식 오류: {expected}")
-            st.stop()
-        return expected, rec
+            errors.append(f"v1 변환: 레코드가 dict가 아님 (키: {k})")
+            continue
 
-    # 2) 정규화 매칭(공백/하이픈 등)
-    if expected_norm in norm_index:
-        real_key = norm_index[expected_norm]
-        rec = combos.get(real_key)
-        if isinstance(rec, dict):
-            return real_key, rec
+        v2["content"][zid][mbti] = rec
 
-    # 3) 여기까지 오면 '진짜 DB에 없음' → 근거 출력
-    st.error(f"데이터에 조합 키가 없습니다: {expected}")
+    if errors:
+        return None, errors
+    return v2, []
 
-    # DB에 원숭이_* 자체가 있는지 보여줌
-    similar = debug_keys_for_zodiac(combos, zodiac_ko, limit=20)
-    if similar:
-        st.info(f"DB에 '{zodiac_ko}_*'로 시작하는 키 예시(일부):\n\n- " + "\n- ".join(similar))
-        st.info("즉, 띠는 있는데 MBTI 조합이 빠진 경우입니다. (예: 원숭이_ENFP만 누락)")
+def validate_db_v2(db: dict):
+    errors = []
+    meta = db.get("meta", {})
+    if meta.get("schema") != "fortune-db-v2":
+        errors.append(f"meta.schema가 fortune-db-v2가 아닙니다. (현재: {meta.get('schema')})")
+
+    content = db.get("content")
+    if not isinstance(content, dict):
+        errors.append("content가 없습니다(또는 dict가 아님).")
+        return errors
+
+    # 12띠 존재
+    for zid in ZODIAC_ORDER:
+        if zid not in content or not isinstance(content.get(zid), dict):
+            errors.append(f"content['{zid}']가 없습니다.")
+            continue
+
+        # 16MBTI 전부 필수
+        for mbti in MBTI_LIST:
+            rec = content[zid].get(mbti)
+            if not isinstance(rec, dict):
+                errors.append(f"조합 누락: {zid}_{mbti}")
+                continue
+
+            missing = [k for k in REQUIRED_RECORD_KEYS if k not in rec]
+            if missing:
+                errors.append(f"레코드 키 누락: {zid}_{mbti} -> {', '.join(missing)}")
+                continue
+
+            lp = rec.get("lucky_point")
+            if not isinstance(lp, dict):
+                errors.append(f"lucky_point 형식 오류: {zid}_{mbti}")
+                continue
+
+            miss_lp = [k for k in REQUIRED_LUCKY_KEYS if k not in lp]
+            if miss_lp:
+                errors.append(f"lucky_point 키 누락: {zid}_{mbti} -> {', '.join(miss_lp)}")
+                continue
+
+    return errors
+
+def load_fortune_db():
+    raw, errs = _load_json_file(DB_PATH)
+    if errs:
+        return None, errs
+    if not isinstance(raw, dict):
+        return None, ["DB 최상위가 dict가 아닙니다."]
+
+    schema = (raw.get("meta") or {}).get("schema")
+    if schema == "fortune-db-v2":
+        v2 = raw
+    elif schema == "fortune-db-v1" or "combos" in raw:
+        v2, conv_errs = _convert_v1_to_v2(raw)
+        if conv_errs:
+            return None, conv_errs
     else:
-        # 띠 이름 자체가 DB에서 다르게 쓰였을 가능성
-        # DB 전체에서 '원숭' 포함 키 검색
-        contains = [k for k in combos.keys() if isinstance(k, str) and ("원숭" in k)]
-        contains = sorted(contains)[:20]
-        if contains:
-            st.warning("DB에 '원숭'이 포함된 키가 있긴 한데, 접두사가 다릅니다. (띠 표기/구분자 확인 필요)")
-            st.code("\n".join(contains))
-        else:
-            st.warning(f"DB에 '{zodiac_ko}' 관련 키가 아예 없습니다. (DB 생성/누락 문제)")
+        return None, [f"알 수 없는 schema 입니다: {schema}"]
 
-    st.stop()
+    val_errs = validate_db_v2(v2)
+    if val_errs:
+        return None, val_errs
+
+    return v2, []
 
 # =========================================================
-# 9) Google Sheet
+# 9) Google Sheet (미니게임 당첨자 저장)
+#  컬럼: 시간 | 이름 | 전화번호 | 기록초 | 공유여부
 # =========================================================
 def get_sheet():
     try:
@@ -457,10 +475,10 @@ def count_winners(ws) -> int:
     values = read_all_rows(ws)
     winners = 0
     for row in values[1:] if len(values) > 1 else []:
-        if len(row) < 6:
+        if len(row) < 5:
             continue
         try:
-            sec = float(row[4])
+            sec = float(row[3])
         except Exception:
             continue
         if 20.160 <= sec <= 20.169:
@@ -478,7 +496,7 @@ def phone_exists(ws, phone_norm: str) -> bool:
 
 def append_entry(ws, name, phone, seconds, shared_bool):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    ws.append_row([now_str, name, phone, "ko", f"{seconds:.3f}", str(bool(shared_bool))])
+    ws.append_row([now_str, name, phone, f"{seconds:.3f}", str(bool(shared_bool))])
 
 # =========================================================
 # 10) Share Button (시스템 공유창만)
@@ -508,8 +526,13 @@ def share_button_native_only(label: str, not_supported_text: str):
     }}
     try {{
       await navigator.share({{ title: "2026 운세", text: url, url }});
-      window.location.href = url + "?shared=1";
-    }} catch (e) {{}}
+      // 공유 완료 시 보너스
+      const u = new URL(window.location.href);
+      u.searchParams.set("shared", "1");
+      window.location.href = u.toString();
+    }} catch (e) {{
+      // user cancelled → do nothing
+    }}
   }});
 }})();
 </script>
@@ -518,7 +541,9 @@ def share_button_native_only(label: str, not_supported_text: str):
     )
 
 # =========================================================
-# 11) Stopwatch Component (STOP 시 t= 리다이렉트)
+# 11) Stopwatch Component
+#  - STOP 시 ?t=초 로 리다이렉트
+#  - tries_left == 0 이면 START/STOP 비활성
 # =========================================================
 def stopwatch_component_auto_fill(note_text: str, tries_left: int):
     disabled = "true" if tries_left <= 0 else "false"
@@ -609,19 +634,27 @@ def stopwatch_component_auto_fill(note_text: str, tries_left: int):
   }}
 
   startBtn.addEventListener("click", () => {{
-    if (running) return;
+    // START 한번 누르면 START 비활성 (원하는 UX)
+    startBtn.disabled = true;
+    startBtn.style.opacity = "0.6";
+    startBtn.style.cursor = "not-allowed";
+
     running = true;
     startTime = performance.now();
     display.textContent = "00:00.000";
     if (rafId) cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(tick);
-
-    startBtn.disabled = true;
-    startBtn.style.cursor = "not-allowed";
-    startBtn.style.opacity = "0.65";
   }});
 
   stopBtn.addEventListener("click", () => {{
+    // STOP 한번 누르면 둘 다 비활성 (원하는 UX)
+    stopBtn.disabled = true;
+    stopBtn.style.opacity = "0.6";
+    stopBtn.style.cursor = "not-allowed";
+    startBtn.disabled = true;
+    startBtn.style.opacity = "0.6";
+    startBtn.style.cursor = "not-allowed";
+
     if (!running) return;
     running = false;
     if (rafId) cancelAnimationFrame(rafId);
@@ -629,86 +662,22 @@ def stopwatch_component_auto_fill(note_text: str, tries_left: int):
     const elapsedSec = (now - startTime) / 1000.0;
     const v = elapsedSec.toFixed(3);
 
-    stopBtn.disabled = true;
-    stopBtn.style.cursor = "not-allowed";
-    stopBtn.style.opacity = "0.65";
-
     try {{
       const u = new URL(window.location.href);
       u.searchParams.set("t", v);
       window.location.href = u.toString();
     }} catch (e) {{
-      window.location.href = {json.dumps(APP_URL)} + "?t=" + v;
+      window.location.href = {json.dumps(APP_URL, ensure_ascii=False)} + "?t=" + v;
     }}
   }});
 }})();
 </script>
 """,
-        height=285
+        height=270
     )
 
 # =========================================================
-# 12) Session State
-# =========================================================
-if "name" not in st.session_state: st.session_state.name = ""
-if "y" not in st.session_state: st.session_state.y = 2005
-if "m" not in st.session_state: st.session_state.m = 1
-if "d" not in st.session_state: st.session_state.d = 1
-if "stage" not in st.session_state: st.session_state.stage = "input"
-if "mbti" not in st.session_state: st.session_state.mbti = None
-if "mbti_mode" not in st.session_state: st.session_state.mbti_mode = "direct"
-
-if "shared" not in st.session_state: st.session_state.shared = False
-if "max_attempts" not in st.session_state: st.session_state.max_attempts = 1
-if "attempts_used" not in st.session_state: st.session_state.attempts_used = 0
-if "show_win_form" not in st.session_state: st.session_state.show_win_form = False
-if "win_seconds" not in st.session_state: st.session_state.win_seconds = None
-if "last_elapsed" not in st.session_state: st.session_state.last_elapsed = None
-
-# =========================================================
-# 13) Shared=1 감지 + t= 기록 감지
-# =========================================================
-qp = get_query_params()
-
-shared_val = qp.get("shared", "0")
-if isinstance(shared_val, list):
-    shared_val = shared_val[0] if shared_val else "0"
-
-if str(shared_val) == "1":
-    if not st.session_state.shared:
-        st.session_state.shared = True
-        st.session_state.max_attempts = 2
-        safe_toast(T["share_bonus_done"])
-    clear_param("shared")
-
-t_val = qp.get("t", None)
-if isinstance(t_val, list):
-    t_val = t_val[0] if t_val else None
-
-if t_val is not None:
-    try:
-        elapsed = float(str(t_val).strip())
-        elapsed = float(f"{elapsed:.3f}")
-    except Exception:
-        elapsed = None
-
-    clear_param("t")
-
-    if elapsed is not None:
-        tries_left_before = max(0, st.session_state.max_attempts - st.session_state.attempts_used)
-        if tries_left_before > 0:
-            st.session_state.attempts_used += 1
-            st.session_state.last_elapsed = elapsed
-
-            if 20.160 <= elapsed <= 20.169:
-                st.session_state.show_win_form = True
-                st.session_state.win_seconds = elapsed
-            else:
-                st.session_state.show_win_form = False
-                st.session_state.win_seconds = None
-
-# =========================================================
-# 14) Style
+# 12) Style (디자인 유지)
 # =========================================================
 st.markdown("""
 <style>
@@ -777,15 +746,78 @@ hr.soft { border:0; height:1px; background: rgba(120, 90, 210, 0.15); margin: 14
 </style>
 """, unsafe_allow_html=True)
 
-inject_seo_korean_only()
+# =========================================================
+# 13) Session State
+# =========================================================
+if "name" not in st.session_state: st.session_state.name = ""
+if "y" not in st.session_state: st.session_state.y = 2005
+if "m" not in st.session_state: st.session_state.m = 1
+if "d" not in st.session_state: st.session_state.d = 1
+if "stage" not in st.session_state: st.session_state.stage = "input"
+if "mbti" not in st.session_state: st.session_state.mbti = "ENFP"
+if "mbti_mode" not in st.session_state: st.session_state.mbti_mode = "direct"
+
+# 미니게임 상태(리셋에서 유지)
+if "shared" not in st.session_state: st.session_state.shared = False
+if "max_attempts" not in st.session_state: st.session_state.max_attempts = 1
+if "attempts_used" not in st.session_state: st.session_state.attempts_used = 0
+if "show_win_form" not in st.session_state: st.session_state.show_win_form = False
+if "win_seconds" not in st.session_state: st.session_state.win_seconds = None
+if "last_attempt_seconds" not in st.session_state: st.session_state.last_attempt_seconds = None
+if "last_attempt_ok" not in st.session_state: st.session_state.last_attempt_ok = None
+
+# ---- shared=1 감지(보너스 1회) ----
+qp = get_query_params()
+shared_val = qp.get("shared", "0")
+if isinstance(shared_val, list):
+    shared_val = shared_val[0] if shared_val else "0"
+
+if str(shared_val) == "1":
+    if not st.session_state.shared:
+        st.session_state.shared = True
+        st.session_state.max_attempts = 2
+        safe_toast(T["share_bonus_done"])
+    clear_param("shared")
+
+# ---- STOP 기록 t= 감지 → 자동 판정 ----
+t_val = qp.get("t", None)
+if isinstance(t_val, list):
+    t_val = t_val[0] if t_val else None
+
+if t_val is not None:
+    clear_param("t")
+    tries_left_now = max(0, st.session_state.max_attempts - st.session_state.attempts_used)
+    if tries_left_now > 0:
+        try:
+            elapsed = float(str(t_val).strip())
+            st.session_state.attempts_used += 1
+            st.session_state.last_attempt_seconds = elapsed
+            ok = (20.160 <= elapsed <= 20.169)
+            st.session_state.last_attempt_ok = ok
+            if ok:
+                st.session_state.show_win_form = True
+                st.session_state.win_seconds = elapsed
+            else:
+                st.session_state.show_win_form = False
+                st.session_state.win_seconds = None
+        except Exception:
+            pass
 
 # =========================================================
-# 15) Reset
+# 14) Core logic
+# =========================================================
+def calc_zodiac_id(year: int) -> str:
+    idx = (year - 4) % 12
+    return ZODIAC_ORDER[idx]
+
+# =========================================================
+# 15) Reset (미니게임 시도/공유 유지)
 # =========================================================
 def reset_input_only_keep_minigame():
     keep_keys = {
         "shared", "max_attempts", "attempts_used",
-        "show_win_form", "win_seconds", "last_elapsed",
+        "show_win_form", "win_seconds",
+        "last_attempt_seconds", "last_attempt_ok",
     }
     current = dict(st.session_state)
     st.session_state.clear()
@@ -798,7 +830,7 @@ def reset_input_only_keep_minigame():
     st.session_state.m = 1
     st.session_state.d = 1
     st.session_state.stage = "input"
-    st.session_state.mbti = None
+    st.session_state.mbti = "ENFP"
     st.session_state.mbti_mode = "direct"
 
 # =========================================================
@@ -822,19 +854,12 @@ def render_input():
     st.session_state.d = c3.number_input(T["day"], 1, 31, st.session_state.d, 1)
 
     st.markdown(f"<div class='card'><b>{T['mbti_mode']}</b></div>", unsafe_allow_html=True)
-    try:
-        mode = st.radio(
-            "",
-            [T["mbti_direct"], T["mbti_12"], T["mbti_16"]],
-            index=0 if st.session_state.mbti_mode=="direct" else (1 if st.session_state.mbti_mode=="12" else 2),
-            horizontal=True
-        )
-    except TypeError:
-        mode = st.radio(
-            "",
-            [T["mbti_direct"], T["mbti_12"], T["mbti_16"]],
-            index=0 if st.session_state.mbti_mode=="direct" else (1 if st.session_state.mbti_mode=="12" else 2),
-        )
+    mode = st.radio(
+        "",
+        [T["mbti_direct"], T["mbti_12"], T["mbti_16"]],
+        index=0 if st.session_state.mbti_mode=="direct" else (1 if st.session_state.mbti_mode=="12" else 2),
+        horizontal=True
+    )
 
     if mode == T["mbti_direct"]:
         st.session_state.mbti_mode = "direct"
@@ -846,13 +871,8 @@ def render_input():
     if st.session_state.mbti_mode == "direct":
         idx = MBTI_LIST.index(st.session_state.mbti) if st.session_state.mbti in MBTI_LIST else MBTI_LIST.index("ENFP")
         st.session_state.mbti = st.selectbox("MBTI", MBTI_LIST, index=idx)
-    elif st.session_state.mbti_mode == "12":
-        done = render_mbti_test(MBTI_Q_12, T["mbti_test_12_title"], "q12")
-        if done:
-            st.success(f"MBTI: {st.session_state.mbti}")
     else:
-        questions = MBTI_Q_12 + MBTI_Q_16_EXTRA
-        done = render_mbti_test(questions, T["mbti_test_16_title"], "q16")
+        done = render_mbti_test("12" if st.session_state.mbti_mode == "12" else "16")
         if done:
             st.success(f"MBTI: {st.session_state.mbti}")
 
@@ -864,99 +884,115 @@ def render_input():
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
+def render_db_error(errors: list[str]):
+    st.markdown(f"""
+    <div class="header-hero">
+      <p class="hero-title">⚠️ {T["db_invalid"]}</p>
+      <p class="hero-sub">DB를 먼저 정상화해야 합니다.</p>
+      <span class="badge">DB</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.write("아래는 앱이 발견한 정확한 오류 목록입니다. (이대로 DB를 고치면 해결됩니다)")
+    for e in errors[:200]:
+        st.write(f"- {e}")
+    if len(errors) > 200:
+        st.write(f"... (총 {len(errors)}개 중 일부만 표시)")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    if st.button(T["reset"], use_container_width=True):
+        reset_input_only_keep_minigame()
+        st.rerun()
+
 def render_result():
-    db, combos_pack, err = load_fortune_db_and_combos()
-    if err is not None:
-        st.error(err[1])
-        st.stop()
+    # DB 로드 + 검증(실패 시 즉시 원인 출력)
+    db, db_errors = load_fortune_db()
+    if db_errors:
+        render_db_error(db_errors)
+        return
+
+    s = T["sections"]
 
     y = st.session_state.y
-    zodiac_ko = calc_zodiac_ko(y)
-    mbti = st.session_state.mbti or "ENFP"
+    zodiac_id = calc_zodiac_id(y)
+    zodiac_label = ZODIAC_LABEL_KO.get(zodiac_id, zodiac_id)
 
-    real_key, record = get_combo_record_or_stop(combos_pack, zodiac_ko, mbti)
-
+    mbti = (st.session_state.mbti or "ENFP").upper()
     name = (st.session_state.name or "").strip()
     display_name = f"{name}님" if name else ""
+
+    # v2: content[zodiac_id][mbti]
+    rec = db["content"][zodiac_id][mbti]
 
     st.markdown(f"""
     <div class="header-hero">
       <p class="hero-title">{display_name} 2026년 운세</p>
-      <p class="hero-sub">{zodiac_ko}띠 · {mbti}</p>
+      <p class="hero-sub">{zodiac_label}띠 · {mbti}</p>
       <span class="badge">2026</span>
     </div>
     """, unsafe_allow_html=True)
 
-    s = T["sections"]
-
-    def req(k: str):
-        if k not in record:
-            st.error(f"DB 레코드({real_key})에 필수 키가 없습니다: {k}")
-            st.stop()
-        return record[k]
-
-    zodiac_fortune = req("zodiac_fortune")
-    mbti_trait = req("mbti_trait")
-    mbti_influence = req("mbti_influence")
-    saju_message = req("saju_message")
-    today = req("today")
-    tomorrow = req("tomorrow")
-    year_2026 = req("year_2026")
-    love = req("love")
-    money = req("money")
-    work = req("work")
-    health = req("health")
-    lucky_point = req("lucky_point")
-    action_tip = req("action_tip")
-    caution = req("caution")
-
-    if not isinstance(lucky_point, dict):
-        st.error(f"DB 레코드({real_key})의 lucky_point 형식이 올바르지 않습니다.")
-        st.stop()
-
-    lp_color = lucky_point.get("color", "")
-    lp_item = lucky_point.get("item", "")
-    lp_number = lucky_point.get("number", "")
-    lp_direction = lucky_point.get("direction", "")
-
+    # ---- 본문 카드(텍스트는 st.write로: 태그 노출 방지) ----
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.markdown(f"**{s['zodiac']}**: {zodiac_fortune}")
-    st.markdown(f"**{s['mbti']}**: {mbti_trait}")
-    st.markdown(f"**{s['mbti_inf']}**: {mbti_influence}")
-    st.markdown(f"**{s['saju']}**: {saju_message}")
+    st.write(f"**{s['zodiac']}**")
+    st.write(rec["zodiac_fortune"])
+
+    st.write(f"**{s['mbti']}**")
+    st.write(rec["mbti_trait"])
+    st.write(rec["mbti_influence"])
+
+    st.write(f"**{s['saju']}**")
+    st.write(rec["saju_message"])
+
     st.markdown("<hr class='soft'/>", unsafe_allow_html=True)
-    st.markdown(f"**{s['today']}**: {today}")
-    st.markdown(f"**{s['tomorrow']}**: {tomorrow}")
+    st.write(f"**{s['today']}**")
+    st.write(rec["today"])
+    st.write(f"**{s['tomorrow']}**")
+    st.write(rec["tomorrow"])
+
     st.markdown("<hr class='soft'/>", unsafe_allow_html=True)
-    st.markdown(f"**{s['year_all']}**: {year_2026}")
+    st.write(f"**{s['year_all']}**")
+    st.write(rec["year_2026"])
+
+    st.markdown("<hr class='soft'/>", unsafe_allow_html=True)
+    st.write(f"**{s['love']}**")
+    st.write(rec["love"])
+    st.write(f"**{s['money']}**")
+    st.write(rec["money"])
+    st.write(f"**{s['work']}**")
+    st.write(rec["work"])
+    st.write(f"**{s['health']}**")
+    st.write(rec["health"])
+
+    st.markdown("<hr class='soft'/>", unsafe_allow_html=True)
+    lp = rec["lucky_point"]
+    st.write(f"**{s['lucky']}**")
+    st.write(f"색: {lp['color']} · 아이템: {lp['item']} · 숫자: {lp['number']} · 방향: {lp['direction']}")
+
+    st.write(f"**{s['action']}**")
+    st.write(rec["action_tip"])
+    st.write(f"**{s['caution']}**")
+    st.write(rec["caution"])
     st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.markdown(f"**{s['love']}**: {love}")
-    st.markdown(f"**{s['money']}**: {money}")
-    st.markdown(f"**{s['work']}**: {work}")
-    st.markdown(f"**{s['health']}**: {health}")
-    st.markdown("<hr class='soft'/>", unsafe_allow_html=True)
-    st.markdown(
-        f"**{s['lucky']}**: 색상 **{lp_color}**, 아이템 **{lp_item}**, 숫자 **{lp_number}**, 방향 **{lp_direction}**"
-    )
-    st.markdown(f"**{s['action']}**: {action_tip}")
-    st.markdown(f"**{s['caution']}**: {caution}")
-    st.markdown("</div>", unsafe_allow_html=True)
-
+    # ---- Tarot ----
     if st.button(T["tarot_btn"], use_container_width=True):
-        local_name, local_meaning = pick_tarot()
+        eng_key, local_name, local_meaning = pick_tarot()
         st.markdown(f"""
         <div class="card" style="text-align:center;">
           <div style="font-weight:900;color:#6b4fd6;">{T["tarot_title"]}</div>
           <div style="font-size:1.45rem;font-weight:900;margin-top:6px;">{local_name}</div>
+          <div style="opacity:0.75;margin-top:2px;">{eng_key}</div>
           <div style="margin-top:10px;" class="soft-box">{local_meaning}</div>
         </div>
         """, unsafe_allow_html=True)
 
+    # ---- Share (시스템 공유창만) ----
     share_button_native_only(T["share_link_btn"], T["share_not_supported"])
     st.caption(T["share_link_hint"])
 
+    # ---- 광고 위치 ----
     st.markdown(f"<div class='adplaceholder'>{T['ad_placeholder']}</div>", unsafe_allow_html=True)
     st.markdown(f"""
     <div class="adbox">
@@ -974,6 +1010,7 @@ def render_result():
     </div>
     """, unsafe_allow_html=True)
 
+    # ---- 미니게임 ----
     st.markdown(
         f"<div class='card'><div style='font-weight:900;font-size:1.2rem;'>{T['mini_title']}</div>"
         f"<div style='margin-top:8px;' class='soft-box'>{T['mini_desc']}</div></div>",
@@ -995,7 +1032,6 @@ def render_result():
             closed = False
 
     tries_left = max(0, st.session_state.max_attempts - st.session_state.attempts_used)
-
     st.markdown(
         f"<div class='small-note'>{T['mini_try_left']}: <b>{tries_left}</b> / {st.session_state.max_attempts}</div>",
         unsafe_allow_html=True
@@ -1004,21 +1040,22 @@ def render_result():
     if closed:
         st.info(T["mini_closed"])
     else:
-        if st.session_state.last_elapsed is not None:
-            st.markdown(
-                f"<div class='card'><b>방금 기록</b>: {st.session_state.last_elapsed:.3f}s</div>",
-                unsafe_allow_html=True
-            )
-            if st.session_state.show_win_form and st.session_state.win_seconds is not None:
-                st.success("🎯 목표 구간 성공! 아래 정보를 입력하면 접수됩니다.")
-            else:
-                st.info(T["miss"])
-
-        if tries_left > 0:
-            stopwatch_component_auto_fill(T["stopwatch_note"], tries_left)
-        else:
+        if tries_left <= 0:
             st.info(T["try_over"])
 
+        # 최근 시도 결과(자동 판정 결과 표시)
+        if st.session_state.last_attempt_seconds is not None:
+            sec = float(st.session_state.last_attempt_seconds)
+            ok = bool(st.session_state.last_attempt_ok)
+            if ok:
+                st.success(f"기록: {sec:.3f}s ✅ (당첨 범위)")
+            else:
+                st.info(f"기록: {sec:.3f}s ❌ {T['miss']}")
+
+        # 스톱워치(START/STOP 한번씩)
+        stopwatch_component_auto_fill(T["stopwatch_note"], tries_left)
+
+        # 당첨 폼
         if st.session_state.show_win_form and st.session_state.win_seconds is not None:
             st.markdown("<div class='card'>", unsafe_allow_html=True)
             st.markdown(f"### {T['win_title']}")
@@ -1058,13 +1095,15 @@ def render_result():
 
             st.markdown("</div>", unsafe_allow_html=True)
 
+    # ---- FAQ ----
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown(f"### {T['faq_title']}")
-    st.markdown("- **2026 운세/띠운세/MBTI 운세/사주/오늘운세/내일운세/타로**를 무료로 제공합니다.")
-    st.markdown("- 띠+MBTI 조합으로 **연애·재물·일/학업·건강** 조언을 제공합니다.")
-    st.markdown("- 일부 브라우저에서는 자동 번역 기능으로 다른 언어로도 볼 수 있습니다.")
+    st.write("- **2026 운세/띠운세/MBTI 운세/사주/오늘운세/내일운세/타로**를 무료로 제공합니다.")
+    st.write("- MBTI 성향을 반영해 **연애·재물·일/학업·건강** 조언을 제공합니다.")
+    st.write("- 한국어 화면에는 선착순 이벤트 미니게임(구글시트 저장)이 포함됩니다.")
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # ---- reset ----
     if st.button(T["reset"], use_container_width=True):
         reset_input_only_keep_minigame()
         st.rerun()
@@ -1074,6 +1113,8 @@ def render_result():
 # =========================================================
 # 17) Router
 # =========================================================
+inject_seo_ko()
+
 if st.session_state.stage == "input":
     render_input()
 else:
