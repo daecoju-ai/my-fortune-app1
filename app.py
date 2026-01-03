@@ -18,11 +18,9 @@ except Exception:
 # =========================================================
 APP_URL = "https://my-fortune.streamlit.app"
 
-# 미니게임 당첨자 저장용 (그대로 유지)
 SPREADSHEET_ID = "1WvuKXx2if2WvxmQaxkqzFW-BzDEWWma9hZgCr2jJQYY"
 SHEET_NAME = "시트1"
 
-# 운세 DB 파일 (한국어만)
 FORTUNE_DB_PATH = Path(__file__).parent / "data" / "fortunes_ko.json"
 
 st.set_page_config(
@@ -47,6 +45,21 @@ def safe_toast(msg: str):
 
 def normalize_phone(phone: str) -> str:
     return re.sub(r"[^0-9]", "", phone or "")
+
+def norm_combo_key(s: str) -> str:
+    """
+    조합키 비교용 정규화:
+    - 공백 제거
+    - 하이픈/슬래시 등 구분자 통일
+    - 연속 언더스코어 정리
+    """
+    if s is None:
+        return ""
+    s = str(s).strip()
+    s = s.replace(" ", "")
+    s = s.replace("-", "_").replace("/", "_")
+    s = re.sub(r"_+", "_", s)
+    return s
 
 # =========================================================
 # 2) Query params (Streamlit 버전 호환)
@@ -78,7 +91,7 @@ def clear_param(param_key: str):
         pass
 
 # =========================================================
-# 3) SEO Inject (안전하게)
+# 3) SEO Inject (한국어만)
 # =========================================================
 def inject_seo_korean_only():
     description = "2026년 띠운세 + MBTI + 사주 + 오늘/내일 운세 + 타로까지 무료로!"
@@ -223,11 +236,10 @@ T = {
     "share_not_supported": "이 기기에서는 시스템 공유가 지원되지 않습니다.",
     "db_file_missing": "운세 DB 파일을 찾지 못했습니다: data/fortunes_ko.json",
     "db_json_invalid": "운세 DB JSON 파싱에 실패했습니다. (형식 오류)",
-    "db_combo_missing": "데이터에 조합 키가 없습니다",
 }
 
 # =========================================================
-# 5) Tarot (한국어만)
+# 5) Tarot
 # =========================================================
 TAROT = [
     ("운명의 수레바퀴", "변화, 전환점"),
@@ -235,12 +247,11 @@ TAROT = [
     ("힘", "용기, 인내"),
     ("세계", "완성, 성취"),
 ]
-
 def pick_tarot():
     return random.choice(TAROT)
 
 # =========================================================
-# 6) MBTI (선택/테스트)
+# 6) MBTI
 # =========================================================
 MBTI_LIST = sorted([
     "INTJ","INTP","ENTJ","ENTP",
@@ -263,7 +274,6 @@ MBTI_Q_12 = [
     ("TF", "갈등은 원인/해결이 우선", "갈등은 감정/관계가 우선"),
     ("JP", "정리/정돈이 잘 되어야 편하다", "어수선해도 일단 진행 가능"),
 ]
-
 MBTI_Q_16_EXTRA = [
     ("EI", "새로운 사람을 만나면 설렌다", "새로운 사람은 적응 시간이 필요"),
     ("SN", "지금 필요한 현실이 중요", "미래 가능성이 더 중요"),
@@ -304,51 +314,115 @@ def render_mbti_test(questions, title: str, key_prefix: str):
     return False
 
 # =========================================================
-# 7) 띠 계산 (DB 키는 '쥐/소/…/닭' 그대로 사용)
+# 7) 띠 계산
 # =========================================================
 ZODIAC_KO_ORDER = ["쥐","소","호랑이","토끼","용","뱀","말","양","원숭이","닭","개","돼지"]
 
 def calc_zodiac_ko(year: int) -> str:
-    # (year - 4) % 12 방식 유지: 2008(쥐), 2009(소) ... 매칭
     idx = (year - 4) % 12
     return ZODIAC_KO_ORDER[idx]
 
 # =========================================================
-# 8) fortunes_ko.json 로드 (자동생성/대체 없음)
+# 8) fortunes_ko.json 로드 + "조합 테이블" 위치 자동 탐지
+#    (근본원인: 파일 구조가 다르면 키가 있어도 못 찾음 → 여기서 해결)
 # =========================================================
 @st.cache_data(show_spinner=False)
-def load_fortune_db():
+def load_fortune_db_and_combos():
     if not FORTUNE_DB_PATH.exists():
-        return None, ("missing", T["db_file_missing"])
+        return None, None, ("missing", T["db_file_missing"])
+
     try:
         raw = FORTUNE_DB_PATH.read_text(encoding="utf-8")
-    except Exception:
-        return None, ("missing", T["db_file_missing"])
-
-    try:
         db = json.loads(raw)
     except Exception:
-        return None, ("invalid", T["db_json_invalid"])
+        return None, None, ("invalid", T["db_json_invalid"])
 
     if not isinstance(db, dict):
-        return None, ("invalid", T["db_json_invalid"])
+        return None, None, ("invalid", T["db_json_invalid"])
 
-    return db, None
+    # 1) 흔한 구조: fortunes 키 아래에 조합 dict
+    candidates = []
+    for k in ["fortunes", "records", "data", "db", "items"]:
+        v = db.get(k)
+        if isinstance(v, dict):
+            candidates.append(v)
 
-def get_combo_record_or_stop(db: dict, zodiac_ko: str, mbti: str):
-    combo_key = f"{zodiac_ko}_{mbti}"
-    if combo_key not in db:
-        st.error(f"{T['db_combo_missing']}: {combo_key}")
-        st.stop()
-    record = db[combo_key]
-    if not isinstance(record, dict):
-        st.error(f"{T['db_combo_missing']}: {combo_key} (형식 오류)")
-        st.stop()
-    return combo_key, record
+    # 2) 최상단에 조합키들이 섞여 있는 구조(meta/zodiacs + 조합키)
+    #    조합키 패턴: "<띠>_<MBTI>" 형태가 상당수 존재할 것
+    top_level_combo_like = {}
+    for k, v in db.items():
+        if isinstance(k, str) and "_" in k and isinstance(v, dict):
+            # 대충 MBTI 형태(4글자, 마지막 4글자) 검사
+            parts = k.split("_")
+            if len(parts) >= 2 and len(parts[-1]) == 4:
+                top_level_combo_like[k] = v
+
+    if candidates:
+        # 가장 큰 dict를 조합 테이블로 채택
+        combos = max(candidates, key=lambda d: len(d))
+    elif len(top_level_combo_like) >= 10:
+        combos = top_level_combo_like
+    else:
+        combos = None
+
+    if not isinstance(combos, dict) or len(combos) == 0:
+        return db, None, ("invalid", "fortunes_ko.json에서 조합 데이터(예: 닭_ENFP)를 찾지 못했습니다. 파일 구조를 확인해주세요.")
+
+    # 정규화 인덱스 생성
+    norm_index = {norm_combo_key(k): k for k in combos.keys() if isinstance(k, str)}
+
+    return db, (combos, norm_index), None
+
+def debug_keys_for_zodiac(combos: dict, zodiac_ko: str, limit: int = 12):
+    """DB 안에 해당 띠로 시작하는 키들을 보여주기(근거 제공용)"""
+    pref = zodiac_ko + "_"
+    out = [k for k in combos.keys() if isinstance(k, str) and k.startswith(pref)]
+    out = sorted(out)[:limit]
+    return out
+
+def get_combo_record_or_stop(combos_pack, zodiac_ko: str, mbti: str):
+    combos, norm_index = combos_pack
+    expected = f"{zodiac_ko}_{mbti}"
+    expected_norm = norm_combo_key(expected)
+
+    # 1) 정확 일치
+    if expected in combos:
+        rec = combos[expected]
+        if not isinstance(rec, dict):
+            st.error(f"DB 레코드 형식 오류: {expected}")
+            st.stop()
+        return expected, rec
+
+    # 2) 정규화 매칭(공백/하이픈 등)
+    if expected_norm in norm_index:
+        real_key = norm_index[expected_norm]
+        rec = combos.get(real_key)
+        if isinstance(rec, dict):
+            return real_key, rec
+
+    # 3) 여기까지 오면 '진짜 DB에 없음' → 근거 출력
+    st.error(f"데이터에 조합 키가 없습니다: {expected}")
+
+    # DB에 원숭이_* 자체가 있는지 보여줌
+    similar = debug_keys_for_zodiac(combos, zodiac_ko, limit=20)
+    if similar:
+        st.info(f"DB에 '{zodiac_ko}_*'로 시작하는 키 예시(일부):\n\n- " + "\n- ".join(similar))
+        st.info("즉, 띠는 있는데 MBTI 조합이 빠진 경우입니다. (예: 원숭이_ENFP만 누락)")
+    else:
+        # 띠 이름 자체가 DB에서 다르게 쓰였을 가능성
+        # DB 전체에서 '원숭' 포함 키 검색
+        contains = [k for k in combos.keys() if isinstance(k, str) and ("원숭" in k)]
+        contains = sorted(contains)[:20]
+        if contains:
+            st.warning("DB에 '원숭'이 포함된 키가 있긴 한데, 접두사가 다릅니다. (띠 표기/구분자 확인 필요)")
+            st.code("\n".join(contains))
+        else:
+            st.warning(f"DB에 '{zodiac_ko}' 관련 키가 아예 없습니다. (DB 생성/누락 문제)")
+
+    st.stop()
 
 # =========================================================
-# 9) Google Sheet (컬럼 고정 유지)
-#  시간 | 이름 | 전화번호 | 언어 | 기록초 | 공유여부
+# 9) Google Sheet
 # =========================================================
 def get_sheet():
     try:
@@ -435,9 +509,7 @@ def share_button_native_only(label: str, not_supported_text: str):
     try {{
       await navigator.share({{ title: "2026 운세", text: url, url }});
       window.location.href = url + "?shared=1";
-    }} catch (e) {{
-      // user cancelled → do nothing
-    }}
+    }} catch (e) {{}}
   }});
 }})();
 </script>
@@ -446,9 +518,7 @@ def share_button_native_only(label: str, not_supported_text: str):
     )
 
 # =========================================================
-# 11) Stopwatch Component (STOP 시 t= 로 리다이렉트)
-#     - "제출 버튼 없음"
-#     - STOP 한 번 하면 즉시 판정 + 그 시도 소모
+# 11) Stopwatch Component (STOP 시 t= 리다이렉트)
 # =========================================================
 def stopwatch_component_auto_fill(note_text: str, tries_left: int):
     disabled = "true" if tries_left <= 0 else "false"
@@ -546,7 +616,6 @@ def stopwatch_component_auto_fill(note_text: str, tries_left: int):
     if (rafId) cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(tick);
 
-    // START 누른 뒤에는 START 비활성화 (한 번만)
     startBtn.disabled = true;
     startBtn.style.cursor = "not-allowed";
     startBtn.style.opacity = "0.65";
@@ -560,12 +629,10 @@ def stopwatch_component_auto_fill(note_text: str, tries_left: int):
     const elapsedSec = (now - startTime) / 1000.0;
     const v = elapsedSec.toFixed(3);
 
-    // STOP 누르면 즉시 완전 비활성화 (한 번만)
     stopBtn.disabled = true;
     stopBtn.style.cursor = "not-allowed";
     stopBtn.style.opacity = "0.65";
 
-    // 현재 URL의 다른 파라미터 유지하고 t만 갱신
     try {{
       const u = new URL(window.location.href);
       u.searchParams.set("t", v);
@@ -591,16 +658,15 @@ if "stage" not in st.session_state: st.session_state.stage = "input"
 if "mbti" not in st.session_state: st.session_state.mbti = None
 if "mbti_mode" not in st.session_state: st.session_state.mbti_mode = "direct"
 
-# 미니게임 상태
 if "shared" not in st.session_state: st.session_state.shared = False
 if "max_attempts" not in st.session_state: st.session_state.max_attempts = 1
 if "attempts_used" not in st.session_state: st.session_state.attempts_used = 0
 if "show_win_form" not in st.session_state: st.session_state.show_win_form = False
 if "win_seconds" not in st.session_state: st.session_state.win_seconds = None
-if "last_elapsed" not in st.session_state: st.session_state.last_elapsed = None  # 마지막 기록(표시용)
+if "last_elapsed" not in st.session_state: st.session_state.last_elapsed = None
 
 # =========================================================
-# 13) Shared=1 감지(보너스 1회) + t= 기록 감지(즉시 판정)
+# 13) Shared=1 감지 + t= 기록 감지
 # =========================================================
 qp = get_query_params()
 
@@ -619,7 +685,6 @@ t_val = qp.get("t", None)
 if isinstance(t_val, list):
     t_val = t_val[0] if t_val else None
 
-# t= 가 들어오면 "기록제출 버튼 없이" 즉시 시도 소모 + 판정
 if t_val is not None:
     try:
         elapsed = float(str(t_val).strip())
@@ -643,7 +708,7 @@ if t_val is not None:
                 st.session_state.win_seconds = None
 
 # =========================================================
-# 14) Style (디자인 변경 금지: 그대로 유지)
+# 14) Style
 # =========================================================
 st.markdown("""
 <style>
@@ -712,11 +777,10 @@ hr.soft { border:0; height:1px; background: rgba(120, 90, 210, 0.15); margin: 14
 </style>
 """, unsafe_allow_html=True)
 
-# SEO 주입 (한국어만)
 inject_seo_korean_only()
 
 # =========================================================
-# 15) Reset (미니게임 시도/공유는 유지)
+# 15) Reset
 # =========================================================
 def reset_input_only_keep_minigame():
     keep_keys = {
@@ -801,8 +865,7 @@ def render_input():
     st.markdown('</div>', unsafe_allow_html=True)
 
 def render_result():
-    # DB 로드 (대체/자동생성 없음)
-    db, err = load_fortune_db()
+    db, combos_pack, err = load_fortune_db_and_combos()
     if err is not None:
         st.error(err[1])
         st.stop()
@@ -810,7 +873,8 @@ def render_result():
     y = st.session_state.y
     zodiac_ko = calc_zodiac_ko(y)
     mbti = st.session_state.mbti or "ENFP"
-    combo_key, record = get_combo_record_or_stop(db, zodiac_ko, mbti)
+
+    real_key, record = get_combo_record_or_stop(combos_pack, zodiac_ko, mbti)
 
     name = (st.session_state.name or "").strip()
     display_name = f"{name}님" if name else ""
@@ -825,11 +889,9 @@ def render_result():
 
     s = T["sections"]
 
-    # 안전 추출 (키가 없으면 "빈값"이 아니라 에러로 멈추게 할 수도 있지만,
-    # DB 구조는 이미 확인됐으니 화면만 안전하게 처리)
     def req(k: str):
         if k not in record:
-            st.error(f"DB 레코드({combo_key})에 필수 키가 없습니다: {k}")
+            st.error(f"DB 레코드({real_key})에 필수 키가 없습니다: {k}")
             st.stop()
         return record[k]
 
@@ -848,9 +910,8 @@ def render_result():
     action_tip = req("action_tip")
     caution = req("caution")
 
-    # lucky_point 태그처럼 보이던 문제 해결: 예쁘게 포맷
     if not isinstance(lucky_point, dict):
-        st.error(f"DB 레코드({combo_key})의 lucky_point 형식이 올바르지 않습니다.")
+        st.error(f"DB 레코드({real_key})의 lucky_point 형식이 올바르지 않습니다.")
         st.stop()
 
     lp_color = lucky_point.get("color", "")
@@ -877,14 +938,12 @@ def render_result():
     st.markdown(f"**{s['health']}**: {health}")
     st.markdown("<hr class='soft'/>", unsafe_allow_html=True)
     st.markdown(
-        f"**{s['lucky']}**: "
-        f"색상 **{lp_color}**, 아이템 **{lp_item}**, 숫자 **{lp_number}**, 방향 **{lp_direction}**"
+        f"**{s['lucky']}**: 색상 **{lp_color}**, 아이템 **{lp_item}**, 숫자 **{lp_number}**, 방향 **{lp_direction}**"
     )
     st.markdown(f"**{s['action']}**: {action_tip}")
     st.markdown(f"**{s['caution']}**: {caution}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ---- Tarot ----
     if st.button(T["tarot_btn"], use_container_width=True):
         local_name, local_meaning = pick_tarot()
         st.markdown(f"""
@@ -895,11 +954,9 @@ def render_result():
         </div>
         """, unsafe_allow_html=True)
 
-    # ---- Share (시스템 공유창만) ----
     share_button_native_only(T["share_link_btn"], T["share_not_supported"])
     st.caption(T["share_link_hint"])
 
-    # ---- 광고 위치: 미니게임 바로 위 ----
     st.markdown(f"<div class='adplaceholder'>{T['ad_placeholder']}</div>", unsafe_allow_html=True)
     st.markdown(f"""
     <div class="adbox">
@@ -917,7 +974,6 @@ def render_result():
     </div>
     """, unsafe_allow_html=True)
 
-    # ---- 미니게임 (한국어) ----
     st.markdown(
         f"<div class='card'><div style='font-weight:900;font-size:1.2rem;'>{T['mini_title']}</div>"
         f"<div style='margin-top:8px;' class='soft-box'>{T['mini_desc']}</div></div>",
@@ -948,7 +1004,6 @@ def render_result():
     if closed:
         st.info(T["mini_closed"])
     else:
-        # 마지막 기록이 있으면 결과 표시
         if st.session_state.last_elapsed is not None:
             st.markdown(
                 f"<div class='card'><b>방금 기록</b>: {st.session_state.last_elapsed:.3f}s</div>",
@@ -959,13 +1014,11 @@ def render_result():
             else:
                 st.info(T["miss"])
 
-        # 남은 시도 있으면 스톱워치 노출
         if tries_left > 0:
             stopwatch_component_auto_fill(T["stopwatch_note"], tries_left)
         else:
             st.info(T["try_over"])
 
-        # 당첨 폼: "성공했을 때만" 표시 (게임 안 했는데 번호 입력 요구 문제 해결)
         if st.session_state.show_win_form and st.session_state.win_seconds is not None:
             st.markdown("<div class='card'>", unsafe_allow_html=True)
             st.markdown(f"### {T['win_title']}")
@@ -1005,7 +1058,6 @@ def render_result():
 
             st.markdown("</div>", unsafe_allow_html=True)
 
-    # ---- 검색/AI 노출 섹션 ----
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown(f"### {T['faq_title']}")
     st.markdown("- **2026 운세/띠운세/MBTI 운세/사주/오늘운세/내일운세/타로**를 무료로 제공합니다.")
@@ -1013,7 +1065,6 @@ def render_result():
     st.markdown("- 일부 브라우저에서는 자동 번역 기능으로 다른 언어로도 볼 수 있습니다.")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ---- reset: 입력/결과만 초기화 (미니게임 시도/공유 유지) ----
     if st.button(T["reset"], use_container_width=True):
         reset_input_only_keep_minigame()
         st.rerun()
