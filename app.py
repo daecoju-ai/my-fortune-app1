@@ -1,178 +1,189 @@
 # app.py
 import json
 import hashlib
+from datetime import date
 from pathlib import Path
+
 import streamlit as st
 
 
-# =========================
+# -----------------------------
 # Config
-# =========================
-APP_TITLE = "🔮 2026 띠 + MBTI + 사주 + 오늘/내일 운세 (완전 무료)"
-DB_REL_PATHS = [
-    Path(__file__).parent / "data" / "fortunes_ko.json",  # recommended (repo structure)
-    Path(__file__).parent / "fortunes_ko.json",           # fallback (root)
-]
-
-# 띠 계산용(12간지) : index = (year % 12)
-# 2016 원숭이(0), 2017 닭(1), 2018 개(2), 2019 돼지(3), 2020 쥐(4) ...
-ZODIAC_BY_YEAR_MOD12 = [
-    "원숭이", "닭", "개", "돼지",
-    "쥐", "소", "호랑이", "토끼",
-    "용", "뱀", "말", "양",
-]
+# -----------------------------
+APP_TITLE = "🔮 2026 띠 + MBTI + 사주 + 오늘/내일 운세"
+DB_PATH = Path(__file__).resolve().parent / "data" / "fortunes_ko.json"
 
 
-# =========================
+# -----------------------------
 # Helpers
-# =========================
-@st.cache_data(show_spinner=False)
-def load_db() -> dict:
-    last_err = None
-    for p in DB_REL_PATHS:
-        try:
-            if p.exists():
-                return json.loads(p.read_text(encoding="utf-8"))
-            last_err = FileNotFoundError(str(p))
-        except Exception as e:
-            last_err = e
-    raise last_err or FileNotFoundError("fortunes_ko.json not found")
+# -----------------------------
+def load_db(path: Path) -> dict:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as e:
+        st.error(f"DB 로드 오류: {e}\n\n경로: {path.as_posix()}")
+        st.stop()
+    except json.JSONDecodeError as e:
+        st.error(f"DB JSON 파싱 오류: {e}\n\n파일: {path.as_posix()}")
+        st.stop()
 
 
 def stable_hash_int(text: str) -> int:
-    """Deterministic int from text."""
+    """Stable across sessions / deployments."""
     h = hashlib.sha256(text.encode("utf-8")).hexdigest()
     return int(h[:16], 16)
 
 
-def pick_mbti(birth_ymd: str, mbti_list: list[str]) -> str:
-    idx = stable_hash_int(birth_ymd + "|mbti") % len(mbti_list)
+def infer_mbti_from_birth(yyyy: int, mm: int, dd: int, mbti_list: list[str]) -> str:
+    # Deterministic mapping: same birthdate => same MBTI (not claiming real MBTI)
+    key = f"{yyyy:04d}-{mm:02d}-{dd:02d}"
+    idx = stable_hash_int(key) % len(mbti_list)
     return mbti_list[idx]
 
 
-def zodiac_from_year(year: int) -> str:
-    return ZODIAC_BY_YEAR_MOD12[year % 12]
-
-
-def pick_tarot(birth_ymd: str, tarot_dict: dict) -> tuple[str, str]:
-    names = list(tarot_dict.keys())
-    idx = stable_hash_int(birth_ymd + "|tarot") % len(names)
-    name = names[idx]
-    return name, str(tarot_dict.get(name, "")).strip()
-
-
-def get_combo(db: dict, zodiac: str, mbti: str) -> dict | None:
-    combos = db.get("combos", {})
-    return combos.get(f"{zodiac}_{mbti}")
-
-
-def safe_text(x) -> str:
-    if x is None:
+def zodiac_from_year(yyyy: int, zodiacs: list[dict]) -> str:
+    """
+    Korean 띠 mapping with 2020 == 쥐 (Rat).
+    2020: 쥐, 2021: 소, 2022: 호랑이, 2023: 토끼, 2024: 용, 2025: 뱀,
+    2026: 말, 2027: 양, 2028: 원숭이, 2029: 닭, 2030: 개, 2031: 돼지
+    """
+    if not zodiacs:
         return ""
-    return str(x).strip()
+    base_year = 2020
+    idx = (yyyy - base_year) % 12
+    return zodiacs[idx]["name"]
 
 
-def render_kv(title: str, value: str):
-    st.markdown(f"### {title}")
-    if value.strip():
-        st.write(value)
-    else:
-        st.info("데이터가 비어있어요. (DB 확인 필요)")
+def pick_tarot_card(yyyy: int, mm: int, dd: int, tarot_cards: list[dict]) -> dict | None:
+    if not tarot_cards:
+        return None
+    key = f"tarot::{yyyy:04d}-{mm:02d}-{dd:02d}"
+    idx = stable_hash_int(key) % len(tarot_cards)
+    return tarot_cards[idx]
 
 
-# =========================
+def render_result(name: str, zodiac: str, mbti: str, rec: dict, tarot: dict | None):
+    st.subheader("결과")
+
+    # 핵심
+    st.markdown(f"**이름:** {name}")
+    st.markdown(f"**띠 운세:** {zodiac}")
+    st.markdown(f"**MBTI 특징:** {mbti}")
+
+    # 문장들
+    st.markdown("---")
+    st.markdown("### 사주 한 마디")
+    st.write(rec.get("saju_message", ""))
+
+    st.markdown("---")
+    st.markdown("### 오늘 운세")
+    st.write(rec.get("today", ""))
+
+    st.markdown("### 내일 운세")
+    st.write(rec.get("tomorrow", ""))
+
+    st.markdown("---")
+    st.markdown("### 2026 전체 운세")
+    st.write(rec.get("year_2026", ""))
+
+    # 분야별
+    st.markdown("---")
+    st.markdown("### 조합 조언")
+    st.info(
+        "\n".join(
+            [
+                f"연애운: {rec.get('love','')}",
+                f"재물운: {rec.get('money','')}",
+                f"일/학업운: {rec.get('work','')}",
+                f"건강운: {rec.get('health','')}",
+            ]
+        )
+    )
+
+    # 행운 포인트
+    lp = rec.get("lucky_point") or {}
+    st.markdown("---")
+    st.markdown("### 행운 포인트")
+    st.write(
+        " · ".join(
+            [
+                f"색: {lp.get('color','')}",
+                f"아이템: {lp.get('item','')}",
+                f"숫자: {lp.get('number','')}",
+                f"방향: {lp.get('direction','')}",
+            ]
+        )
+    )
+
+    # 액션팁 / 주의
+    st.markdown("---")
+    st.markdown("### 오늘의 액션팁")
+    st.write(rec.get("action_tip", ""))
+
+    st.markdown("### 주의할 점")
+    st.write(rec.get("caution", ""))
+
+    # 타로
+    if tarot:
+        st.markdown("---")
+        st.markdown("### 오늘의 타로 카드")
+        st.write(f"**{tarot.get('name','')}**")
+        if tarot.get("meaning"):
+            st.write(tarot["meaning"])
+
+
+# -----------------------------
 # UI
-# =========================
+# -----------------------------
 st.set_page_config(page_title="2026 Fortune", page_icon="🔮", layout="centered")
 st.title(APP_TITLE)
+st.caption("완전 무료")
 
-try:
-    db = load_db()
-except Exception as e:
-    st.error(f"DB 로드 오류: {e}")
-    st.stop()
+db = load_db(DB_PATH)
 
-# Inputs
-st.subheader("입력")
-name = st.text_input("이름 (결과에 표시돼요)", value="")
+# Input
+st.header("입력")
+name = st.text_input("이름 (결과에 표시돼요)", value="", max_chars=20)
+
 col1, col2, col3 = st.columns(3)
 with col1:
-    year = st.number_input("년", min_value=1900, max_value=2100, value=1990, step=1)
+    yyyy = st.number_input("년", min_value=1900, max_value=2100, value=2000, step=1)
 with col2:
-    month = st.number_input("월", min_value=1, max_value=12, value=1, step=1)
+    mm = st.number_input("월", min_value=1, max_value=12, value=1, step=1)
 with col3:
-    day = st.number_input("일", min_value=1, max_value=31, value=1, step=1)
+    dd = st.number_input("일", min_value=1, max_value=31, value=1, step=1)
 
-# Validate date (simple)
-birth_ymd = None
+# Validate birthdate strictly
 try:
-    birth_date = datetime.date(int(year), int(month), int(day))
-    birth_ymd = birth_date.isoformat()
-except Exception:
+    born = date(int(yyyy), int(mm), int(dd))
+    valid_birth = True
+except ValueError:
+    valid_birth = False
+
+if not valid_birth:
     st.warning("생년월일이 올바르지 않아요. (월/일 확인)")
     st.stop()
 
-# Derive keys (deterministic by birthdate only)
-zodiac = zodiac_from_year(int(year))
-mbti_list = db.get("mbti_list") or []
-if not mbti_list:
-    st.error("DB에 mbti_list 가 없습니다.")
+# Compute deterministic keys
+zodiac = zodiac_from_year(int(yyyy), db.get("zodiacs", []))
+mbti = infer_mbti_from_birth(int(yyyy), int(mm), int(dd), db.get("mbti_list", []))
+combo_key = f"{zodiac}_{mbti}"
+
+# Lookup record
+combos = db.get("combos", {})
+rec = combos.get(combo_key)
+
+if not rec:
+    st.error(f"데이터에 조합 키가 없습니다: {combo_key}")
+    # debug hints
+    st.info("DB의 combos 키 형식이 '띠_MBTI' 인지 확인하세요. 예: '쥐_ENFP'")
     st.stop()
 
-mbti = pick_mbti(birth_ymd, mbti_list)
-combo = get_combo(db, zodiac, mbti)
+# Tarot
+tarot = pick_tarot_card(int(yyyy), int(mm), int(dd), db.get("tarot_cards", []))
 
-st.divider()
-st.subheader("결과")
-if name.strip():
-    st.caption(f"이름: {name.strip()}")
+render_result(name or "이름없음", zodiac, mbti, rec, tarot)
 
-st.write(f"**띠:** {zodiac}")
-st.write(f"**MBTI:** {mbti}")
-
-if combo is None:
-    st.error(f"데이터에 조합 키가 없습니다: {zodiac}_{mbti}")
-    st.stop()
-
-# Main blocks (ALL from DB)
-render_kv("띠 운세", safe_text(combo.get("zodiac_fortune")))
-render_kv("MBTI 특징", safe_text(combo.get("mbti_trait")))
-render_kv("MBTI 영향", safe_text(combo.get("mbti_influence")))
-render_kv("사주 한 마디", safe_text(combo.get("saju_message")))
-
-st.divider()
-render_kv("오늘 운세", safe_text(combo.get("today")))
-render_kv("내일 운세", safe_text(combo.get("tomorrow")))
-render_kv("2026 전체 운세", safe_text(combo.get("year_2026")))
-
-st.divider()
-st.markdown("### 조합 조언")
-st.write(f"- **연애운:** {safe_text(combo.get('love'))}")
-st.write(f"- **재물운:** {safe_text(combo.get('money'))}")
-st.write(f"- **일/학업운:** {safe_text(combo.get('work'))}")
-st.write(f"- **건강운:** {safe_text(combo.get('health'))}")
-
-st.divider()
-lp = combo.get("lucky_point") or {}
-st.markdown("### 행운 포인트")
-st.write(
-    f"색: **{safe_text(lp.get('color'))}** · "
-    f"아이템: **{safe_text(lp.get('item'))}** · "
-    f"숫자: **{safe_text(lp.get('number'))}** · "
-    f"방향: **{safe_text(lp.get('direction'))}**"
-)
-
-render_kv("오늘의 액션팁", safe_text(combo.get("action_tip")))
-render_kv("주의할 점", safe_text(combo.get("caution")))
-
-st.divider()
-tarot_dict = db.get("tarot_cards") or {}
-if tarot_dict:
-    tarot_name, tarot_meaning = pick_tarot(birth_ymd, tarot_dict)
-    st.markdown("### 오늘의 타로 카드")
-    st.write(f"**{tarot_name}**")
-    if tarot_meaning:
-        st.caption(tarot_meaning)
-
-# Footer
-st.caption("※ 결과는 입력한 생년월일 기준으로 항상 동일하게 생성됩니다. (신뢰도/일관성 목적)")
+st.markdown("---")
+st.button("링크 공유하기")
+st.caption("버튼을 누르면 '링크 공유' 창이 뜹니다.")
