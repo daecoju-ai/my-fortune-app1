@@ -21,7 +21,7 @@ APP_URL = "https://my-fortune.streamlit.app"
 SPREADSHEET_ID = "1WvuKXx2if2WvxmQaxkqzFW-BzDEWWma9hZgCr2jJQYY"
 SHEET_NAME = "시트1"
 
-# 미니게임 목표
+TARGET_SEC = 20.260
 TARGET_MIN = 20.260
 TARGET_MAX = 20.269
 
@@ -49,7 +49,6 @@ def normalize_phone(phone: str) -> str:
     return re.sub(r"[^0-9]", "", phone or "")
 
 def sha_seed(s: str) -> int:
-    # 결정론 seed: stable
     h = hashlib.sha256(s.encode("utf-8")).hexdigest()
     return int(h[:12], 16)
 
@@ -61,7 +60,7 @@ def valid_date(y: int, m: int, d: int) -> bool:
         return False
 
 # =========================================================
-# 2) Query params
+# 2) Query params (Streamlit 버전 호환)
 # =========================================================
 def get_query_params():
     try:
@@ -80,21 +79,21 @@ def set_query_params(params: dict):
     except Exception:
         st.experimental_set_query_params(**params)
 
-def clear_param(param_key: str):
+def clear_param(key: str):
     try:
         params = get_query_params()
-        if param_key in params:
-            params.pop(param_key, None)
+        if key in params:
+            params.pop(key, None)
             set_query_params(params)
     except Exception:
         pass
 
 # =========================================================
-# 3) SEO Inject (키워드 노출용)
+# 3) SEO Inject
 # =========================================================
 def inject_seo_ko():
     description = "2026 운세 무료: 띠운세 + MBTI 운세 + 사주 + 오늘운세/내일운세 + 타로. 20.26초 스톱워치 미니게임 이벤트."
-    keywords = "2026 운세, 띠운세, MBTI 운세, 사주, 오늘운세, 내일운세, 무료운세, 타로, 연애운, 재물운, 건강운, 20.26초, 스톱워치 이벤트, 커피쿠폰"
+    keywords = "2026 운세, 띠운세, MBTI 운세, 사주, 오늘운세, 내일운세, 무료운세, 타로, 연애운, 재물운, 건강운, 20.26초, 스톱워치, 커피쿠폰"
     title = "2026 운세 | 띠 + MBTI + 사주 + 오늘/내일 운세"
 
     webapp_ld = {
@@ -160,11 +159,10 @@ def inject_seo_ko():
     )
 
 # =========================================================
-# 4) Fortune DB (Korean only)
+# 4) DB Load (근본 원인 표시)
 # =========================================================
-# 기대 파일: data/fortunes_ko.json
 def load_fortune_db():
-    # repo 구조 대응(로컬/streamlit cloud)
+    checked = []
     candidates = [
         "data/fortunes_ko.json",
         "./data/fortunes_ko.json",
@@ -172,94 +170,17 @@ def load_fortune_db():
         "./fortunes_ko.json",
     ]
     for p in candidates:
+        checked.append(p)
         if os.path.exists(p):
-            with open(p, "r", encoding="utf-8") as f:
-                return json.load(f)
-    return None
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                return data, checked, None
+            except Exception as e:
+                return None, checked, f"DB JSON 파싱 오류: {e}"
+    return None, checked, "DB 파일을 찾지 못했습니다."
 
-FORTUNE_DB = load_fortune_db()
-
-ZODIAC_ORDER = ["쥐","소","호랑이","토끼","용","뱀","말","양","원숭이","닭","개","돼지"]
-
-def zodiac_from_year(year: int) -> str:
-    # 1900~2030 범위 기준. 4 기준은 기존 코드 관례(쥐띠=4)
-    idx = (year - 4) % 12
-    return ZODIAC_ORDER[idx]
-
-def pick_from_pool(pool, seed_int: int, salt: str):
-    if not pool:
-        return ""
-    idx = sha_seed(f"{seed_int}_{salt}") % len(pool)
-    return pool[idx]
-
-def build_result_from_db(y, m, d, mbti):
-    """
-    결과는 '결정론적'이어야 함:
-    seed = YYYYMMDD + MBTI
-    """
-    if not FORTUNE_DB:
-        return None, "DB 파일(data/fortunes_ko.json)을 찾지 못했어요."
-
-    birth_key = f"{y:04d}{m:02d}{d:02d}"
-    seed_int = sha_seed(f"{birth_key}_{mbti}")
-
-    zodiac = zodiac_from_year(y)
-    combo_key = f"{zodiac}_{mbti}"
-
-    pools = FORTUNE_DB.get("pools", {})
-    combos = FORTUNE_DB.get("combos", {})
-
-    # 각 섹션 풀
-    today = pick_from_pool(pools.get("today", []), seed_int, "today")
-    tomorrow = pick_from_pool(pools.get("tomorrow", []), seed_int, "tomorrow")
-    year_all = pick_from_pool(pools.get("year_2026", []), seed_int, "year_2026")
-    love = pick_from_pool(pools.get("love", []), seed_int, "love")
-    money = pick_from_pool(pools.get("money", []), seed_int, "money")
-    work = pick_from_pool(pools.get("work", []), seed_int, "work")
-    health = pick_from_pool(pools.get("health", []), seed_int, "health")
-    action_tip = pick_from_pool(pools.get("action_tip", []), seed_int, "action_tip")
-    caution = pick_from_pool(pools.get("caution", []), seed_int, "caution")
-
-    # 조합 문구
-    combo = combos.get(combo_key, {})
-    one_liner = pick_from_pool(combo.get("one_liner", []), seed_int, "one_liner")
-    advice = pick_from_pool(combo.get("advice", []), seed_int, "advice")
-
-    # 띠 설명은 pools 또는 combos에 별도 있으면 쓰고, 없으면 기본 문장
-    zodiac_pool = pools.get("zodiac_desc", {})
-    zodiac_desc_list = []
-    if isinstance(zodiac_pool, dict):
-        zodiac_desc_list = zodiac_pool.get(zodiac, [])
-    zodiac_desc = pick_from_pool(zodiac_desc_list, seed_int, "zodiac_desc") or f"{zodiac}띠는 2026년에 흐름을 잘 타면 기회가 커져요."
-
-    mbti_pool = pools.get("mbti_desc", {})
-    mbti_desc_list = []
-    if isinstance(mbti_pool, dict):
-        mbti_desc_list = mbti_pool.get(mbti, [])
-    mbti_desc = pick_from_pool(mbti_desc_list, seed_int, "mbti_desc") or f"{mbti} 성향은 상황을 해석하는 방식이 뚜렷해서, 장점이 운을 끌어당겨요."
-
-    saju = pick_from_pool(pools.get("saju", []), seed_int, "saju") or "사주 한 마디: 과하지 않게 균형을 잡으면 대길!"
-
-    return {
-        "birth_key": birth_key,
-        "seed": seed_int,
-        "zodiac": zodiac,
-        "zodiac_desc": zodiac_desc,
-        "mbti": mbti,
-        "mbti_desc": mbti_desc,
-        "saju": saju,
-        "today": today,
-        "tomorrow": tomorrow,
-        "year_all": year_all,
-        "love": love,
-        "money": money,
-        "work": work,
-        "health": health,
-        "action_tip": action_tip,
-        "caution": caution,
-        "one_liner": one_liner,
-        "advice": advice,
-    }, None
+FORTUNE_DB, DB_CHECKED_PATHS, DB_LOAD_ERR = load_fortune_db()
 
 # =========================================================
 # 5) MBTI
@@ -271,9 +192,6 @@ MBTI_LIST = [
     "ISTP","ISFP","ESTP","ESFP"
 ]
 
-MBTI_HELP = "각 문항에서 더 가까운 쪽을 고르세요."
-
-# (axis, left, right)
 MBTI_Q_12 = [
     ("EI","사람들과 있을 때 에너지가 더 생긴다","혼자 있을 때 에너지가 더 생긴다"),
     ("SN","현실적인 정보가 편하다","가능성/아이디어가 편하다"),
@@ -313,16 +231,87 @@ def compute_mbti(answers):
     return mbti if mbti in MBTI_LIST else "ENFP"
 
 # =========================================================
-# 6) Google Sheet (컬럼 유지 + G열 상담신청)
-#  A 시간 | B 이름 | C 전화번호 | D 언어 | E 기록초 | F 공유여부 | G 상담신청(O/X)
+# 6) Fortune from DB (결정론)
 # =========================================================
-def get_sheet():
-    try:
-        if gspread is None or Credentials is None:
-            return None
-        if "gcp_service_account" not in st.secrets:
-            return None
+ZODIAC_ORDER = ["쥐","소","호랑이","토끼","용","뱀","말","양","원숭이","닭","개","돼지"]
 
+def zodiac_from_year(year: int) -> str:
+    idx = (year - 4) % 12
+    return ZODIAC_ORDER[idx]
+
+def pick_from_pool(pool, seed_int: int, salt: str):
+    if not pool:
+        return ""
+    idx = sha_seed(f"{seed_int}_{salt}") % len(pool)
+    return pool[idx]
+
+def build_result_from_db(y, m, d, mbti):
+    if not FORTUNE_DB:
+        return None, DB_LOAD_ERR
+
+    pools = FORTUNE_DB.get("pools")
+    combos = FORTUNE_DB.get("combos")
+    if not isinstance(pools, dict) or not isinstance(combos, dict):
+        return None, "DB 구조 오류: pools/combos 키가 없거나 형식이 다릅니다."
+
+    birth_key = f"{y:04d}{m:02d}{d:02d}"
+    seed_int = sha_seed(f"{birth_key}_{mbti}")
+
+    zodiac = zodiac_from_year(y)
+    combo_key = f"{zodiac}_{mbti}"
+    combo = combos.get(combo_key, {})
+
+    def gpool(name): return pools.get(name, [])
+    def cpool(name): return combo.get(name, [])
+
+    zodiac_desc = ""
+    zd = pools.get("zodiac_desc", {})
+    if isinstance(zd, dict):
+        zodiac_desc = pick_from_pool(zd.get(zodiac, []), seed_int, "zodiac_desc")
+
+    mbti_desc = ""
+    md = pools.get("mbti_desc", {})
+    if isinstance(md, dict):
+        mbti_desc = pick_from_pool(md.get(mbti, []), seed_int, "mbti_desc")
+
+    result = {
+        "birth_key": birth_key,
+        "seed": seed_int,
+        "zodiac": zodiac,
+        "mbti": mbti,
+        "one_liner": pick_from_pool(cpool("one_liner"), seed_int, "one_liner"),
+        "advice": pick_from_pool(cpool("advice"), seed_int, "advice"),
+        "zodiac_desc": zodiac_desc,
+        "mbti_desc": mbti_desc,
+        "saju": pick_from_pool(gpool("saju"), seed_int, "saju"),
+        "today": pick_from_pool(gpool("today"), seed_int, "today"),
+        "tomorrow": pick_from_pool(gpool("tomorrow"), seed_int, "tomorrow"),
+        "year_all": pick_from_pool(gpool("year_2026"), seed_int, "year_2026"),
+        "love": pick_from_pool(gpool("love"), seed_int, "love"),
+        "money": pick_from_pool(gpool("money"), seed_int, "money"),
+        "work": pick_from_pool(gpool("work"), seed_int, "work"),
+        "health": pick_from_pool(gpool("health"), seed_int, "health"),
+        "action_tip": pick_from_pool(gpool("action_tip"), seed_int, "action_tip"),
+        "caution": pick_from_pool(gpool("caution"), seed_int, "caution"),
+    }
+
+    # 필수 값이 비어있으면 DB가 비정상(근본 원인 표시)
+    essentials = ["today","tomorrow","year_all","love","money","work","health","action_tip"]
+    missing = [k for k in essentials if not result.get(k)]
+    if missing:
+        return None, f"DB 내용 부족/키 불일치로 결과 생성 실패: {', '.join(missing)} 가 비어있습니다."
+
+    return result, None
+
+# =========================================================
+# 7) Google Sheet (상세 오류 메시지)
+# =========================================================
+def get_sheet_detailed():
+    if gspread is None or Credentials is None:
+        return None, "gspread/google-auth import 실패(requirements.txt 확인 필요)"
+    if "gcp_service_account" not in st.secrets:
+        return None, "Streamlit Secrets에 gcp_service_account가 없습니다."
+    try:
         scopes = [
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive",
@@ -334,10 +323,15 @@ def get_sheet():
         creds = Credentials.from_service_account_info(info, scopes=scopes)
         gc = gspread.authorize(creds)
         sh = gc.open_by_key(SPREADSHEET_ID)
-        ws = sh.worksheet(SHEET_NAME)
-        return ws
-    except Exception:
-        return None
+        try:
+            ws = sh.worksheet(SHEET_NAME)
+        except Exception:
+            # 탭 이름 실수 방지: 첫 번째 탭 안내
+            sheets = [w.title for w in sh.worksheets()]
+            return None, f"시트 탭 '{SHEET_NAME}'을 찾지 못했습니다. 현재 탭: {sheets}"
+        return ws, None
+    except Exception as e:
+        return None, f"구글시트 인증/접근 오류: {e}"
 
 def read_all_rows(ws):
     try:
@@ -353,11 +347,6 @@ def phone_exists(ws, phone_norm: str) -> bool:
     return False
 
 def count_coupon_entries(ws) -> int:
-    """
-    선착순 20명 카운트 기준:
-    - 기록이 TARGET 범위면 당첨(응모)
-    - 또는 상담신청 'O'면 응모
-    """
     values = read_all_rows(ws)
     cnt = 0
     for row in values[1:] if len(values) > 1 else []:
@@ -375,13 +364,11 @@ def count_coupon_entries(ws) -> int:
 
 def append_entry(ws, name, phone, seconds, shared_bool, consult_ox):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    lang = "ko"
-    # 상담신청은 O/X만 허용
     consult_ox = "O" if str(consult_ox).strip().upper() == "O" else "X"
-    ws.append_row([now_str, name, phone, lang, f"{seconds:.3f}", str(bool(shared_bool)), consult_ox])
+    ws.append_row([now_str, name, phone, "ko", f"{seconds:.3f}", str(bool(shared_bool)), consult_ox])
 
 # =========================================================
-# 7) Share Button (시스템 공유창만 + shared=1 보너스)
+# 8) Share Button (시스템 공유창만)
 # =========================================================
 def share_button_native_only(label: str):
     st.components.v1.html(
@@ -410,9 +397,7 @@ def share_button_native_only(label: str):
       const u = new URL(window.location.href);
       u.searchParams.set("shared", "1");
       window.location.href = u.toString();
-    }} catch (e) {{
-      // 취소 시 아무 것도 안 함
-    }}
+    }} catch (e) {{}}
   }});
 }})();
 </script>
@@ -421,15 +406,10 @@ def share_button_native_only(label: str):
     )
 
 # =========================================================
-# 8) Stopwatch Component
-# - 실시간 표시
-# - STOP 시 기록을 session으로 넘김 (query param t=)
-# - START/STOP: 한 시도에서 1번씩만 가능하도록 JS에서 잠금
+# 9) Stopwatch (STOP 시 t= 기록 전달)
 # =========================================================
-def stopwatch_component(tries_left: int, initial_display: str = None):
+def stopwatch_component(tries_left: int, initial_display: str):
     disabled = "true" if tries_left <= 0 else "false"
-    initial_display = initial_display or "00:00.000"
-
     st.components.v1.html(
         f"""
 <div style="
@@ -527,7 +507,6 @@ def stopwatch_component(tries_left: int, initial_display: str = None):
     if (rafId) cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(tick);
 
-    // START는 1회만
     startBtn.disabled = true;
     startBtn.style.opacity = "0.6";
     startBtn.style.cursor = "not-allowed";
@@ -543,12 +522,10 @@ def stopwatch_component(tries_left: int, initial_display: str = None):
     const elapsedSec = (now - startTime) / 1000.0;
     const v = elapsedSec.toFixed(3);
 
-    // STOP도 1회만
     stopBtn.disabled = true;
     stopBtn.style.opacity = "0.6";
     stopBtn.style.cursor = "not-allowed";
 
-    // 현재 URL 유지 + t 기록 전달
     try {{
       const u = new URL(window.location.href);
       u.searchParams.set("t", v);
@@ -564,42 +541,39 @@ def stopwatch_component(tries_left: int, initial_display: str = None):
     )
 
 # =========================================================
-# 9) Session State Init
+# 10) Session State
 # =========================================================
 if "stage" not in st.session_state: st.session_state.stage = "input"
-
-# 입력
 if "name" not in st.session_state: st.session_state.name = ""
 if "y" not in st.session_state: st.session_state.y = 2005
 if "m" not in st.session_state: st.session_state.m = 1
 if "d" not in st.session_state: st.session_state.d = 1
 
-# MBTI
 if "mbti" not in st.session_state: st.session_state.mbti = None
-if "mbti_mode" not in st.session_state: st.session_state.mbti_mode = "direct"  # direct / 12 / 16
+if "mbti_mode" not in st.session_state: st.session_state.mbti_mode = "direct"  # direct/12/16
 
-# 미니게임
+# 미니게임 상태
 if "shared" not in st.session_state: st.session_state.shared = False
 if "max_attempts" not in st.session_state: st.session_state.max_attempts = 1
 if "attempts_used" not in st.session_state: st.session_state.attempts_used = 0
+
 if "last_time" not in st.session_state: st.session_state.last_time = None
 if "last_time_display" not in st.session_state: st.session_state.last_time_display = "00:00.000"
-if "last_try_status" not in st.session_state: st.session_state.last_try_status = None  # "win" / "fail"
-if "show_success_form" not in st.session_state: st.session_state.show_success_form = False
+if "last_try_status" not in st.session_state: st.session_state.last_try_status = None  # win/fail
+if "last_t_processed" not in st.session_state: st.session_state.last_t_processed = None
 
-# 실패 후 상담신청 흐름
+if "show_success_form" not in st.session_state: st.session_state.show_success_form = False
 if "show_consult_flow" not in st.session_state: st.session_state.show_consult_flow = False
 
 # =========================================================
-# 10) Query param handling (shared=1, t=)
+# 11) Query param 처리 (가장 먼저)
 # =========================================================
 qp = get_query_params()
 
-# shared=1 → 보너스 1회(딱 1번)
+# 공유 보너스
 shared_val = qp.get("shared", "0")
 if isinstance(shared_val, list):
     shared_val = shared_val[0] if shared_val else "0"
-
 if str(shared_val) == "1":
     if not st.session_state.shared:
         st.session_state.shared = True
@@ -607,27 +581,31 @@ if str(shared_val) == "1":
         safe_toast("공유 확인! 미니게임 1회 추가 지급 🎁")
     clear_param("shared")
 
-# t= → STOP 기록
+# STOP 기록
 t_val = qp.get("t", None)
 if isinstance(t_val, list):
     t_val = t_val[0] if t_val else None
 
 if t_val is not None:
-    try:
-        sec = float(str(t_val).strip())
-        st.session_state.last_time = sec
-        # 표시용 00:00.000
-        mm = int(sec * 1000) % 1000
-        total_s = int(sec)
-        s = total_s % 60
-        m = total_s // 60
-        st.session_state.last_time_display = f"{m:02d}:{s:02d}.{mm:03d}"
+    # 같은 t 중복 처리 방지
+    if st.session_state.last_t_processed != str(t_val):
+        st.session_state.last_t_processed = str(t_val)
+        try:
+            sec = float(str(t_val).strip())
+            st.session_state.last_time = sec
 
-        # STOP이 일어났으므로 시도 1회 차감 + 자동 판정
-        tries_left_before = max(0, st.session_state.max_attempts - st.session_state.attempts_used)
-        if tries_left_before > 0:
-            st.session_state.attempts_used += 1
+            mm = int(sec * 1000) % 1000
+            total_s = int(sec)
+            s = total_s % 60
+            m = total_s // 60
+            st.session_state.last_time_display = f"{m:02d}:{s:02d}.{mm:03d}"
 
+            # 시도 차감 (tries_left>0일 때만)
+            tries_left_before = max(0, st.session_state.max_attempts - st.session_state.attempts_used)
+            if tries_left_before > 0:
+                st.session_state.attempts_used += 1
+
+            # 자동 판정
             if TARGET_MIN <= sec <= TARGET_MAX:
                 st.session_state.last_try_status = "win"
                 st.session_state.show_success_form = True
@@ -636,12 +614,12 @@ if t_val is not None:
                 st.session_state.last_try_status = "fail"
                 st.session_state.show_success_form = False
                 st.session_state.show_consult_flow = True
-    except Exception:
-        pass
+        except Exception:
+            pass
     clear_param("t")
 
 # =========================================================
-# 11) Styles (디자인 고정)
+# 12) Style (고정)
 # =========================================================
 st.markdown("""
 <style>
@@ -701,26 +679,24 @@ hr.soft { border:0; height:1px; background: rgba(120, 90, 210, 0.15); margin: 14
 </style>
 """, unsafe_allow_html=True)
 
-# SEO 주입(한국어)
 inject_seo_ko()
 
 # =========================================================
-# 12) UI - MBTI test render
+# 13) MBTI 테스트 렌더
 # =========================================================
 def render_mbti_test(mode: str):
     questions = MBTI_Q_12 + (MBTI_Q_16_EXTRA if mode == "16" else [])
-    st.markdown(f"<div class='card'><b>{'MBTI 12문항' if mode=='12' else 'MBTI 16문항'}</b><br><span style='opacity:0.85;'>{MBTI_HELP}</span></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='card'><b>{'MBTI 12문항' if mode=='12' else 'MBTI 16문항'}</b><br><span style='opacity:0.85;'>각 문항에서 더 가까운 쪽을 선택하세요.</span></div>", unsafe_allow_html=True)
     answers = []
     for i, (axis, left, right) in enumerate(questions, start=1):
         pick = st.radio(f"{i}. {axis}", [left, right], index=0, key=f"mbti_{mode}_{i}")
         answers.append((axis, pick == left))
-
     if st.button("제출하고 MBTI 확정", use_container_width=True):
         st.session_state.mbti = compute_mbti(answers)
         st.success(f"MBTI 확정: {st.session_state.mbti}")
 
 # =========================================================
-# 13) Screens
+# 14) Screens
 # =========================================================
 def render_input():
     st.markdown("""
@@ -771,11 +747,21 @@ def render_input():
     st.markdown('</div>', unsafe_allow_html=True)
 
 def render_result():
-    # 결과 생성(DB 기반 결정론)
+    # DB 진단 (근본 원인 표시)
+    if not FORTUNE_DB:
+        st.error(DB_LOAD_ERR or "DB 로딩 실패")
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.markdown("**DB 파일 확인 경로(아래 중 하나에 있어야 함)**")
+        for p in DB_CHECKED_PATHS:
+            st.markdown(f"- `{p}`")
+        if DB_LOAD_ERR and "파싱" in DB_LOAD_ERR:
+            st.markdown("⚠️ JSON 파일이 깨졌거나 구조가 잘못됐을 가능성이 큽니다.")
+        st.markdown("</div>", unsafe_allow_html=True)
+        return
+
     res, err = build_result_from_db(st.session_state.y, st.session_state.m, st.session_state.d, st.session_state.mbti or "ENFP")
     if err:
         st.error(err)
-        st.info("GitHub에 data/fortunes_ko.json 파일이 실제로 존재하는지 확인하세요.")
         return
 
     name = (st.session_state.name or "").strip()
@@ -806,10 +792,7 @@ def render_result():
 
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("**조합 조언**")
-    if res.get("advice"):
-        st.markdown(res["advice"])
-    else:
-        st.markdown("연애/재물/일/건강에서 강점을 살리면 운이 커집니다.")
+    st.markdown(res["advice"] or "연애/재물/일/건강에서 강점을 살리면 운이 커집니다.")
     st.markdown("<hr class='soft'/>", unsafe_allow_html=True)
     st.markdown(f"**연애운**: {res['love']}")
     st.markdown(f"**재물운**: {res['money']}")
@@ -820,14 +803,14 @@ def render_result():
     st.markdown(f"**주의 포인트**: {res['caution']}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ---- 친구에게 공유하기 (실제 시스템 공유창만) ----
+    # 공유
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("**친구에게 공유하기** (공유하면 미니게임 1회 추가)")
     share_button_native_only("🔗 링크 공유하기")
-    st.caption("모바일에서 누르면 ‘갤러리/카톡 등 공유 화면’이 뜨는 방식입니다.")
+    st.caption("모바일에서 누르면 갤러리/카톡 등 ‘시스템 공유 화면’이 뜹니다.")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ---- 광고 (다나눔렌탈) ----
+    # 광고
     st.markdown(f"""
     <div class="adbox">
       <small style="font-weight:900;color:#e74c3c;">광고</small><br>
@@ -844,41 +827,46 @@ def render_result():
     </div>
     """, unsafe_allow_html=True)
 
-    # ---- 미니게임 ----
+    # 미니게임
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.markdown("### 🎁 미니게임: 20.26초 맞추기 (선착순 20명 커피쿠폰)")
-    st.markdown(f"<div class='soft-box'>STOP을 눌렀을 때 기록이 <b>{TARGET_MIN:.3f} ~ {TARGET_MAX:.3f}</b>초면 성공!<br>"
-                f"기본 1회, <b>친구에게 공유하기</b>를 하면 1회 추가됩니다.</div>", unsafe_allow_html=True)
+    st.markdown("### 🎁 미니게임: 20.26초 정확히 맞추기 (선착순 20명 커피쿠폰)")
+    st.markdown(f"<div class='soft-box'>STOP 기록이 <b>{TARGET_MIN:.3f} ~ {TARGET_MAX:.3f}</b>초면 성공!<br>"
+                f"기본 1회, 공유하면 1회 추가</div>", unsafe_allow_html=True)
 
-    ws = get_sheet()
+    ws, ws_err = get_sheet_detailed()
     if ws is None:
-        st.warning("구글시트 연결이 아직 안 되어 있어요. (secrets/requirements/시트 공유/탭 이름 확인)")
+        st.warning(f"구글시트 연동 안됨: {ws_err}")
+        st.caption("※ 기존 데이터는 시트에 남아있습니다. 현재는 앱에서 접근만 못하는 상태예요.")
     else:
+        st.success("구글시트 연동 성공")
         try:
-            current_entries = count_coupon_entries(ws)
-            if current_entries >= 20:
+            if count_coupon_entries(ws) >= 20:
                 st.info("이벤트가 종료되었습니다. (선착순 20명 마감)")
                 st.markdown("</div>", unsafe_allow_html=True)
                 return
-        except Exception:
-            pass
+        except Exception as e:
+            st.warning(f"시트 읽기 중 오류: {e}")
 
     tries_left = max(0, st.session_state.max_attempts - st.session_state.attempts_used)
     st.markdown(f"<div class='small-note'>남은 시도: <b>{tries_left}</b> / {st.session_state.max_attempts}</div>", unsafe_allow_html=True)
 
-    # stopwatch
-    stopwatch_component(tries_left, initial_display=st.session_state.last_time_display)
+    # 스톱워치 (STOP하면 자동 판정되도록 고정)
+    stopwatch_component(tries_left, st.session_state.last_time_display)
 
-    # 결과 표시(STOP 후 자동 판정)
+    # STOP 이후 결과 카드 (반드시 표시)
     if st.session_state.last_time is not None:
         sec = st.session_state.last_time
-        diff = sec - 20.260
+        diff = sec - TARGET_SEC
         sign = "+" if diff >= 0 else "-"
         st.markdown(f"<div class='card'><b>기록</b>: {sec:.3f}s (차이: {sign}{abs(diff):.3f}s)</div>", unsafe_allow_html=True)
 
-    # 성공 폼
+        if st.session_state.last_try_status == "win":
+            st.success("성공! 응모 시 선착순 20명에게 커피 쿠폰 보내드립니다.")
+        elif st.session_state.last_try_status == "fail":
+            st.info("친구 공유 후 재도전.\n\n또는 다나눔렌탈 정수기 렌탈 정보 상담신청하고 커피쿠폰 응모.")
+
+    # 성공 폼 (성공일 때만)
     if st.session_state.show_success_form and st.session_state.last_time is not None:
-        st.success("성공! 응모 시 선착순 20명에게 커피 쿠폰 보내드립니다.")
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.markdown("### 🎉 당첨자 정보 입력")
 
@@ -894,7 +882,7 @@ def render_result():
 
         if st.button("제출", use_container_width=True):
             if ws is None:
-                st.error("구글시트 연결 오류")
+                st.error("구글시트 연동이 안 되어 저장할 수 없습니다.")
             elif not consent:
                 st.warning("동의가 필요합니다.")
             elif nm.strip() == "" or ph_norm == "":
@@ -907,10 +895,8 @@ def render_result():
                         if count_coupon_entries(ws) >= 20:
                             st.info("이벤트가 종료되었습니다. (선착순 20명 마감)")
                         else:
-                            # 성공자는 상담신청 OFF → G열 'X'
                             append_entry(ws, nm.strip(), ph_norm, float(st.session_state.last_time), st.session_state.shared, "X")
                             st.success("접수 완료! 커피쿠폰 발송 대상에 등록되었습니다.")
-                            # 성공 후 폼 닫기
                             st.session_state.show_success_form = False
                             st.session_state.show_consult_flow = False
                 except Exception as e:
@@ -918,36 +904,24 @@ def render_result():
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # 실패 흐름
+    # 실패 흐름 (실패일 때만)
     if st.session_state.last_try_status == "fail" and st.session_state.show_consult_flow:
-        st.warning("실패! 친구 공유 후 재도전 또는 상담신청으로 응모할 수 있어요.")
-
-        # 1) 공유로 1회 추가(이미 공유했으면 추가 없음)
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.markdown("#### 1) 친구 공유 후 재도전 (1회 추가)")
-        st.caption("‘친구에게 공유하기’를 누르고 공유를 완료하면 1회 추가됩니다.")
-        share_button_native_only("🔗 친구에게 공유하기")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        # 2) 상담신청으로 응모
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.markdown("#### 2) 정수기 렌탈 상담신청으로 커피쿠폰 응모")
+        st.markdown("#### 상담신청으로 커피쿠폰 응모 (O만 저장 / X는 저장 금지)")
         choice = st.radio("상담 신청하시겠어요?", ["O", "X"], index=1, horizontal=True, key="consult_choice")
         if choice == "O":
-            st.info("상담신청(O)을 선택하셨습니다. 아래 정보를 입력하면 커피쿠폰 응모로 저장됩니다.")
             nm2 = st.text_input("이름", value=(st.session_state.name or "").strip(), key="consult_name")
             ph2 = st.text_input("전화번호", value="", key="consult_phone")
             ph2_norm = normalize_phone(ph2)
-
             consent2 = st.checkbox(
                 "개인정보 수집·이용 동의(필수)\n\n상담/경품 발송을 위해 이름/전화번호를 수집하며, 목적 달성 후 지체 없이 파기합니다. 동의 거부 시 참여가 제한됩니다.",
                 value=False,
                 key="consult_consent"
             )
 
-            if st.button("상담신청으로 응모 저장", use_container_width=True):
+            if st.button("상담신청(O)로 응모 저장", use_container_width=True):
                 if ws is None:
-                    st.error("구글시트 연결 오류")
+                    st.error("구글시트 연동이 안 되어 저장할 수 없습니다.")
                 elif not consent2:
                     st.warning("동의가 필요합니다.")
                 elif nm2.strip() == "" or ph2_norm == "":
@@ -963,7 +937,6 @@ def render_result():
                                 sec_val = float(st.session_state.last_time) if st.session_state.last_time is not None else 0.0
                                 append_entry(ws, nm2.strip(), ph2_norm, sec_val, st.session_state.shared, "O")
                                 st.success("커피쿠폰 응모가 완료되었습니다. (상담신청 O 저장됨)")
-                                # 실패 흐름 종료
                                 st.session_state.show_consult_flow = False
                     except Exception as e:
                         st.error(f"저장 중 오류: {e}")
@@ -973,15 +946,15 @@ def render_result():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ---- 검색/AI 노출 섹션(텍스트 유지) ----
+    # 검색/AI 노출
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("### 🔎 검색/AI 노출용 정보(FAQ)")
     st.markdown("- **2026 운세/띠운세/MBTI 운세/사주/오늘운세/내일운세/타로**를 무료로 제공합니다.")
-    st.markdown("- 생년월일+MBTI 기반으로 **항상 같은 결과(결정론)**가 나오도록 설계되어 신뢰도를 높였습니다.")
-    st.markdown("- 20.26초 스톱워치 미니게임 이벤트(선착순 20명 커피쿠폰)도 함께 진행합니다.")
+    st.markdown("- 생년월일+MBTI 기반으로 **항상 같은 결과(결정론)**가 나오도록 설계했습니다.")
+    st.markdown("- 20.26초 스톱워치 미니게임 이벤트(선착순 20명 커피쿠폰).")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ---- 전체 초기화(삭제하지 말 것) ----
+    # 전체 초기화 버튼(유지)
     if st.button("처음부터 다시하기", use_container_width=True):
         st.session_state.clear()
         st.rerun()
@@ -989,7 +962,7 @@ def render_result():
     st.caption(APP_URL)
 
 # =========================================================
-# 14) Router
+# 15) Router
 # =========================================================
 if st.session_state.stage == "input":
     render_input()
