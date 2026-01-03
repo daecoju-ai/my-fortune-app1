@@ -1,21 +1,22 @@
 # app.py
-import os
 import json
+import os
+import random
 import time
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import streamlit as st
 import streamlit.components.v1 as components
 
-# -----------------------------
+# =========================
 # 기본 설정
-# -----------------------------
+# =========================
 KST = timezone(timedelta(hours=9))
 
-APP_URL = "https://my-fortune.streamlit.app"  # 필요시 너 앱 주소로 유지/수정
-SHEET_NAME = "시트1"  # 너가 말한 시트1
-SPREADSHEET_ID = "1WvuKXx2if2WvxmQaxkqzFW-BzDEWWma9hZgCr2jJQYY"  # 기억해둔 ID
+APP_URL = "https://my-fortune.streamlit.app"  # 네 앱 주소 (그대로 유지)
+SPREADSHEET_ID = "1WvuKXx2if2WvxmQaxkqzFW-BzDEWWma9hZgCr2jJQYY"
+SHEET_NAME = "시트1"
 
 TARGET_MIN = 20.260
 TARGET_MAX = 20.269
@@ -30,24 +31,23 @@ SUPPORTED_LANGS = [
     ("hi", "हिन्दी"),
 ]
 
+DATA_DIR = "data"
 FORTUNE_FILE_BY_LANG = {
-    "ko": "data/fortunes_ko.json",
-    "en": "data/fortunes_en.json",
-    "ja": "data/fortunes_ja.json",
-    "zh": "data/fortunes_zh.json",
-    "ru": "data/fortunes_ru.json",
-    "hi": "data/fortunes_hi.json",
+    "ko": os.path.join(DATA_DIR, "fortunes_ko.json"),
+    "en": os.path.join(DATA_DIR, "fortunes_en.json"),
+    "ja": os.path.join(DATA_DIR, "fortunes_ja.json"),
+    "zh": os.path.join(DATA_DIR, "fortunes_zh.json"),
+    "ru": os.path.join(DATA_DIR, "fortunes_ru.json"),
+    "hi": os.path.join(DATA_DIR, "fortunes_hi.json"),
 }
 
-# -----------------------------
-# 디자인(고정) + 스크롤 튐 방지 JS
-# -----------------------------
+# =========================
+# 디자인: 절대 바꾸지 않기(최소 CSS만)
+# =========================
 BASE_CSS = """
 <style>
-/* 전체 폭/여백 최소, 기본 카드 톤 유지 */
 .main .block-container { max-width: 720px; padding-top: 18px; padding-bottom: 60px; }
 
-/* 버튼 스타일은 Streamlit 기본에 가깝게 유지(과한 커스텀 X) */
 div.stButton > button {
   width: 100%;
   border-radius: 14px;
@@ -55,24 +55,12 @@ div.stButton > button {
   font-weight: 700;
 }
 
-/* 안내 박스 */
-.notice {
-  background: #FFF3CD;
-  border: 1px solid #FFE69C;
-  color: #664D03;
-  padding: 14px 14px;
-  border-radius: 12px;
-  margin: 12px 0 8px 0;
-}
-
-/* 결과 섹션 타이틀 */
 .section-title{
   font-size: 20px;
   font-weight: 800;
   margin: 14px 0 8px 0;
 }
 
-/* 미니게임 카드 */
 .game-card{
   background: #ffffff;
   border: 1px solid rgba(0,0,0,0.08);
@@ -81,7 +69,6 @@ div.stButton > button {
   box-shadow: 0 8px 24px rgba(0,0,0,0.06);
 }
 
-/* 스톱워치 디스플레이 */
 .stopwatch{
   font-size: 44px;
   font-weight: 900;
@@ -90,7 +77,6 @@ div.stButton > button {
   padding: 10px 0 4px 0;
 }
 
-/* 광고 박스(미니게임 바로 위에 위치될 것) */
 .ad-box{
   border: 2px solid rgba(255, 153, 0, 0.55);
   border-radius: 16px;
@@ -120,20 +106,28 @@ div.stButton > button {
   font-weight: 900;
 }
 .ad-btn:active, .ad-btn:hover{ opacity:0.95; }
+
+/* SEO 텍스트는 사람 눈에 안 띄게(스팸처럼 과도하지 않게) */
+.seo-hidden{
+  position:absolute;
+  left:-9999px;
+  top:auto;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+}
 </style>
 """
 
-# 스크롤 튐 방지: 버튼 클릭 등 리런 전 스크롤 위치 저장 -> 로드 후 복원
+# 스크롤 튐 방지(버튼 눌러도 위로 안 튀게)
 SCROLL_FIX_JS = """
 <script>
 (function(){
   try{
-    // 클릭 시 현재 스크롤 저장
     document.addEventListener('click', function(){
       localStorage.setItem('st_scroll_y', String(window.scrollY || 0));
     }, true);
 
-    // 로드 후 복원 (약간 지연)
     window.addEventListener('load', function(){
       const y = parseInt(localStorage.getItem('st_scroll_y') || "0", 10);
       setTimeout(()=>{ window.scrollTo(0, y); }, 80);
@@ -144,38 +138,209 @@ SCROLL_FIX_JS = """
 """
 
 
-# -----------------------------
-# 유틸: 데이터 로딩
-# -----------------------------
+# =========================
+# SEO/AI 검색 노출 섹션 (삭제되면 안 됨)
+# =========================
+def inject_seo(lang: str):
+    title = {
+        "ko": "2026 운세 | 띠 + MBTI + 사주 + 오늘/내일 운세",
+        "en": "2026 Fortune | Zodiac + MBTI + Saju + Daily/Tomorrow",
+        "ja": "2026年 運勢 | 干支 + MBTI + 四柱 + 今日/明日",
+        "zh": "2026 运势 | 生肖 + MBTI + 四柱 + 今日/明日",
+        "ru": "Гороскоп 2026 | Зодиак + MBTI + Саджу + Сегодня/Завтра",
+        "hi": "2026 भाग्य | राशि + MBTI + साजू + आज/कल",
+    }.get(lang, "2026 Fortune")
+
+    desc = {
+        "ko": "2026년 띠운세, MBTI, 사주 기반으로 오늘/내일 운세와 2026 전체 운세를 확인하고 미니게임 커피쿠폰 이벤트에 참여하세요.",
+        "en": "Check 2026 fortune based on zodiac, MBTI and saju. Daily & tomorrow messages, plus a mini-game event.",
+        "ja": "干支・MBTI・四柱で2026年の運勢をチェック。今日/明日メッセージとミニゲームイベント。",
+        "zh": "基于生肖、MBTI、四柱，查看2026运势。包含今日/明日运势与小游戏活动。",
+        "ru": "Узнайте прогноз на 2026 по зодиаку, MBTI и саджу. Сообщения на сегодня/завтра и мини-игра.",
+        "hi": "राशि, MBTI और साजू के आधार पर 2026 भाग्य देखें। आज/कल संदेश और मिनी-गेम।",
+    }.get(lang, "Fortune app")
+
+    # JSON-LD (AI 검색에도 도움이 되는 구조화 데이터)
+    json_ld = {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": title,
+        "url": APP_URL,
+        "applicationCategory": "LifestyleApplication",
+        "operatingSystem": "Web",
+        "description": desc,
+        "inLanguage": lang,
+    }
+
+    meta_html = f"""
+    <script type="application/ld+json">{json.dumps(json_ld, ensure_ascii=False)}</script>
+    <meta name="description" content="{desc}"/>
+    <meta property="og:title" content="{title}"/>
+    <meta property="og:description" content="{desc}"/>
+    <meta property="og:url" content="{APP_URL}"/>
+    <meta name="twitter:card" content="summary"/>
+    """
+    components.html(meta_html, height=0)
+
+
+def render_seo_hidden_text():
+    # 과도하게 길면 스팸처럼 보일 수 있어서 핵심 키워드만
+    keywords = """
+    2026 운세, 2026년 운세, 띠운세, 띠 운세, MBTI 운세, 사주 운세, 오늘 운세, 내일 운세, 2026 전체 운세,
+    zodiac fortune 2026, mbti fortune, saju fortune, daily fortune, tomorrow fortune,
+    2026年 運勢, 干支 運勢, 四柱 運勢, 今日 運勢, 明日 運勢,
+    2026 运势, 生肖 运势, 四柱 运势, 今日 运势, 明日 运势,
+    гороскоп 2026, судьба 2026, आज का भाग्य, कल का भाग्य
+    """
+    st.markdown(f"<div class='seo-hidden'>{keywords}</div>", unsafe_allow_html=True)
+
+
+# =========================
+# Query params 호환(에러 방지)
+# =========================
+def get_query_params() -> Dict[str, List[str]]:
+    try:
+        # 구버전/호환
+        return st.experimental_get_query_params()
+    except Exception:
+        return {}
+
+
+def set_query_params(**kwargs):
+    try:
+        st.experimental_set_query_params(**kwargs)
+    except Exception:
+        pass
+
+
+# =========================
+# 데이터 로딩/파싱 (데이터 없음 해결)
+# =========================
 @st.cache_data(show_spinner=False)
-def load_fortunes(lang: str) -> Dict[str, Any]:
-    """각 언어별 fortunes_XX.json 로딩. 누락/에러시 영어 fallback."""
-    path = FORTUNE_FILE_BY_LANG.get(lang, FORTUNE_FILE_BY_LANG["en"])
+def load_json_file(path: str) -> Any:
     try:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception:
-        # fallback en
-        try:
-            with open(FORTUNE_FILE_BY_LANG["en"], "r", encoding="utf-8") as f:
-            # type: ignore
-                return json.load(f)
-        except Exception:
-            return {}
+        return None
 
 
-def safe_get(d: Dict[str, Any], *keys, default=None):
-    cur = d
-    for k in keys:
-        if not isinstance(cur, dict) or k not in cur:
-            return default
-        cur = cur[k]
-    return cur
+def _first_non_empty(*vals):
+    for v in vals:
+        if v is None:
+            continue
+        if isinstance(v, str) and v.strip() == "":
+            continue
+        return v
+    return None
 
 
-# -----------------------------
-# Google Sheet (gspread) - append 방식으로 "1000행 초과" 해결
-# -----------------------------
+def normalize_fortune_record(raw: Any) -> Dict[str, str]:
+    """
+    fortunes_XX.json이 어떤 구조든 최대한 맞춰서
+    today/tomorrow/year/love/money/work/health 키로 변환
+    """
+    out = {
+        "today": "",
+        "tomorrow": "",
+        "year": "",
+        "love": "",
+        "money": "",
+        "work": "",
+        "health": "",
+    }
+
+    if raw is None:
+        return out
+
+    # raw가 dict일 때
+    if isinstance(raw, dict):
+        # 흔한 키들 폭넓게 지원
+        out["today"] = str(_first_non_empty(
+            raw.get("today"),
+            raw.get("daily"),
+            raw.get("daily_message"),
+            raw.get("today_message"),
+            raw.get("message_today"),
+        ) or "")
+
+        out["tomorrow"] = str(_first_non_empty(
+            raw.get("tomorrow"),
+            raw.get("tomorrow_message"),
+            raw.get("message_tomorrow"),
+        ) or "")
+
+        out["year"] = str(_first_non_empty(
+            raw.get("year"),
+            raw.get("year_2026"),
+            raw.get("overall_2026"),
+            raw.get("total_2026"),
+        ) or "")
+
+        # advice가 dict로 들어있는 케이스
+        adv = raw.get("advice")
+        if isinstance(adv, dict):
+            out["love"] = str(adv.get("love") or "")
+            out["money"] = str(adv.get("money") or "")
+            out["work"] = str(adv.get("work") or adv.get("career") or "")
+            out["health"] = str(adv.get("health") or "")
+
+        # 또는 love/money/work/health가 최상위에 있는 케이스
+        out["love"] = str(_first_non_empty(out["love"], raw.get("love")) or "")
+        out["money"] = str(_first_non_empty(out["money"], raw.get("money")) or "")
+        out["work"] = str(_first_non_empty(out["work"], raw.get("work"), raw.get("career")) or "")
+        out["health"] = str(_first_non_empty(out["health"], raw.get("health")) or "")
+
+        return out
+
+    return out
+
+
+def pick_fortune(data: Any) -> Dict[str, str]:
+    """
+    - data가 list면 랜덤 1개 선택
+    - data가 dict면 entries/items/list 중 하나 있으면 그 안에서 선택
+    - dict 자체가 1개 레코드면 그대로 normalize
+    """
+    if data is None:
+        return normalize_fortune_record(None)
+
+    if isinstance(data, list) and len(data) > 0:
+        return normalize_fortune_record(random.choice(data))
+
+    if isinstance(data, dict):
+        for k in ["entries", "items", "data", "fortunes", "records", "list"]:
+            v = data.get(k)
+            if isinstance(v, list) and len(v) > 0:
+                return normalize_fortune_record(random.choice(v))
+        # dict 자체가 레코드일 수 있음
+        return normalize_fortune_record(data)
+
+    return normalize_fortune_record(None)
+
+
+def ensure_not_empty(rec: Dict[str, str], lang: str) -> Dict[str, str]:
+    # 완전 공백이면 fallback 문장
+    fb = {
+        "ko": "데이터가 없습니다.",
+        "en": "No data.",
+        "ja": "データがありません。",
+        "zh": "暂无数据。",
+        "ru": "Нет данных.",
+        "hi": "डेटा नहीं मिला।",
+    }.get(lang, "No data.")
+
+    for k in rec.keys():
+        if not isinstance(rec[k], str) or rec[k].strip() == "":
+            rec[k] = fb
+    return rec
+
+
+# =========================
+# Google Sheet: append_row (1000행 초과 에러 방지)
+# 저장 컬럼 변경 금지:
+# A ts, B phone, C name, D lang, E game_time, F game_result, G consult(O/X)
+# =========================
 def get_gspread_client():
     import gspread
     from google.oauth2.service_account import Credentials
@@ -193,7 +358,6 @@ def get_gspread_client():
 
 
 def append_row_to_sheet(row: list):
-    """항상 마지막에 append. Range 지정 X -> 행 초과 에러 방지."""
     gc = get_gspread_client()
     sh = gc.open_by_key(SPREADSHEET_ID)
     ws = sh.worksheet(SHEET_NAME)
@@ -201,40 +365,47 @@ def append_row_to_sheet(row: list):
 
 
 def count_success_winners_cached() -> int:
-    """성공자(선착순 20명) 카운트. 너무 자주 읽지 않게 캐시."""
-    # 캐시는 10초 정도면 충분
+    # 10초 캐시
     now = time.time()
-    last_t = st.session_state.get("_winner_count_cache_t", 0)
-    last_v = st.session_state.get("_winner_count_cache_v", 0)
-    if now - last_t < 10:
-        return int(last_v)
+    t = st.session_state.get("_winner_cnt_t", 0.0)
+    v = st.session_state.get("_winner_cnt_v", 0)
+    if now - t < 10:
+        return int(v)
 
     try:
         gc = get_gspread_client()
         sh = gc.open_by_key(SPREADSHEET_ID)
         ws = sh.worksheet(SHEET_NAME)
         values = ws.get_all_values()
-        # 가정: 헤더 1행, game_result 컬럼이 6번째(F)라고 가정 (아래 저장컬럼 고정)
-        # A ts, B phone, C name, D lang, E game_time, F game_result, G consult(O/X)
         cnt = 0
         for r in values[1:]:
             if len(r) >= 6 and (r[5] or "").strip().upper() == "SUCCESS":
                 cnt += 1
-        st.session_state["_winner_count_cache_t"] = now
-        st.session_state["_winner_count_cache_v"] = cnt
+        st.session_state["_winner_cnt_t"] = now
+        st.session_state["_winner_cnt_v"] = cnt
         return cnt
     except Exception:
         return 0
 
 
-# -----------------------------
-# 공유(갤러리 공유 시트) - 네가 말한 "이 화면" 그대로
-# -----------------------------
-def render_native_share_button(share_title: str, share_text: str, share_url: str):
-    """
-    navigator.share로 모바일 공유 시트를 띄움.
-    성공하면 URL에 ?shared=1 붙여서 Streamlit이 bonus 처리.
-    """
+def save_consult(phone: str, name: str, lang: str, game_time: float, game_result: str, consult: str):
+    ts = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    row = [
+        ts,
+        phone,
+        name,
+        lang,
+        f"{game_time:.3f}",
+        game_result,
+        consult,  # G열 O/X
+    ]
+    append_row_to_sheet(row)
+
+
+# =========================
+# 공유: 네가 말한 “공유 시트” 그대로 (navigator.share)
+# =========================
+def render_native_share_button(title: str, text: str, url: str):
     html = f"""
     <div style="margin: 14px 0 10px 0;">
       <button id="shareBtn"
@@ -250,33 +421,35 @@ def render_native_share_button(share_title: str, share_text: str, share_url: str
         ">
         친구에게 결과 공유하기
       </button>
-      <div id="shareHint" style="margin-top:8px; font-size:12px; color:rgba(0,0,0,0.55);">
+      <div style="margin-top:8px; font-size:12px; color:rgba(0,0,0,0.55);">
         (공유 성공 시 재도전 1회 추가)
       </div>
     </div>
 
     <script>
     (function(){{
-      const title = {json.dumps(share_title)};
-      const text  = {json.dumps(share_text)};
-      const url   = {json.dumps(share_url)};
+      const title = {json.dumps(title)};
+      const text  = {json.dumps(text)};
+      const url   = {json.dumps(url)};
       const btn = document.getElementById('shareBtn');
 
       async function doShare(){{
         try {{
           if (navigator.share) {{
             await navigator.share({{ title, text, url }});
-            // 공유 성공 -> shared=1 붙여서 리로드 (bonus 처리)
             const u = new URL(window.location.href);
             u.searchParams.set('shared','1');
             window.location.href = u.toString();
           }} else {{
-            // share 미지원 -> 복사
-            await navigator.clipboard.writeText(text + "\\n" + url);
-            alert("공유 기능이 없어서 텍스트를 복사했습니다.\\n원하시는 곳에 붙여넣기 하세요.");
+            try {{
+              await navigator.clipboard.writeText(text + "\\n" + url);
+              alert("공유 기능이 없어 텍스트를 복사했습니다.\\n원하시는 곳에 붙여넣기 하세요.");
+            }} catch(e) {{
+              alert("공유 기능이 없습니다.\\nURL을 직접 복사해주세요: " + url);
+            }}
           }}
         }} catch(e) {{
-          // 사용자가 취소해도 그냥 무시
+          // 사용자가 취소해도 그냥 종료
         }}
       }}
 
@@ -288,100 +461,199 @@ def render_native_share_button(share_title: str, share_text: str, share_url: str
 
 
 def consume_shared_bonus_once():
-    """URL 파라미터 shared=1 을 감지해서 bonus 1회만 지급."""
-    q = st.query_params
-    if q.get("shared", None) == "1":
-        # 이미 지급했으면 또 지급하지 않음
+    qp = get_query_params()
+    shared = (qp.get("shared", ["0"])[0] if isinstance(qp.get("shared"), list) else "0")
+    if shared == "1":
         if not st.session_state.get("share_bonus_used", False):
             st.session_state["share_bonus_used"] = True
-            st.session_state["game_attempts"] = st.session_state.get("game_attempts", 1) + 1
-
-        # URL 깔끔하게 shared 제거
-        try:
-            st.query_params.clear()
-        except Exception:
-            pass
+            st.session_state["game_attempts"] = int(st.session_state.get("game_attempts", 1)) + 1
+        # 파라미터 제거(호환)
+        set_query_params()
 
 
-# -----------------------------
-# 세션 상태 초기화
-# -----------------------------
+# =========================
+# 16문항(12,16 포함) + 다국어
+# =========================
+QUESTIONS_16 = {
+    "ko": [
+        "1. 낯선 사람과도 금방 친해지는 편이다.",
+        "2. 혼자만의 시간이 꼭 필요하다.",
+        "3. 즉흥적으로 계획을 바꾸는 걸 좋아한다.",
+        "4. 일을 시작하기 전에 전체 계획을 세운다.",
+        "5. 감정보다 논리가 더 중요하다고 느낀다.",
+        "6. 상대의 기분을 먼저 고려하는 편이다.",
+        "7. 여러 사람과 함께 있을 때 에너지가 난다.",
+        "8. 소수 친한 사람과 깊게 지내는 편이다.",
+        "9. 큰 그림/가능성을 떠올리는 걸 좋아한다.",
+        "10. 현실적이고 구체적인 정보를 선호한다.",
+        "11. 마감 직전 몰아서 하는 편이다.",
+        "12. (복구) 작은 약속도 꼼꼼히 지키려고 한다.",
+        "13. 갈등이 생기면 바로 해결하려 한다.",
+        "14. 갈등이 생기면 시간을 두고 생각한다.",
+        "15. 결정을 빠르게 내리는 편이다.",
+        "16. (복구) 결정을 내리기 전 충분히 고민한다.",
+    ],
+    "en": [
+        "1. I quickly get along with strangers.",
+        "2. I need alone time regularly.",
+        "3. I like changing plans spontaneously.",
+        "4. I plan the whole flow before starting.",
+        "5. Logic feels more important than emotion.",
+        "6. I consider others' feelings first.",
+        "7. I gain energy around many people.",
+        "8. I prefer deep bonds with a few.",
+        "9. I like imagining big possibilities.",
+        "10. I prefer practical, concrete details.",
+        "11. I often do things near the deadline.",
+        "12. (Restored) I try to keep even small promises.",
+        "13. I try to solve conflicts right away.",
+        "14. I reflect before dealing with conflicts.",
+        "15. I decide quickly.",
+        "16. (Restored) I think carefully before deciding.",
+    ],
+    "ja": [
+        "1. 初対面の人ともすぐ仲良くなれる。",
+        "2. 一人の時間が必要だ。",
+        "3. 即興で予定を変えるのが好きだ。",
+        "4. 始める前に全体計画を立てる。",
+        "5. 感情より論理が大事だと思う。",
+        "6. 相手の気持ちを先に考える。",
+        "7. 大勢といると元気になる。",
+        "8. 少数と深く付き合う。",
+        "9. 大きな可能性を考えるのが好き。",
+        "10. 現実的で具体的な情報が好き。",
+        "11. 締切直前にまとめてやりがち。",
+        "12. (復元) 小さな約束も守ろうとする。",
+        "13. 衝突はすぐ解決したい。",
+        "14. 衝突は少し考えてから向き合う。",
+        "15. 決断が早い。",
+        "16. (復元) 決断前に十分悩む。",
+    ],
+    "zh": [
+        "1. 我很快能和陌生人熟络起来。",
+        "2. 我经常需要独处时间。",
+        "3. 我喜欢临时改变计划。",
+        "4. 我开始前会先做好整体规划。",
+        "5. 我觉得逻辑比情绪更重要。",
+        "6. 我会先考虑对方的感受。",
+        "7. 和很多人在一起会更有能量。",
+        "8. 我更喜欢和少数人深交。",
+        "9. 我喜欢思考大方向与可能性。",
+        "10. 我偏好现实且具体的信息。",
+        "11. 我常在截止前集中完成。",
+        "12. (已恢复) 我会尽量遵守小承诺。",
+        "13. 我倾向马上解决冲突。",
+        "14. 我会先想清楚再处理冲突。",
+        "15. 我做决定很快。",
+        "16. (已恢复) 我会充分思考后再决定。",
+    ],
+    "ru": [
+        "1. Я быстро нахожу общий язык с незнакомыми.",
+        "2. Мне регулярно нужно время наедине.",
+        "3. Мне нравится спонтанно менять планы.",
+        "4. Я планирую всё заранее перед началом.",
+        "5. Логика важнее эмоций.",
+        "6. Я сначала думаю о чувствах других.",
+        "7. Я заряжаюсь в компании многих людей.",
+        "8. Я предпочитаю близкое общение с немногими.",
+        "9. Мне нравится думать о больших возможностях.",
+        "10. Я предпочитаю практичные детали.",
+        "11. Часто делаю всё перед дедлайном.",
+        "12. (Восстановлено) Стараюсь держать даже маленькие обещания.",
+        "13. Хочу решать конфликты сразу.",
+        "14. Сначала обдумываю, потом решаю конфликт.",
+        "15. Решаю быстро.",
+        "16. (Восстановлено) Долго думаю перед решением.",
+    ],
+    "hi": [
+        "1. मैं अजनबियों से जल्दी घुल-मिल जाता/जाती हूँ।",
+        "2. मुझे अक्सर अकेले समय की ज़रूरत होती है।",
+        "3. मुझे अचानक योजना बदलना पसंद है।",
+        "4. शुरू करने से पहले मैं पूरा प्लान बनाता/बनाती हूँ।",
+        "5. मुझे लगता है तर्क भावनाओं से ज़्यादा महत्वपूर्ण है।",
+        "6. मैं पहले दूसरों की भावनाएँ सोचता/सोचती हूँ।",
+        "7. बहुत लोगों के साथ रहने से ऊर्जा मिलती है।",
+        "8. मैं कुछ लोगों के साथ गहरा रिश्ता पसंद करता/करती हूँ।",
+        "9. मुझे बड़ी संभावनाएँ सोचना पसंद है।",
+        "10. मुझे व्यावहारिक और ठोस जानकारी पसंद है।",
+        "11. मैं अक्सर डेडलाइन के पास काम करता/करती हूँ।",
+        "12. (बहाल) मैं छोटे वादे भी निभाने की कोशिश करता/करती हूँ।",
+        "13. मैं तुरंत संघर्ष सुलझाना चाहता/चाहती हूँ।",
+        "14. मैं सोचकर फिर संघर्ष सुलझाता/सुलझाती हूँ।",
+        "15. मैं जल्दी निर्णय लेता/लेती हूँ।",
+        "16. (बहाल) मैं निर्णय से पहले अच्छे से सोचता/सोचती हूँ।",
+    ],
+}
+
+
+# =========================
+# 세션 초기화
+# =========================
 def init_state():
     st.session_state.setdefault("lang", "ko")
-    st.session_state.setdefault("view", "input")  # input / result
-    st.session_state.setdefault("result_payload", None)
+    st.session_state.setdefault("view", "home")  # home / result
+    st.session_state.setdefault("name", "")
+    st.session_state.setdefault("phone", "")
 
-    # 미니게임 상태 (한국어만 사용)
+    # 16문항 응답 저장
+    st.session_state.setdefault("q_answers", [None] * 16)
+
+    # 미니게임
     st.session_state.setdefault("game_attempts", 1)  # 기본 1회
-    st.session_state.setdefault("game_running", False)
-    st.session_state.setdefault("game_start_t", None)
-    st.session_state.setdefault("game_elapsed", None)  # stop 시 고정 값
-    st.session_state.setdefault("game_outcome", None)  # SUCCESS / FAIL / None
-
     st.session_state.setdefault("share_bonus_used", False)
 
-    # 상담신청 UI on/off
-    st.session_state.setdefault("consult_enabled", False)  # 실패자만 ON
-    st.session_state.setdefault("consult_done", False)     # 성공자는 OFF
+    st.session_state.setdefault("game_running", False)
+    st.session_state.setdefault("game_start_t", None)
+    st.session_state.setdefault("game_elapsed", 0.0)
+    st.session_state.setdefault("game_outcome", None)  # SUCCESS / FAIL / None
 
-    # 리프레시 제어
-    st.session_state.setdefault("tick", 0)
+    st.session_state.setdefault("consult_enabled", False)
+    st.session_state.setdefault("consult_done", False)
 
-
-# -----------------------------
-# 결과 구성(간단/안정)
-# -----------------------------
-def build_result(fortunes: Dict[str, Any], lang: str) -> Dict[str, Any]:
-    """
-    기존 네 앱 로직 전체를 내가 여기서 알 수 없으니,
-    '라벨이 Daily message 로 보이는 문제'는
-    JSON에서 실제 문장을 꺼내는 방식으로 해결.
-    (키가 없으면 fallback 문장을 넣음)
-    """
-    # 예시 키 구조를 최대한 폭넓게 허용
-    # (너가 만든 master 데이터 구조를 그대로 쓰는 전제)
-    today = safe_get(fortunes, "today", default=None)
-    tomorrow = safe_get(fortunes, "tomorrow", default=None)
-    year = safe_get(fortunes, "year_2026", default=None)
-    love = safe_get(fortunes, "advice", "love", default=None)
-    money = safe_get(fortunes, "advice", "money", default=None)
-    work = safe_get(fortunes, "advice", "work", default=None)
-    health = safe_get(fortunes, "advice", "health", default=None)
-
-    def fallback(msg: str) -> str:
-        # 언어별 간단 fallback
-        if lang == "ko":
-            return msg
-        if lang == "ja":
-            return "データが見つかりません。"
-        if lang == "zh":
-            return "未找到数据。"
-        if lang == "ru":
-            return "Данные не найдены."
-        if lang == "hi":
-            return "डेटा नहीं मिला।"
-        return "Data not found."
-
-    return {
-        "today": today or fallback("오늘 운세 데이터가 없습니다."),
-        "tomorrow": tomorrow or fallback("내일 운세 데이터가 없습니다."),
-        "year": year or fallback("2026 전체 운세 데이터가 없습니다."),
-        "love": love or fallback("연애운 조언 데이터가 없습니다."),
-        "money": money or fallback("재물운 조언 데이터가 없습니다."),
-        "work": work or fallback("직장/일 조언 데이터가 없습니다."),
-        "health": health or fallback("건강운 조언 데이터가 없습니다."),
-    }
+    # 결과 캐시
+    st.session_state.setdefault("fortune_cache", None)
 
 
-# -----------------------------
-# 미니게임 로직
-# -----------------------------
+# =========================
+# 언어 선택(반응 안 하는 문제 해결)
+# =========================
+def render_language_selector():
+    consume_shared_bonus_once()
+
+    codes = [c for c, _ in SUPPORTED_LANGS]
+    name_map = {c: n for c, n in SUPPORTED_LANGS}
+
+    cur = st.session_state.get("lang", "ko")
+    if cur not in codes:
+        cur = "ko"
+
+    selected = st.radio(
+        "",
+        options=codes,
+        format_func=lambda x: name_map.get(x, x),
+        index=codes.index(cur),
+        horizontal=True,
+        key="lang_radio_key",  # key 고정
+        label_visibility="collapsed",
+    )
+
+    # 즉시 반영
+    if selected != st.session_state.get("lang"):
+        st.session_state["lang"] = selected
+        # 언어 바뀌면 결과 캐시도 초기화
+        st.session_state["fortune_cache"] = None
+        st.rerun()
+
+
+# =========================
+# 미니게임 로직 + 실시간 표시
+# =========================
 def can_start_game() -> Tuple[bool, str]:
     if st.session_state.get("lang") != "ko":
         return False, "미니게임은 한국어에서만 진행됩니다."
     if st.session_state.get("consult_done", False):
         return False, "이미 성공하셨습니다."
-    if st.session_state.get("game_attempts", 0) <= 0:
+    if int(st.session_state.get("game_attempts", 0)) <= 0:
         return False, "남은 시도 횟수가 없습니다. 친구 공유 후 재도전 1회가 가능합니다."
     if st.session_state.get("game_running", False):
         return False, "이미 진행 중입니다."
@@ -394,7 +666,7 @@ def start_game():
         return
     st.session_state["game_running"] = True
     st.session_state["game_start_t"] = time.perf_counter()
-    st.session_state["game_elapsed"] = None
+    st.session_state["game_elapsed"] = 0.0
     st.session_state["game_outcome"] = None
     st.session_state["consult_enabled"] = False
 
@@ -406,98 +678,62 @@ def stop_game_and_judge():
     if not start_t:
         return
 
-    elapsed = time.perf_counter() - start_t
-    elapsed_ms = round(elapsed, 3)
+    elapsed = round(time.perf_counter() - start_t, 3)
 
-    # Stop 시 고정
     st.session_state["game_running"] = False
-    st.session_state["game_elapsed"] = elapsed_ms
+    st.session_state["game_elapsed"] = elapsed
 
-    # 시도 1회 차감
+    # 시도 횟수 차감
     st.session_state["game_attempts"] = max(0, int(st.session_state.get("game_attempts", 0)) - 1)
 
-    # 선착순 마감 확인
+    # 선착순 마감
     winner_cnt = count_success_winners_cached()
     if winner_cnt >= MAX_WINNERS:
         st.session_state["game_outcome"] = "FAIL"
         st.session_state["consult_enabled"] = True
         return
 
-    # 성공 판정(허용오차: 20.260~20.269)
-    if TARGET_MIN <= elapsed_ms <= TARGET_MAX:
+    if TARGET_MIN <= elapsed <= TARGET_MAX:
         st.session_state["game_outcome"] = "SUCCESS"
-        st.session_state["consult_enabled"] = False
         st.session_state["consult_done"] = True
-        # 성공자는 상담신청 OFF
+        st.session_state["consult_enabled"] = False
     else:
         st.session_state["game_outcome"] = "FAIL"
         st.session_state["consult_enabled"] = True
 
 
-def game_tick_display() -> float:
-    """진행 중이면 현재 경과, 아니면 고정 elapsed"""
+def get_live_elapsed() -> float:
     if st.session_state.get("game_running") and st.session_state.get("game_start_t"):
         return round(time.perf_counter() - st.session_state["game_start_t"], 3)
-    if st.session_state.get("game_elapsed") is not None:
-        return float(st.session_state["game_elapsed"])
-    return 0.000
+    return float(st.session_state.get("game_elapsed", 0.0))
 
 
-def maybe_autorefresh():
-    """게임 running 중일 때만 부드럽게 갱신"""
-    if st.session_state.get("game_running", False):
-        # 100ms
-        st.session_state["tick"] += 1
-        st.experimental_rerun()
+# =========================
+# 광고(미니게임 바로 위, 한국어만)
+# =========================
+def render_ad_block_ko_only():
+    if st.session_state.get("lang") != "ko":
+        return
+    st.markdown(
+        """
+        <div class="ad-box">
+          <div class="ad-badge">광고</div>
+          <div class="ad-title">정수기렌탈 대박!</div>
+          <div class="ad-desc">
+            제휴카드면 월 0원부터!<br/>
+            설치 당일 최대 50만원 지원 + 사은품 듬뿍
+          </div>
+          <a class="ad-btn" href="https://xn--910b51a1r88nu39a.com" target="_blank" rel="noopener">다나눔렌탈.com 바로가기</a>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
-# -----------------------------
-# 상담신청 저장 (실패자만, O 선택 시에만 저장)
-# 저장 컬럼(바꾸지 말아달라)에 맞춰서 최소 컬럼만 append
-# A ts, B phone, C name, D lang, E game_time, F game_result, G consult(O)
-# -----------------------------
-def save_consult(phone: str, name: str, lang: str, game_time: float, game_result: str):
-    ts = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
-    row = [
-        ts,
-        phone,
-        name,
-        lang,
-        f"{game_time:.3f}",
-        game_result,
-        "O",  # G열
-    ]
-    append_row_to_sheet(row)
-
-
-# -----------------------------
-# UI
-# -----------------------------
-def header_language_selector():
-    # shared bonus 처리(공유 후 재도전 1회)
-    consume_shared_bonus_once()
-
-    cols = st.columns([1, 3])
-    with cols[0]:
-        pass
-    with cols[1]:
-        labels = [name for _, name in SUPPORTED_LANGS]
-        codes = [code for code, _ in SUPPORTED_LANGS]
-        current = st.session_state.get("lang", "ko")
-        idx = codes.index(current) if current in codes else 0
-        chosen = st.radio(
-            "",
-            options=codes,
-            format_func=lambda c: dict(SUPPORTED_LANGS).get(c, c),
-            index=idx,
-            horizontal=True,
-            label_visibility="collapsed",
-        )
-        st.session_state["lang"] = chosen
-
-
-def render_results_section(result: Dict[str, Any], lang: str):
-    # 결과 섹션(라벨은 각 언어별로 간단 처리)
+# =========================
+# 결과 렌더링 (다국어 + 데이터 파싱)
+# =========================
+def render_result_blocks(rec: Dict[str, str], lang: str):
     labels = {
         "ko": {
             "today": "오늘 운세",
@@ -556,206 +792,190 @@ def render_results_section(result: Dict[str, Any], lang: str):
     }
     L = labels.get(lang, labels["en"])
 
-    st.markdown(f"<div class='section-title'>{L['today']}</div>", unsafe_allow_html=True)
-    st.write(result["today"])
-
-    st.markdown(f"<div class='section-title'>{L['tomorrow']}</div>", unsafe_allow_html=True)
-    st.write(result["tomorrow"])
-
-    st.markdown(f"<div class='section-title'>{L['year']}</div>", unsafe_allow_html=True)
-    st.write(result["year"])
-
-    st.markdown(f"<div class='section-title'>{L['love']}</div>", unsafe_allow_html=True)
-    st.write(result["love"])
-
-    st.markdown(f"<div class='section-title'>{L['money']}</div>", unsafe_allow_html=True)
-    st.write(result["money"])
-
-    st.markdown(f"<div class='section-title'>{L['work']}</div>", unsafe_allow_html=True)
-    st.write(result["work"])
-
-    st.markdown(f"<div class='section-title'>{L['health']}</div>", unsafe_allow_html=True)
-    st.write(result["health"])
+    for k in ["today", "tomorrow", "year", "love", "money", "work", "health"]:
+        st.markdown(f"<div class='section-title'>{L[k]}</div>", unsafe_allow_html=True)
+        st.write(rec.get(k, ""))
 
 
-def render_ad_block_ko_only():
-    # "다나눔렌탈 광고"는 요청대로 미니게임 바로 위에서,
-    # 한국어에서만 노출
-    if st.session_state.get("lang") != "ko":
-        return
+# =========================
+# 메인 UI
+# =========================
+def render_home():
+    lang = st.session_state.get("lang", "ko")
+
     st.markdown(
         """
-        <div class="ad-box">
-          <div class="ad-badge">광고</div>
-          <div class="ad-title">정수기렌탈 대박!</div>
-          <div class="ad-desc">
-            제휴카드면 월 0원부터!<br/>
-            설치 당일 최대 50만원 지원 + 사은품 듬뿍
-          </div>
-          <a class="ad-btn" href="https://xn--910b51a1r88nu39a.com" target="_blank" rel="noopener">다나눔렌탈.com 바로가기</a>
+        <div style="
+          background: linear-gradient(135deg, rgba(122,74,255,0.20), rgba(255,153,0,0.18));
+          border-radius: 18px;
+          padding: 20px 16px;
+          text-align:center;
+          font-weight:900;
+          font-size:28px;
+          margin: 10px 0 16px 0;
+        ">
+          2026 띠 + MBTI + 사주 + 오늘/내일 운세
+          <div style="font-size:14px; font-weight:800; margin-top:6px; opacity:0.7;">완전 무료</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+    st.session_state["name"] = st.text_input("이름 입력 (결과에 표시돼요)", value=st.session_state.get("name", ""), key="name_input")
+    st.session_state["phone"] = st.text_input("전화번호 (실패 시 상담신청에서 사용)", value=st.session_state.get("phone", ""), key="phone_input")
 
-def render_mini_game_ko_only(name: str, phone: str):
-    # 한국어만
-    if st.session_state.get("lang") != "ko":
-        return
+    # 16문항 (12,16 포함) 복구
+    st.markdown("### MBTI 16문항")
+    qs = QUESTIONS_16.get(lang, QUESTIONS_16["en"])
+    for i in range(16):
+        st.session_state["q_answers"][i] = st.radio(
+            qs[i],
+            options=["선택 안함", "예", "아니오"] if lang == "ko" else ["Not set", "Yes", "No"],
+            index=0 if st.session_state["q_answers"][i] is None else st.session_state["q_answers"][i],
+            key=f"q_{i+1}",
+        )
 
+    if st.button("운세 보기", key="go_result_btn"):
+        st.session_state["view"] = "result"
+        st.session_state["fortune_cache"] = None
+        st.rerun()
+
+
+def render_result():
+    lang = st.session_state.get("lang", "ko")
+
+    # 데이터 로딩
+    path = FORTUNE_FILE_BY_LANG.get(lang, FORTUNE_FILE_BY_LANG["en"])
+    data = load_json_file(path)
+
+    # 결과 캐시(언어 변경/다시보기 시 초기화)
+    if st.session_state.get("fortune_cache") is None:
+        rec = pick_fortune(data)
+        rec = ensure_not_empty(rec, lang)
+        st.session_state["fortune_cache"] = rec
+    else:
+        rec = st.session_state["fortune_cache"]
+
+    render_result_blocks(rec, lang)
+
+    # 공유 버튼(네가 말한 방식 그대로)
+    render_native_share_button(
+        title="2026 운세 결과",
+        text="내 2026 운세 결과 확인해봐! 🔮",
+        url=APP_URL,
+    )
+
+    # 한국어에서만: 광고(미니게임 바로 위) + 미니게임
+    if lang == "ko":
+        render_ad_block_ko_only()
+        render_mini_game_and_consult()
+
+    if st.button("처음부터 다시하기", key="restart_btn"):
+        # 시도횟수는 초기화하지 않음(요청)
+        st.session_state["view"] = "home"
+        st.session_state["fortune_cache"] = None
+        st.rerun()
+
+
+def render_mini_game_and_consult():
     st.markdown("<div class='game-card'>", unsafe_allow_html=True)
-    st.markdown("### 🎁 미니게임: 선착순 20명 커피쿠폰 도전!", unsafe_allow_html=True)
+    st.markdown("### 🎁 미니게임: 선착순 20명 커피쿠폰 도전!")
     st.write("스톱워치를 **20.260s ~ 20.269s** 사이에 멈추면 성공입니다. (기본 1회, 친구 공유 시 1회 추가)")
 
-    # 스톱 시 고정된 표시 유지
-    current = game_tick_display()
-    st.markdown(f"<div class='stopwatch'>{current:06.3f}</div>", unsafe_allow_html=True)
+    # 실시간 표시
+    live = get_live_elapsed()
+    st.markdown(f"<div class='stopwatch'>{live:06.3f}</div>", unsafe_allow_html=True)
 
-    # 버튼들
-    colA, colB = st.columns(2)
+    # 버튼
+    c1, c2 = st.columns(2)
 
-    with colA:
-        start_disabled = not can_start_game()[0]
-        if st.button("Start", disabled=start_disabled, key="game_start_btn"):
+    with c1:
+        start_ok, msg = can_start_game()
+        if st.button("Start", disabled=not start_ok, key="game_start_btn"):
             start_game()
 
-    with colB:
-        stop_disabled = not st.session_state.get("game_running", False)
-        if st.button("Stop", disabled=stop_disabled, key="game_stop_btn"):
+    with c2:
+        if st.button("Stop", disabled=not st.session_state.get("game_running", False), key="game_stop_btn"):
             stop_game_and_judge()
 
-    st.caption(f"남은 시도 횟수: **{st.session_state.get('game_attempts', 0)}회**")
+    st.caption(f"남은 시도 횟수: **{int(st.session_state.get('game_attempts', 0))}회**")
 
-    # 결과 메시지
     outcome = st.session_state.get("game_outcome")
+
     if outcome == "SUCCESS":
         st.success("성공! 응모 시 선착순 20명에게 커피 쿠폰 보내드립니다.")
+        # 성공자: 상담신청 기능 OFF
+        st.session_state["consult_enabled"] = False
+
     elif outcome == "FAIL":
-        # 실패: 공유 후 재도전 or 상담신청 유도
         st.warning("친구 공유 후 재도전.\n또는 다나눔렌탈 정수기 렌탈 정보 상담신청하고 커피쿠폰 응모.")
+        # 실패자: 상담신청 ON
+        st.session_state["consult_enabled"] = True
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 상담신청 UI (실패자만 ON)
+    # 실패자만 상담신청
     if st.session_state.get("consult_enabled", False) and not st.session_state.get("consult_done", False):
         st.markdown("### 다나눔렌탈 상담신청(실패자만 가능)")
         st.write("상담 신청하시겠습니까?")
 
-        # 전화번호는 이미 입력받은 값을 보여주되 수정은 가능하게
-        phone_in = st.text_input("Phone / 전화번호", value=phone or "", key="consult_phone")
-        col1, col2 = st.columns(2)
+        phone = st.text_input("Phone / 전화번호", value=st.session_state.get("phone", ""), key="consult_phone")
+        name = st.session_state.get("name", "")
+        game_time = float(st.session_state.get("game_elapsed", 0.0))
+        game_result = st.session_state.get("game_outcome", "FAIL")
 
-        with col1:
+        b1, b2 = st.columns(2)
+        with b1:
             if st.button("O (신청)", key="consult_yes"):
-                # 상담 신청 O -> DB 저장 (G열 O)
+                # O 선택 시 저장 (G열 O)
                 try:
-                    gt = float(st.session_state.get("game_elapsed") or 0.0)
-                    gr = st.session_state.get("game_outcome") or "FAIL"
-                    save_consult(phone_in.strip(), name.strip(), "ko", gt, gr)
-                    st.success("커피쿠폰 응모가 접수되었습니다.")
-                    # 접수 후에는 상담신청 off (중복 방지)
+                    save_consult(
+                        phone=str(phone).strip(),
+                        name=str(name).strip(),
+                        lang="ko",
+                        game_time=game_time,
+                        game_result=str(game_result),
+                        consult="O",
+                    )
+                    st.success("커피쿠폰 응모되셨습니다.")
                     st.session_state["consult_enabled"] = False
                 except Exception as e:
                     st.error(f"Sheet error: {e}")
 
-        with col2:
+        with b2:
             if st.button("X (취소)", key="consult_no"):
-                # X 누르면 저장 안함 (요청대로 삭제/미기록)
+                # X 누르면 저장하지 않음(요청: DB 기록 삭제/미저장)
                 st.session_state["consult_enabled"] = False
 
-    # 진행 중이면 부드럽게 갱신 (리런)
+    # ✅ 실시간 타이머를 위해 running 중이면 자동 rerun (0.1초)
     if st.session_state.get("game_running", False):
-        # 0.1초마다 갱신: 화면 튐은 SCROLL_FIX_JS가 잡아줌
         time.sleep(0.10)
-        st.experimental_rerun()
+        st.rerun()
 
 
-def render():
+# =========================
+# 앱 엔트리
+# =========================
+def main():
     st.set_page_config(page_title="2026 운세", page_icon="🔮", layout="centered")
     st.markdown(BASE_CSS, unsafe_allow_html=True)
     components.html(SCROLL_FIX_JS, height=0)
 
     init_state()
-    header_language_selector()
 
-    lang = st.session_state.get("lang", "ko")
-    fortunes = load_fortunes(lang)
+    # SEO 항상 주입 (삭제되면 안 됨)
+    inject_seo(st.session_state.get("lang", "ko"))
+    render_seo_hidden_text()
 
-    # -------------------------
-    # 입력 화면
-    # -------------------------
-    if st.session_state.get("view") == "input":
-        # (너가 기존에 쓰던 입력 UI가 여기 있을 텐데,
-        #  디자인 고정 요청 때문에 구조는 최소로 둠)
+    # 언어 선택
+    render_language_selector()
 
-        st.markdown(
-            """
-            <div style="
-              background: linear-gradient(135deg, rgba(122,74,255,0.20), rgba(255,153,0,0.18));
-              border-radius: 18px;
-              padding: 20px 16px;
-              text-align:center;
-              font-weight:900;
-              font-size:28px;
-              margin: 10px 0 16px 0;
-            ">
-              2026 띠 + MBTI + 사주 + 오늘/내일 운세
-              <div style="font-size:14px; font-weight:800; margin-top:6px; opacity:0.7;">완전 무료</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        name = st.text_input("이름 입력 (결과에 표시돼요)", key="name_input")
-        # 생년월일/MBTI/띠 선택 등은 기존 코드에 맞게 있겠지만,
-        # 여기서는 결과 오류/번역/미니게임/시트 문제 해결이 핵심이라 최소화
-        # 너 기존 로직 그대로 넣고 result_payload만 만들어도 됨.
-
-        if st.button("운세 보기", key="go_result"):
-            # 결과 payload 저장
-            result = build_result(fortunes, lang)
-            st.session_state["result_payload"] = {
-                "name": name.strip(),
-                "phone": st.session_state.get("phone_input", "").strip(),
-                "lang": lang,
-                "result": result,
-            }
-            st.session_state["view"] = "result"
-            st.experimental_rerun()
-
-        return
-
-    # -------------------------
-    # 결과 화면
-    # -------------------------
-    payload = st.session_state.get("result_payload") or {}
-    name = (payload.get("name") or "").strip()
-    phone = (payload.get("phone") or "").strip()
-    result = payload.get("result") or build_result(fortunes, lang)
-
-    render_results_section(result, lang)
-
-    # ✅ 공유 버튼: “그 공유 시트” 방식 그대로 (다른 생각 X)
-    share_title = "2026 운세 결과"
-    # 너무 길면 공유앱이 잘릴 수 있어 짧게
-    share_text = "내 2026 운세 결과 확인해봐! 🔮"
-    render_native_share_button(share_title, share_text, APP_URL)
-
-    # ✅ 광고는 “미니게임 바로 위” (한국어만)
-    render_ad_block_ko_only()
-
-    # ✅ 미니게임은 한국어만
-    render_mini_game_ko_only(name=name, phone=phone)
-
-    # ✅ 처음부터 다시하기: 입력값만 리셋, “시도횟수는 초기화하지 않음”
-    # (요청: 처음부터 다시하기 후에도 시도횟수 유지)
-    if st.button("처음부터 다시하기", key="restart"):
-        # view만 input으로. attempts/share_bonus는 그대로 둠.
-        st.session_state["view"] = "input"
-        st.session_state["result_payload"] = None
-        st.experimental_rerun()
+    # 화면
+    if st.session_state.get("view") == "home":
+        render_home()
+    else:
+        render_result()
 
 
 if __name__ == "__main__":
-    render()
+    main()
