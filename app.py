@@ -1,628 +1,763 @@
-import streamlit as st
 import json
-import time
+import os
 import re
-from datetime import datetime, date
-from pathlib import Path
+import random
+import hashlib
+from datetime import datetime
 
-# Optional (Google Sheets)
-try:
-    import gspread
-    from google.oauth2.service_account import Credentials
-except Exception:
-    gspread = None
-    Credentials = None
+import streamlit as st
+from PIL import Image
 
-# =========================
-# Config
-# =========================
-APP_TITLE = "🔮 2026 띠 + MBTI + 사주 + 오늘/내일 운세 (완전 무료)"
-DB_PATH = Path("data") / "fortunes_ko.json"
+# =========================================================
+# 0) App Config
+# =========================================================
+APP_URL = "https://my-fortune.streamlit.app"
 
-# 다나눔렌탈 광고(원하면 링크만 바꿔서 사용)
-DANANUM_RENTAL_NAME = "다나눔렌탈"
-DANANUM_RENTAL_URL = "https://다나눔렌탈.com"
+st.set_page_config(
+    page_title="2026 운세 | 띠 + MBTI + 사주 + 오늘/내일 + 타로",
+    page_icon="🔮",
+    layout="centered",
+)
 
-# Google Sheet (기본값: 기억해둔 ID)
-DEFAULT_SHEET_ID = "1WvuKXx2if2WvxmQaxkqzFW-BzDEWWma9hZgCr2jJQYY"
-DEFAULT_SHEET_TAB = "Sheet1"
+# =========================================================
+# 1) Paths
+# =========================================================
+ROOT = os.path.dirname(os.path.abspath(__file__))
 
-TARGET_SECONDS = 20.26
-SUCCESS_TOLERANCE = 0.15  # ±0.15초면 성공 처리
+FORTUNE_DB_PATH = os.path.join(ROOT, "fortunes_ko.json")              # 광범위 운세 DB (너가 만든 것)
+TAROT_DB_PATH   = os.path.join(ROOT, "data", "tarot_db_ko.json")      # 타로 텍스트 DB (78장)
+TAROT_ASSET_DIR = os.path.join(ROOT, "assets", "tarot")               # 이미지 폴더
+TAROT_BACK_IMG  = os.path.join(TAROT_ASSET_DIR, "back.png")
+TAROT_MAJORS_DIR = os.path.join(TAROT_ASSET_DIR, "majors")
+TAROT_MINORS_DIR = os.path.join(TAROT_ASSET_DIR, "minors")
 
-# =========================
-# UI helpers
-# =========================
-def inject_css():
-    st.markdown(
-        """
-        <style>
-        .stApp{
-            background: linear-gradient(135deg, rgba(170,200,255,0.25), rgba(255,190,230,0.18));
-        }
-        .block-container{ padding-top: 1.0rem; padding-bottom: 2.5rem; }
-        .card{
-            background: rgba(255,255,255,0.78);
-            border: 1px solid rgba(0,0,0,0.06);
-            border-radius: 18px;
-            padding: 14px 14px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.06);
-        }
-        .muted{ color: rgba(0,0,0,0.55); font-size: 0.92rem; }
-        .pill{
-            display:inline-block;
-            padding: 4px 10px;
-            border-radius: 999px;
-            background: rgba(0,0,0,0.06);
-            margin-right: 6px;
-            font-size: 0.86rem;
-        }
-        .seo-hidden{position:absolute; left:-9999px; top:-9999px; height:1px; overflow:hidden;}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+# =========================================================
+# 2) Utils
+# =========================================================
+def normalize_text(s: str) -> str:
+    return (s or "").strip()
 
-def card(title: str, body_md: str):
-    st.markdown(
-        f"""
-        <div class="card">
-          <div style="font-weight:800; font-size:1.05rem; margin-bottom:6px;">{title}</div>
-          <div>{body_md}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-def seo_keywords_block():
-    # 검색 키워드(네이버/구글/제미나이/챗지피티 검색 대비)
-    keywords = [
-        "2026 운세", "띠운세", "사주", "오늘 운세", "내일 운세", "MBTI 운세",
-        "무료 운세", "2026 띠+MBTI", "스톱워치 게임", "20.26초 맞추기",
-        "안마의자 렌탈", "정수기 렌탈", "가전 렌탈", "다나눔렌탈",
-    ]
-    st.markdown(
-        f"<div class='seo-hidden'>{' · '.join(keywords)}</div>",
-        unsafe_allow_html=True
-    )
-
-# =========================
-# Data / logic
-# =========================
-def load_db():
-    if not DB_PATH.exists():
-        raise FileNotFoundError(f"DB 파일을 찾을 수 없습니다: {DB_PATH}")
-    data = json.loads(DB_PATH.read_text(encoding="utf-8"))
-
-    if "combos" not in data or not isinstance(data["combos"], dict) or len(data["combos"]) == 0:
-        raise ValueError("DB 구조 오류: combos 키가 없거나 비어있습니다.")
-    if "zodiacs" not in data or not isinstance(data["zodiacs"], list) or len(data["zodiacs"]) < 12:
-        raise ValueError("DB 구조 오류: zodiacs(12띠 목록)가 없습니다.")
-    return data
-
-def zodiac_from_year(year: int, db) -> str:
-    # 1984년이 쥐띠(=Rat) 기준
-    idx = (year - 1984) % 12
+def safe_int(s, default=0):
     try:
-        return db["zodiacs"][idx]["name"]
+        return int(s)
     except Exception:
-        # fallback
-        names = ["쥐","소","호랑이","토끼","용","뱀","말","양","원숭이","닭","개","돼지"]
-        return names[idx]
+        return default
 
-def stable_hash_int(s: str) -> int:
-    # 파이썬 기본 hash는 실행마다 바뀔 수 있어서, 직접 안정 해시 사용
-    h = 2166136261
-    for ch in s.encode("utf-8"):
-        h ^= ch
-        h = (h * 16777619) & 0xFFFFFFFF
-    return h
+def safe_float(s, default=None):
+    try:
+        return float(s)
+    except Exception:
+        return default
 
-def get_combo_key(zodiac_ko: str, mbti: str) -> str:
-    return f"{zodiac_ko}_{mbti.upper()}"
+def stable_hash_to_int(s: str) -> int:
+    """파이썬 hash()는 실행마다 달라질 수 있으니 sha256으로 고정."""
+    h = hashlib.sha256((s or "").encode("utf-8")).hexdigest()
+    return int(h[:12], 16)
 
-def pick_field(combo: dict, *keys, default=""):
-    for k in keys:
-        if k in combo and combo[k]:
-            return combo[k]
-    return default
+def stable_seed(*parts) -> int:
+    """
+    같은 입력이면 항상 같은 seed가 나오도록:
+    - 생년월일/이름/MBTI/띠/질문타입 등을 합쳐서 sha256 → int
+    """
+    combined = "||".join([str(p) for p in parts])
+    return stable_hash_to_int(combined)
 
-def get_lucky_point(combo: dict):
-    # DB가 lucky_point 객체를 가지기도 하고, lucky_colors/items/numbers/directions로 나뉘기도 함.
-    lp = combo.get("lucky_point")
-    if isinstance(lp, dict):
-        return {
-            "color": lp.get("color",""),
-            "item": lp.get("item",""),
-            "number": lp.get("number",""),
-            "direction": lp.get("direction",""),
-        }
-    # fallback: plural keys
-    colors = combo.get("lucky_colors") or []
-    items = combo.get("lucky_items") or []
-    numbers = combo.get("lucky_numbers") or []
-    directions = combo.get("lucky_directions") or []
-    return {
-        "color": colors[0] if colors else "",
-        "item": items[0] if items else "",
-        "number": numbers[0] if numbers else "",
-        "direction": directions[0] if directions else "",
+def load_json(path: str, fallback):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return fallback
+
+@st.cache_data(show_spinner=False)
+def load_fortunes_db():
+    return load_json(FORTUNE_DB_PATH, fallback={"meta": {}, "zodiac_mbti": {}, "fallback": {}})
+
+@st.cache_data(show_spinner=False)
+def load_tarot_db():
+    return load_json(TAROT_DB_PATH, fallback={"meta": {}, "cards": []})
+
+def image_exists(path: str) -> bool:
+    try:
+        return os.path.exists(path) and os.path.getsize(path) > 0
+    except Exception:
+        return False
+
+def open_image(path: str):
+    try:
+        return Image.open(path)
+    except Exception:
+        return None
+
+def inject_seo_hidden():
+    # 프론트에 안보이게 head에만 주입 (height=0)
+    desc = "2026 운세, 띠운세, MBTI 운세, 사주, 오늘운세, 내일운세, 타로카드, 무료 운세"
+    keywords = "2026 운세, 띠운세, MBTI 운세, 사주, 오늘 운세, 내일 운세, 타로, 연애운, 재물운, 직장운, 건강운, 무료"
+    title = "2026 운세 | 띠 + MBTI + 사주 + 오늘/내일 + 타로"
+
+    st.components.v1.html(
+        f"""
+<script>
+(function() {{
+  try {{
+    const metas = [
+      ['name','description', {json.dumps(desc, ensure_ascii=False)}],
+      ['name','keywords', {json.dumps(keywords, ensure_ascii=False)}],
+      ['property','og:title', {json.dumps(title, ensure_ascii=False)}],
+      ['property','og:description', {json.dumps(desc, ensure_ascii=False)}],
+      ['property','og:type','website'],
+      ['property','og:url', {json.dumps(APP_URL, ensure_ascii=False)}],
+      ['name','robots','index,follow'],
+      ['name','twitter:card','summary']
+    ];
+    metas.forEach(([attr, key, val]) => {{
+      let el = document.head.querySelector(`meta[${{attr}}="${{key}}"]`);
+      if(!el) {{
+        el = document.createElement('meta');
+        el.setAttribute(attr, key);
+        document.head.appendChild(el);
+      }}
+      el.setAttribute('content', val);
+    }});
+
+    let canonical = document.head.querySelector('link[rel="canonical"]');
+    if(!canonical) {{
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel','canonical');
+      document.head.appendChild(canonical);
+    }}
+    canonical.setAttribute('href', {json.dumps(APP_URL, ensure_ascii=False)});
+  }} catch(e) {{}}
+}})();
+</script>
+        """,
+        height=0
+    )
+
+# =========================================================
+# 3) UI Style (고급 카드 + 그라데이션 / 큰 틀 유지)
+# =========================================================
+st.markdown("""
+<style>
+.block-container { padding-top: 1.0rem; padding-bottom: 2.5rem; max-width: 760px; }
+
+.hero {
+  border-radius: 22px;
+  padding: 18px 16px;
+  background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #8ec5fc 100%);
+  color: white;
+  text-align: center;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+  margin-bottom: 14px;
+}
+.hero h1 { font-size: 1.55rem; font-weight: 900; margin: 0; }
+.hero p { font-size: 0.95rem; opacity: 0.95; margin: 6px 0 0 0; }
+.badge {
+  display:inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  background: rgba(255,255,255,0.20);
+  border: 1px solid rgba(255,255,255,0.25);
+  margin-top: 10px;
+}
+
+.card {
+  background: rgba(255,255,255,0.96);
+  border-radius: 18px;
+  padding: 16px 14px;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.10);
+  border: 1px solid rgba(140,120,200,0.18);
+  margin: 12px 0;
+}
+
+.card-premium {
+  border-radius: 20px;
+  padding: 16px 14px;
+  margin: 12px 0;
+  background: linear-gradient(145deg, rgba(20,10,45,0.92), rgba(120,70,200,0.22));
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.20);
+  color: white;
+}
+
+.card-premium .sub {
+  opacity: 0.88;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.soft-box {
+  background: rgba(245,245,255,0.78);
+  border: 1px solid rgba(130,95,220,0.18);
+  padding: 12px 12px;
+  border-radius: 14px;
+  line-height: 1.65;
+  font-size: 1.0rem;
+}
+
+.bigbtn > button {
+  border-radius: 999px !important;
+  font-weight: 900 !important;
+  padding: 0.75rem 1.2rem !important;
+}
+
+.adbox {
+  background: rgba(255,255,255,0.96);
+  border-radius: 18px;
+  padding: 16px;
+  margin: 12px 0;
+  border: 2px solid rgba(255, 140, 80, 0.55);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.08);
+  text-align:center;
+}
+
+hr.soft { border:0; height:1px; background: rgba(120, 90, 210, 0.15); margin: 14px 0; }
+
+.small-note { font-size: 0.92rem; opacity: 0.88; text-align:center; margin-top: 8px; }
+
+.tarot-grid {
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.tarot-item {
+  width: 210px;
+  max-width: 48%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 16px;
+  padding: 10px;
+}
+.tarot-title {
+  font-weight: 900;
+  margin-top: 8px;
+  font-size: 1.05rem;
+}
+.tarot-meta {
+  opacity: 0.85;
+  font-size: 0.92rem;
+  margin-top: 4px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# =========================================================
+# 4) MBTI: Direct / 12 / 16 (변화 금지 요구 반영)
+# =========================================================
+MBTI_TYPES = [
+    "INTJ","INTP","ENTJ","ENTP",
+    "INFJ","INFP","ENFJ","ENFP",
+    "ISTJ","ISFJ","ESTJ","ESFJ",
+    "ISTP","ISFP","ESTP","ESFP"
+]
+
+MBTI_Q_12 = [
+    ("EI", "사람들과 있을 때 에너지가 더 생긴다", "혼자 있을 때 에너지가 더 생긴다"),
+    ("SN", "현실적인 정보가 편하다", "가능성/아이디어가 편하다"),
+    ("TF", "결정은 논리/원칙이 우선", "결정은 사람/상황 배려가 우선"),
+    ("JP", "계획대로 진행해야 마음이 편하다", "유연하게 바뀌어도 괜찮다"),
+
+    ("EI", "말하며 생각이 정리된다", "생각한 뒤 말하는 편이다"),
+    ("SN", "경험/사실을 믿는 편", "직감/영감을 믿는 편"),
+    ("TF", "피드백은 직설이 낫다", "피드백은 부드럽게가 낫다"),
+    ("JP", "마감 전에 미리 끝내는 편", "마감 직전에 몰아서 하는 편"),
+
+    ("EI", "주말엔 약속이 있으면 좋다", "주말엔 혼자 쉬고 싶다"),
+    ("SN", "설명은 구체적으로", "설명은 큰그림으로"),
+    ("TF", "갈등은 원인/해결이 우선", "갈등은 감정/관계가 우선"),
+    ("JP", "정리/정돈이 잘 되어야 편하다", "어수선해도 일단 진행 가능"),
+]
+
+MBTI_Q_16_EXTRA = [
+    ("EI", "새로운 사람을 만나면 설렌다", "새로운 사람은 적응 시간이 필요"),
+    ("SN", "지금 필요한 현실이 중요", "미래 가능성이 더 중요"),
+    ("TF", "공정함이 최우선", "조화로움이 최우선"),
+    ("JP", "일정이 확정되어야 안심", "상황에 따라 바뀌는 게 자연스럽다"),
+]
+
+def compute_mbti_from_answers(answers):
+    # answers: list of (axis, pick_left_bool)
+    scores = {"EI":0, "SN":0, "TF":0, "JP":0}
+    counts = {"EI":0, "SN":0, "TF":0, "JP":0}
+    for axis, pick_left in answers:
+        if axis in scores:
+            counts[axis] += 1
+            if pick_left:
+                scores[axis] += 1
+
+    def decide(axis, left_char, right_char):
+        if counts[axis] == 0:
+            return left_char
+        return left_char if scores[axis] >= (counts[axis]/2) else right_char
+
+    mbti = f"{decide('EI','E','I')}{decide('SN','S','N')}{decide('TF','T','F')}{decide('JP','J','P')}"
+    return mbti if mbti in MBTI_TYPES else "ENFP"
+
+# =========================================================
+# 5) Zodiac
+# =========================================================
+ZODIAC_ORDER = ["rat","ox","tiger","rabbit","dragon","snake","horse","goat","monkey","rooster","dog","pig"]
+ZODIAC_LABEL_KO = {
+    "rat":"쥐띠","ox":"소띠","tiger":"호랑이띠","rabbit":"토끼띠","dragon":"용띠","snake":"뱀띠",
+    "horse":"말띠","goat":"양띠","monkey":"원숭이띠","rooster":"닭띠","dog":"개띠","pig":"돼지띠"
+}
+def calc_zodiac_key(year: int) -> str:
+    return ZODIAC_ORDER[(year - 4) % 12]
+
+# =========================================================
+# 6) Fortune DB selection (생년월일 기반 "항상 동일" 고정)
+# =========================================================
+def pick_from_list_deterministic(items, seed_int: int):
+    if not items:
+        return None
+    rng = random.Random(seed_int)
+    return items[rng.randrange(0, len(items))]
+
+def get_fortune_bundle(db: dict, zodiac_ko: str, mbti: str, y: int, m: int, d: int, name: str):
+    """
+    fortunes_ko.json의 구조는 너가 만든 버전 기준으로:
+    db["zodiac_mbti"][ "<띠>_<MBTI>" ] 안에 항목들이 있다고 가정.
+    fallback도 처리.
+    """
+    key = f"{zodiac_ko}_{mbti}"
+    block = (db.get("zodiac_mbti") or {}).get(key)
+
+    # seed: 생년월일+mbti+띠+이름
+    base_seed = stable_seed(y, m, d, zodiac_ko, mbti, name)
+
+    # DB가 없거나 key가 없으면 fallback 사용
+    if not isinstance(block, dict):
+        block = (db.get("fallback") or {})
+
+    # 여기서는 "항목명"을 최대한 유연하게 뽑음 (DB가 조금 달라도 깨지지 않게)
+    def pick(field, salt):
+        items = block.get(field)
+        if isinstance(items, list):
+            return pick_from_list_deterministic(items, base_seed + salt)
+        if isinstance(items, str) and items.strip():
+            return items.strip()
+        return None
+
+    bundle = {
+        "zodiac_fortune": pick("zodiac_fortune", 11) or pick("띠운세", 11) or "",
+        "mbti_traits":    pick("mbti_traits", 22) or pick("mbti특징", 22) or "",
+        "saju_one":       pick("saju_one", 33) or pick("사주한마디", 33) or "",
+        "today":          pick("today", 44) or pick("오늘운세", 44) or "",
+        "tomorrow":       pick("tomorrow", 55) or pick("내일운세", 55) or "",
+        "year_all":       pick("year_all", 66) or pick("2026전체운세", 66) or "",
+        "combo_advice":   pick("combo_advice", 77) or pick("조합조언", 77) or "",
+        "action_tip":     pick("action_tip", 88) or pick("오늘의액션팁", 88) or "",
     }
+    return bundle
 
-# =========================
-# MBTI quiz (변화금지)
-# =========================
-MBTI_12 = [
-    ("E","I","새 사람 만나면 에너지가 난다 / 혼자 있으면 에너지가 난다"),
-    ("E","I","말로 먼저 풀어야 된다 / 생각 정리 후 말한다"),
-    ("E","I","모임이 많을수록 신난다 / 적을수록 편하다"),
-    ("S","N","현실/사실이 중요 / 의미/가능성이 중요"),
-    ("S","N","디테일이 강점 / 큰 그림이 강점"),
-    ("S","N","경험이 우선 / 아이디어가 우선"),
-    ("T","F","원칙/논리가 우선 / 가치/공감이 우선"),
-    ("T","F","문제 해결이 먼저 / 사람 마음이 먼저"),
-    ("T","F","팩트가 중요 / 분위기가 중요"),
-    ("J","P","계획대로가 편함 / 유연하게가 편함"),
-    ("J","P","마감 전에 끝냄 / 막판 집중"),
-    ("J","P","정리정돈 선호 / 즉흥적 배치도 OK"),
-]
+# =========================================================
+# 7) Tarot (78장) - 이미지 + 텍스트 / 정·역방향 / 질문유형
+# =========================================================
+def tarot_image_path(card: dict) -> str:
+    """
+    tarot_db_ko.json 카드 항목에서 파일명을 찾는 방식:
+    - card["image"] 가 있으면 그걸 사용
+    - 없으면 major/minor 추론해서 생성
+    """
+    img = card.get("image")
+    if isinstance(img, str) and img.strip():
+        # image에 "majors/00_the_fool.png" 같은 상대경로가 들어있다고 가정
+        cand = os.path.join(TAROT_ASSET_DIR, img)
+        return cand
 
-MBTI_16 = [
-    # 각 축 4문항(총 16)
-    ("E","I","낯선 자리에서도 먼저 인사한다 / 조용히 관찰 후 다가간다"),
-    ("E","I","생각보다 말이 먼저 나온다 / 말 전에 생각이 길다"),
-    ("E","I","스트레스는 사람 만나 풀린다 / 혼자 쉬어야 풀린다"),
-    ("E","I","즉흥 약속도 OK / 약속은 미리 잡는 편"),
-    ("S","N","지금 당장 가능한가가 중요 / 언젠가 가능성이 중요"),
-    ("S","N","설명은 구체적으로 / 설명은 비유로"),
-    ("S","N","현재 사실에 집중 / 미래 상상에 집중"),
-    ("S","N","실용성이 최고 / 독창성이 최고"),
-    ("T","F","감정보다 판단이 빠르다 / 판단보다 감정이 먼저다"),
-    ("T","F","직설적으로 말한다 / 돌려 말한다"),
-    ("T","F","정답을 찾는다 / 사람을 챙긴다"),
-    ("T","F","논쟁도 괜찮다 / 갈등은 피하고 싶다"),
-    ("J","P","일정을 세우면 마음이 편하다 / 일정은 상황 보며 바꾼다"),
-    ("J","P","결정이 빠르다 / 결정은 더 고민한다"),
-    ("J","P","정리된 환경 선호 / 자유로운 환경 선호"),
-    ("J","P","할 일 리스트 필수 / 그때그때 처리"),
-]
+    arcana = card.get("arcana")  # "major" / "minor"
+    if arcana == "major":
+        num = card.get("number")
+        slug = card.get("slug") or ""
+        if num is not None and slug:
+            fn = f"{int(num):02d}_{slug}.png"
+            return os.path.join(TAROT_MAJORS_DIR, fn)
 
-def run_mbti_quiz(kind: str) -> str:
-    questions = MBTI_12 if kind == "12문항" else MBTI_16
-    scores = {"E":0,"I":0,"S":0,"N":0,"T":0,"F":0,"J":0,"P":0}
+    if arcana == "minor":
+        suit = card.get("suit")   # wands/cups/swords/pentacles
+        rank = card.get("rank")   # ace,2..10,page,knight,queen,king 등
+        # 네가 56장 다 만들었다면 이 규칙대로 저장하는 걸 추천:
+        # assets/tarot/minors/wands/ace.png ... /king.png
+        if suit and rank:
+            return os.path.join(TAROT_MINORS_DIR, suit, f"{rank}.png")
 
-    st.markdown("#### MBTI 간단 검사")
-    st.markdown("<div class='muted'>모르면 아래 문항으로 빠르게 확인해보세요.</div>", unsafe_allow_html=True)
+    return TAROT_BACK_IMG
 
-    for idx,(a,b,text) in enumerate(questions, start=1):
-        left, right = text.split(" / ")
-        choice = st.radio(
-            f"{idx}. {text}",
-            [a, b],
-            format_func=lambda x: f"{x} · {left}" if x==a else f"{x} · {right}",
-            key=f"q_{kind}_{idx}",
-            horizontal=False,
-        )
-        scores[choice] += 1
+def tarot_draw(db: dict, seed_int: int, n_cards: int = 1):
+    cards = db.get("cards") or []
+    if not isinstance(cards, list) or len(cards) == 0:
+        return []
 
-    mbti = (
-        ("E" if scores["E"]>=scores["I"] else "I") +
-        ("S" if scores["S"]>=scores["N"] else "N") +
-        ("T" if scores["T"]>=scores["F"] else "F") +
-        ("J" if scores["J"]>=scores["P"] else "P")
-    )
-    return mbti
+    rng = random.Random(seed_int)
+    picks = []
+    used = set()
+    tries = 0
+    while len(picks) < n_cards and tries < 5000:
+        tries += 1
+        idx = rng.randrange(0, len(cards))
+        if idx in used:
+            continue
+        used.add(idx)
+        c = cards[idx]
+        reversed_flag = (rng.random() < 0.35)  # 역방향 확률
+        picks.append((c, reversed_flag))
+    return picks
 
-# =========================
-# Google Sheets
-# =========================
-def sheets_available() -> bool:
-    return (gspread is not None) and (Credentials is not None) and ("gcp_service_account" in st.secrets)
+def tarot_interpret(card: dict, reversed_flag: bool, topic: str):
+    """
+    tarot_db_ko.json 카드 구조를 최대한 유연하게 사용:
+    - meaning_upright, meaning_reversed
+    - topics: {love:..., money:..., work:..., health:...}
+    """
+    name = card.get("name_ko") or card.get("name") or "카드"
+    upright = card.get("meaning_upright") or card.get("upright") or ""
+    rev = card.get("meaning_reversed") or card.get("reversed") or ""
 
-def append_to_sheet(row: dict, sheet_id: str = DEFAULT_SHEET_ID, tab: str = DEFAULT_SHEET_TAB) -> bool:
-    if not sheets_available():
-        st.warning("구글시트 연동이 설정되어 있지 않습니다. (st.secrets에 gcp_service_account 필요)")
-        return False
+    base = rev if reversed_flag else upright
+    topic_map = card.get("topics") or {}
 
-    creds_info = st.secrets["gcp_service_account"]
-    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-    creds = Credentials.from_service_account_info(creds_info, scopes=scopes)
+    topic_text = ""
+    if isinstance(topic_map, dict):
+        topic_text = topic_map.get(topic, "")
 
-    gc = gspread.authorize(creds)
-    sh = gc.open_by_key(sheet_id)
-    ws = sh.worksheet(tab)
+    # 최종 텍스트 구성
+    if topic_text and base:
+        return name, base, topic_text
+    if base:
+        return name, base, ""
+    return name, "해석 데이터가 없습니다.", ""
 
-    # 헤더 자동 생성(없으면 1행에 컬럼 생성)
-    existing_header = ws.row_values(1)
-    cols = list(row.keys())
-
-    if not existing_header:
-        ws.append_row(cols, value_input_option="RAW")
-        existing_header = cols
-
-    # header에 없는 컬럼은 뒤에 추가
-    missing = [c for c in cols if c not in existing_header]
-    if missing:
-        # expand header row
-        new_header = existing_header + missing
-        ws.update("1:1", [new_header])
-        existing_header = new_header
-
-    values = [row.get(c, "") for c in existing_header]
-    ws.append_row(values, value_input_option="RAW")
-    return True
-
-def render_sheet_columns_guide():
-    st.markdown("#### 구글시트 컬럼 추천(복붙용)")
-    cols = [
-        "timestamp", "name", "phone",
-        "product_category", "consult_request", "coffee_coupon",
-        "game_result", "game_time_sec",
-        "birthdate", "zodiac", "mbti",
-        "combo_key",
-    ]
-    st.code(", ".join(cols), language="text")
-    st.markdown("<div class='muted'>시트 1행(헤더)에 위 컬럼을 넣어두면 정리가 쉬워요. 없어도 앱이 자동으로 헤더를 만들어줍니다.</div>", unsafe_allow_html=True)
-
-# =========================
-# Stopwatch mini game
-# =========================
-def game_init_state():
-    ss = st.session_state
-    ss.setdefault("game_running", False)
-    ss.setdefault("game_start_ts", None)
-    ss.setdefault("game_last_time", None)
-    ss.setdefault("game_last_result", None)  # "SUCCESS"/"FAIL"
-    ss.setdefault("retry_granted", False)
-    ss.setdefault("retry_used", False)
-
-def game_reset():
-    ss = st.session_state
-    ss["game_running"] = False
-    ss["game_start_ts"] = None
-    ss["game_last_time"] = None
-    ss["game_last_result"] = None
-    ss["retry_granted"] = False
-    ss["retry_used"] = False
-
-def stopwatch_ui():
-    game_init_state()
-    ss = st.session_state
-
-    st.markdown("### 🎮 미니게임: 스톱워치 20.26초 정확히 맞추기")
-    st.markdown("<div class='muted'>정확히 20.26초(±0.15초)로 STOP을 누르면 성공!</div>", unsafe_allow_html=True)
-
-    c1, c2, c3 = st.columns([1,1,2])
-
-    with c1:
-        if st.button("START", use_container_width=True, disabled=ss["game_running"]):
-            ss["game_running"] = True
-            ss["game_start_ts"] = time.time()
-            ss["game_last_time"] = None
-            ss["game_last_result"] = None
-
-    with c2:
-        if st.button("STOP", use_container_width=True, disabled=not ss["game_running"]):
-            elapsed = time.time() - float(ss["game_start_ts"])
-            ss["game_running"] = False
-            ss["game_last_time"] = float(elapsed)
-
-            if abs(elapsed - TARGET_SECONDS) <= SUCCESS_TOLERANCE:
-                ss["game_last_result"] = "SUCCESS"
-            else:
-                ss["game_last_result"] = "FAIL"
-
-    with c3:
-        if ss["game_running"]:
-            st.info("⏱️ 실행 중... STOP을 눌러 기록을 확정하세요.")
-        elif ss["game_last_time"] is not None:
-            st.success(f"기록: {ss['game_last_time']:.2f}초") if ss["game_last_result"]=="SUCCESS" else st.error(f"기록: {ss['game_last_time']:.2f}초")
-
-    # 실패 시: 공유로 1회 재도전
-    if ss["game_last_result"] == "FAIL":
-        if (not ss["retry_granted"]) and (not ss["retry_used"]):
-            st.warning("아깝다! 친구에게 공유하면 **재도전 1회**를 드립니다.")
-            if st.button("친구에게 공유하고 재도전 1회 받기"):
-                ss["retry_granted"] = True
-                st.success("재도전 1회가 활성화되었습니다. 다시 START 해보세요!")
-        elif ss["retry_granted"] and (not ss["retry_used"]):
-            st.info("재도전 1회 가능 상태입니다. 다시 START → STOP!")
-        else:
-            st.info("재도전 기회를 이미 사용했습니다.")
-
-    # 재도전 사용 처리: FAIL에서 retry_granted 상태로 다시 STOP을 누르면 retry_used로 처리
-    if ss["retry_granted"] and ss["game_last_time"] is not None and ss["game_last_result"] == "FAIL":
-        # 첫 실패 후 재도전 granted 상태에서, 다시 FAIL이 확정되는 순간 retry_used 처리
-        # (이미 한 번 FAIL 후 granted 된 상태에서 STOP을 눌렀다는 뜻이므로)
-        if not ss["retry_used"]:
-            ss["retry_used"] = True
-
-    return ss["game_last_result"], ss["game_last_time"]
-
-# =========================
-# Main app
-# =========================
-def ensure_state():
-    ss = st.session_state
-    ss.setdefault("stage", "input")  # input -> result
-    ss.setdefault("name", "")
-    ss.setdefault("birth_y", 1990)
-    ss.setdefault("birth_m", 1)
-    ss.setdefault("birth_d", 1)
-    ss.setdefault("mbti_mode", "직접 선택")
-    ss.setdefault("mbti_selected", "ENFP")
-    ss.setdefault("mbti_quiz_kind", "12문항")
-    ss.setdefault("mbti_from_quiz", None)
-    ss.setdefault("result_payload", None)
-
-def valid_date(y,m,d) -> bool:
-    try:
-        date(y,m,d)
-        return True
-    except Exception:
-        return False
-
-def render_header():
-    st.set_page_config(page_title=APP_TITLE, page_icon="🔮", layout="centered")
-    inject_css()
-
-    st.markdown(f"## {APP_TITLE}")
-    st.markdown("<div class='muted'>띠 + MBTI + 사주 + 오늘/내일 + 2026 전체 운세</div>", unsafe_allow_html=True)
-
-    # 광고 카드
-    card(
-        f"📣 광고: {DANANUM_RENTAL_NAME}",
+# =========================================================
+# 8) Share button (네가 말한 '갤러리 공유 화면' = 시스템 공유시트)
+# =========================================================
+def share_button_native_only(label: str):
+    st.components.v1.html(
         f"""
-        <div style="margin-bottom:8px;">안마의자 · 정수기 · 기타가전 <b>렌탈 상담</b>이 필요하면 아래로!</div>
-        <a href="{DANANUM_RENTAL_URL}" target="_blank" style="text-decoration:none;">
-          <div class="pill">다나눔렌탈 바로가기</div>
-        </a>
-        """,
+<div style="margin: 8px 0;">
+  <button id="btnShare" style="
+    width:100%;
+    border:none;border-radius:999px;
+    padding:12px 14px;
+    font-weight:900;
+    background:#6b4fd6;color:white;
+    cursor:pointer;
+  ">{label}</button>
+</div>
+<script>
+(function() {{
+  const btn = document.getElementById("btnShare");
+  const url = {json.dumps(APP_URL, ensure_ascii=False)};
+  btn.addEventListener("click", async () => {{
+    if (!navigator.share) {{
+      alert("이 기기/브라우저에서는 시스템 공유가 지원되지 않습니다.\\n(모바일 크롬/사파리에서 다시 시도해 주세요)");
+      return;
+    }}
+    try {{
+      await navigator.share({{ title: "2026 운세", text: url, url }});
+      // 공유 성공 시 (재도전 1회 같은 로직은 여기서 shared=1로 넘겨 처리 가능)
+      const u = new URL(window.location.href);
+      u.searchParams.set("shared", "1");
+      window.location.href = u.toString();
+    }} catch (e) {{
+      // 사용자가 취소하면 아무것도 안함
+    }}
+  }});
+}})();
+</script>
+""",
+        height=70
     )
 
-    seo_keywords_block()
+# =========================================================
+# 9) Session State
+# =========================================================
+if "stage" not in st.session_state:
+    st.session_state.stage = "input"
 
-def render_input(db):
-    ss = st.session_state
-    st.markdown("### 입력")
+if "name" not in st.session_state:
+    st.session_state.name = ""
 
-    ss["name"] = st.text_input("이름 (결과에 표시돼요)", value=ss["name"])
+if "y" not in st.session_state:
+    st.session_state.y = 2005
+if "m" not in st.session_state:
+    st.session_state.m = 1
+if "d" not in st.session_state:
+    st.session_state.d = 1
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        ss["birth_y"] = st.number_input("년", min_value=1900, max_value=2100, value=int(ss["birth_y"]), step=1)
-    with col2:
-        ss["birth_m"] = st.number_input("월", min_value=1, max_value=12, value=int(ss["birth_m"]), step=1)
-    with col3:
-        ss["birth_d"] = st.number_input("일", min_value=1, max_value=31, value=int(ss["birth_d"]), step=1)
+if "mbti_mode" not in st.session_state:
+    st.session_state.mbti_mode = "direct"  # direct / 12 / 16
+if "mbti" not in st.session_state:
+    st.session_state.mbti = "ENFP"
 
-    if not valid_date(int(ss["birth_y"]), int(ss["birth_m"]), int(ss["birth_d"])):
-        st.warning("생년월일이 올바르지 않아요. (월/일 확인)")
-        return
+# tarot state
+if "tarot_topic" not in st.session_state:
+    st.session_state.tarot_topic = "love"
+if "tarot_spread" not in st.session_state:
+    st.session_state.tarot_spread = 1
+if "tarot_drawn" not in st.session_state:
+    st.session_state.tarot_drawn = []  # list of dicts for rendering
 
-    st.markdown("---")
-    st.markdown("### MBTI 선택")
-    ss["mbti_mode"] = st.radio(
-        "MBTI를 어떻게 할까요?",
-        ["직접 선택", "모르면 간단 검사(12문항)", "모르면 간단 검사(16문항)"],
-        index=["직접 선택", "모르면 간단 검사(12문항)", "모르면 간단 검사(16문항)"].index(ss["mbti_mode"]),
-    )
+# shared bonus example (재도전 1회 같은 구조에 쓰고 싶으면 여기서 저장)
+qp = {}
+try:
+    qp = dict(st.query_params)
+except Exception:
+    try:
+        qp = st.experimental_get_query_params()
+    except Exception:
+        qp = {}
 
-    mbti = None
-    if ss["mbti_mode"] == "직접 선택":
-        all_types = [
-            "ISTJ","ISFJ","INFJ","INTJ",
-            "ISTP","ISFP","INFP","INTP",
-            "ESTP","ESFP","ENFP","ENTP",
-            "ESTJ","ESFJ","ENFJ","ENTJ",
-        ]
-        ss["mbti_selected"] = st.selectbox("MBTI", all_types, index=all_types.index(ss["mbti_selected"]) if ss["mbti_selected"] in all_types else 10)
-        mbti = ss["mbti_selected"]
+shared_val = qp.get("shared", "0")
+if isinstance(shared_val, list):
+    shared_val = shared_val[0] if shared_val else "0"
+if str(shared_val) == "1":
+    # 지금은 “공유 성공 기록” 정도만 표시 (원하면 미니게임 재도전 로직에 연결하면 됨)
+    st.toast("공유가 완료되었습니다 ✅")
+    # shared 파라미터 제거
+    try:
+        st.query_params.pop("shared", None)
+    except Exception:
+        pass
+
+# =========================================================
+# 10) Load DB
+# =========================================================
+inject_seo_hidden()
+
+fortune_db = load_fortunes_db()
+tarot_db = load_tarot_db()
+
+# =========================================================
+# 11) Screens
+# =========================================================
+def render_input():
+    st.markdown("""
+    <div class="hero">
+      <h1>🔮 2026 띠 + MBTI + 사주 + 오늘/내일 + 타로</h1>
+      <p>완전 무료 · 같은 생년월일이면 결과가 항상 동일하게 나오도록 설계</p>
+      <span class="badge">2026</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.session_state.name = st.text_input("이름 입력 (결과에 표시돼요)", value=st.session_state.name)
+
+    st.markdown("<div class='card'><b>생년월일 입력</b></div>", unsafe_allow_html=True)
+    c1, c2, c3 = st.columns(3)
+    st.session_state.y = c1.number_input("년", min_value=1900, max_value=2030, value=int(st.session_state.y), step=1)
+    st.session_state.m = c2.number_input("월", min_value=1, max_value=12, value=int(st.session_state.m), step=1)
+    st.session_state.d = c3.number_input("일", min_value=1, max_value=31, value=int(st.session_state.d), step=1)
+
+    st.markdown("<div class='card'><b>MBTI</b> (직접 선택 / 12문항 / 16문항)</div>", unsafe_allow_html=True)
+
+    mode_label = {"direct":"직접 선택", "12":"간단 테스트 (12문항)", "16":"상세 테스트 (16문항)"}
+    mode_opts = ["direct","12","16"]
+    idx = mode_opts.index(st.session_state.mbti_mode) if st.session_state.mbti_mode in mode_opts else 0
+
+    st.session_state.mbti_mode = mode_opts[
+        st.radio("", [mode_label[m] for m in mode_opts], index=idx, horizontal=True).strip() and idx
+    ] if False else st.session_state.mbti_mode
+
+    # 위 라디오가 Streamlit 버전마다 가끔 꼬여서, 안정적으로 다시 매핑
+    picked_label = st.radio("", [mode_label[m] for m in mode_opts], index=idx, horizontal=True, key="mbti_mode_radio")
+    inv = {v:k for k,v in mode_label.items()}
+    st.session_state.mbti_mode = inv.get(picked_label, "direct")
+
+    if st.session_state.mbti_mode == "direct":
+        mbti_idx = MBTI_TYPES.index(st.session_state.mbti) if st.session_state.mbti in MBTI_TYPES else MBTI_TYPES.index("ENFP")
+        st.session_state.mbti = st.selectbox("MBTI 선택", MBTI_TYPES, index=mbti_idx)
+
+    elif st.session_state.mbti_mode == "12":
+        st.markdown("<div class='card'><b>MBTI 12문항</b> (각 축 3문항)</div>", unsafe_allow_html=True)
+        answers = []
+        for i, (axis, left_txt, right_txt) in enumerate(MBTI_Q_12, start=1):
+            choice = st.radio(f"{i}. {axis}", [left_txt, right_txt], key=f"mbti12_{i}")
+            answers.append((axis, choice == left_txt))
+        if st.button("제출하고 MBTI 확정", use_container_width=True):
+            st.session_state.mbti = compute_mbti_from_answers(answers)
+            st.success(f"MBTI 확정: {st.session_state.mbti}")
+
     else:
-        kind = "12문항" if "12" in ss["mbti_mode"] else "16문항"
-        mbti = run_mbti_quiz(kind)
-        ss["mbti_from_quiz"] = mbti
-        st.info(f"예상 MBTI: **{mbti}**")
+        st.markdown("<div class='card'><b>MBTI 16문항</b> (각 축 4문항)</div>", unsafe_allow_html=True)
+        answers = []
+        q16 = MBTI_Q_12 + MBTI_Q_16_EXTRA
+        for i, (axis, left_txt, right_txt) in enumerate(q16, start=1):
+            choice = st.radio(f"{i}. {axis}", [left_txt, right_txt], key=f"mbti16_{i}")
+            answers.append((axis, choice == left_txt))
+        if st.button("제출하고 MBTI 확정", use_container_width=True):
+            st.session_state.mbti = compute_mbti_from_answers(answers)
+            st.success(f"MBTI 확정: {st.session_state.mbti}")
 
-    st.markdown("---")
-
-    # 미니게임
-    game_result, game_time = stopwatch_ui()
-
-    st.markdown("---")
-    # 결과보기 버튼 (같은 페이지 + 새창 링크 제공)
+    st.markdown("<div class='bigbtn'>", unsafe_allow_html=True)
     if st.button("결과 보기", use_container_width=True):
-        ss["result_payload"] = {
-            "name": ss["name"],
-            "birth": f"{int(ss['birth_y']):04d}-{int(ss['birth_m']):02d}-{int(ss['birth_d']):02d}",
-            "birth_y": int(ss["birth_y"]),
-            "mbti": mbti,
-            "game_result": game_result,
-            "game_time": game_time,
-        }
-        ss["stage"] = "result"
-        st.query_params["view"] = "result"
+        st.session_state.stage = "result"
         st.rerun()
-
-    st.markdown(
-        "<div class='muted'>TIP) 결과를 새 창으로 보고 싶으면 결과 화면에서 ‘새 창으로 결과보기’를 눌러주세요.</div>",
-        unsafe_allow_html=True,
-    )
-
-def render_result(db):
-    ss = st.session_state
-    payload = ss.get("result_payload") or {}
-
-    name = payload.get("name","")
-    birth_y = int(payload.get("birth_y", 1990))
-    mbti = (payload.get("mbti") or "ENFP").upper()
-    birth = payload.get("birth","")
-    zodiac = zodiac_from_year(birth_y, db)
-    combo_key = get_combo_key(zodiac, mbti)
-
-    st.markdown("## 결과")
-    st.markdown(f"<span class='pill'>DB 경로: {DB_PATH.as_posix()}</span>", unsafe_allow_html=True)
-
-    # 새 창 링크(현재 결과를 새 탭으로)
-    st.markdown(
-        "<div style='margin:8px 0 14px 0;'>"
-        "<a href='?view=result' target='_blank' style='text-decoration:none;'>"
-        "<div class='pill'>🔗 새 창으로 결과보기</div>"
-        "</a>"
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    # combo 존재 확인
-    if combo_key not in db["combos"]:
-        st.error(f"데이터에 조합 키가 없습니다: {combo_key}")
-        st.info("DB의 combos 키에 '띠_MBTI' 형식으로 존재하는지 확인해 주세요. (예: 개_ENTJ)")
-        if st.button("다시 입력"):
-            ss["stage"] = "input"
-            st.query_params.clear()
-            st.rerun()
-        return
-
-    combo = db["combos"][combo_key]
-
-    # 뽑기
-    zodiac_fortune = pick_field(combo, "zodiac_fortune", default="")
-    mbti_trait = pick_field(combo, "mbti_trait", "mbti_traits", default="")
-    saju_message = pick_field(combo, "saju_message", "saju_messages", default="")
-    today = pick_field(combo, "today", "daily_today", default="")
-    tomorrow = pick_field(combo, "tomorrow", "daily_tomorrow", default="")
-    year_2026 = pick_field(combo, "year_2026", default="")
-
-    love = pick_field(combo, "love", default="")
-    money = pick_field(combo, "money", default="")
-    work = pick_field(combo, "work", default="")
-    health = pick_field(combo, "health", default="")
-
-    lucky = get_lucky_point(combo)
-    action_tip = pick_field(combo, "action_tip", "action_tips", default="")
-    caution = pick_field(combo, "caution", "cautions", default="")
-
-    card("띠 운세", f"<b>{zodiac}</b><br/>{zodiac_fortune}")
-    card("MBTI 특징", f"<b>{mbti}</b><br/>{mbti_trait}")
-    card("사주 한 마디", saju_message if saju_message else "—")
-    card("오늘 운세", today if today else "—")
-    card("내일 운세", tomorrow if tomorrow else "—")
-    card("2026 전체 운세", year_2026 if year_2026 else "—")
-
-    st.markdown("### 조합 조언")
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.markdown(f"**연애운:** {love or '—'}")
-    st.markdown(f"**재물운:** {money or '—'}")
-    st.markdown(f"**일/학업운:** {work or '—'}")
-    st.markdown(f"**건강운:** {health or '—'}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("### 행운 포인트")
-    lp_line = f"색: {lucky.get('color','—')} · 아이템: {lucky.get('item','—')} · 숫자: {lucky.get('number','—')} · 방향: {lucky.get('direction','—')}"
-    card("행운 포인트", lp_line)
 
-    if action_tip:
-        card("오늘의 액션팁", action_tip)
-    if caution:
-        card("주의할 점", caution)
+def render_result():
+    name = normalize_text(st.session_state.name)
+    y, m, d = int(st.session_state.y), int(st.session_state.m), int(st.session_state.d)
+    mbti = st.session_state.mbti or "ENFP"
 
-    # =====================
-    # 리드(이름/전화번호) 수집
-    # =====================
-    st.markdown("---")
-    st.markdown("## 🎁 이벤트/상담 신청")
+    zodiac_key = calc_zodiac_key(y)
+    zodiac_ko = ZODIAC_LABEL_KO[zodiac_key]
 
-    # 미니게임 성공이면 반드시 입력
-    game_result = payload.get("game_result")
-    game_time = payload.get("game_time")
-    if game_result == "SUCCESS":
-        st.success("미니게임 성공! 🎉 커피쿠폰 응모/상담 신청을 진행해 주세요.")
-    elif game_result == "FAIL":
-        st.warning("미니게임은 실패했어요. 그래도 상담 신청은 가능해요.")
-    else:
-        st.info("미니게임 기록이 없어요. 그래도 상담 신청은 가능해요.")
+    # ===== 운세: 생년월일 기반 seed 고정 =====
+    fortune_bundle = get_fortune_bundle(
+        fortune_db, zodiac_ko=zodiac_ko, mbti=mbti, y=y, m=m, d=d, name=name
+    )
 
-    with st.expander("📌 (중요) 구글시트 컬럼은 어떻게 만들까요?"):
-        render_sheet_columns_guide()
+    display_name = f"{name}님" if name else ""
+    st.markdown(f"""
+    <div class="hero">
+      <h1>{display_name} 2026 운세</h1>
+      <p>{zodiac_ko} · {mbti}</p>
+      <span class="badge">{y:04d}.{m:02d}.{d:02d}</span>
+    </div>
+    """, unsafe_allow_html=True)
 
-    product_category = st.selectbox("관심 품목", ["안마의자", "정수기", "기타가전"], index=0)
+    # ===== 결과 카드(프리미엄) =====
+    st.markdown("<div class='card-premium'>", unsafe_allow_html=True)
+    st.markdown(f"### ✨ 핵심 요약", unsafe_allow_html=True)
+    st.markdown(f"<div class='sub'>"
+                f"• <b>띠 운세</b>: {fortune_bundle.get('zodiac_fortune','')}"
+                f"<br>• <b>MBTI 특징</b>: {fortune_bundle.get('mbti_traits','')}"
+                f"<br>• <b>사주 한 마디</b>: {fortune_bundle.get('saju_one','')}"
+                f"</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    consult_request = st.radio("상담 요청", ["O", "X"], horizontal=True, index=0)
-    coffee_coupon = st.radio("커피쿠폰 응모", ["O", "X"], horizontal=True, index=0)
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown("### 📌 오늘/내일", unsafe_allow_html=True)
+    st.markdown(f"**오늘 운세**: {fortune_bundle.get('today','')}")
+    st.markdown(f"**내일 운세**: {fortune_bundle.get('tomorrow','')}")
+    st.markdown("<hr class='soft'/>", unsafe_allow_html=True)
+    st.markdown("### 🧭 2026 전체 운세", unsafe_allow_html=True)
+    st.markdown(f"{fortune_bundle.get('year_all','')}")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    # 규칙: '상담 요청 O + 커피쿠폰 X'면 구글시트 입력 금지(요청대로)
-    will_write_sheet = (coffee_coupon == "O")
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown("### 🧩 조합 조언", unsafe_allow_html=True)
+    st.markdown(f"{fortune_bundle.get('combo_advice','')}")
+    st.markdown("<hr class='soft'/>", unsafe_allow_html=True)
+    st.markdown("### ✅ 오늘의 액션팁", unsafe_allow_html=True)
+    st.markdown(f"{fortune_bundle.get('action_tip','')}")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    if consult_request == "O" and coffee_coupon == "X":
-        st.info("안내: **상담 요청 O + 커피쿠폰 X** 선택 시, 구글시트에는 저장하지 않습니다.")
+    # ===== 결과 바로 밑: 친구에게 공유하기 버튼(시스템 공유시트) =====
+    share_button_native_only("📤 친구에게 공유하기")
+    st.caption("버튼을 누르면 휴대폰 ‘공유’ 창(갤러리 공유처럼 뜨는 그 화면)이 열립니다.")
 
-    lead_name = st.text_input("이름", value=name or "")
-    lead_phone = st.text_input("전화번호", placeholder="예) 010-1234-5678")
+    # ===== 광고(다나눔렌탈) =====
+    st.markdown("""
+    <div class="adbox">
+      <small style="font-weight:900;color:#e74c3c;">광고</small><br>
+      <div style="font-size:1.15rem;font-weight:900;margin-top:6px;">
+        다나눔렌탈 정수기 렌탈
+      </div>
+      <div style="margin-top:6px;">제휴카드시 <b>월 0원부터</b></div>
+      <div>설치당일 <b>최대 50만원 + 사은품</b></div>
+      <div style="margin-top:10px;">
+        <a href="https://www.다나눔렌탈.com" target="_blank"
+           style="display:inline-block;background:#ff8c50;color:white;
+           padding:10px 16px;border-radius:999px;font-weight:900;text-decoration:none;">
+          상담 신청하기
+        </a>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    if st.button("제출", use_container_width=True):
-        # 간단 전화번호 검사
-        phone_clean = re.sub(r"[^0-9]", "", lead_phone or "")
-        if len(phone_clean) < 9:
-            st.error("전화번호를 정확히 입력해 주세요.")
-            return
+    # ===== 타로 섹션 (1장/3장 + 질문유형 + 정/역 + 이미지) =====
+    st.markdown("<div class='card-premium'>", unsafe_allow_html=True)
+    st.markdown("### 🃏 타로카드 (고급 카드형)", unsafe_allow_html=True)
+    st.markdown("<div class='sub'>질문 유형과 생년월일 기반으로 ‘같은 입력이면 항상 같은 카드’가 나오도록 고정됩니다.</div>", unsafe_allow_html=True)
 
-        row = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "name": lead_name.strip() if lead_name else "",
-            "phone": lead_phone.strip(),
-            "product_category": product_category,
-            "consult_request": consult_request,
-            "coffee_coupon": coffee_coupon,
-            "game_result": game_result or "",
-            "game_time_sec": f"{float(game_time):.2f}" if isinstance(game_time,(int,float)) else "",
-            "birthdate": birth,
-            "zodiac": zodiac,
-            "mbti": mbti,
-            "combo_key": combo_key,
-        }
-
-        if will_write_sheet:
-            ok = append_to_sheet(row, sheet_id=DEFAULT_SHEET_ID, tab=DEFAULT_SHEET_TAB)
-            if ok:
-                st.success("제출 완료! (구글시트 저장 완료)")
-            else:
-                st.warning("제출은 되었지만 구글시트 저장은 실패했어요. 설정을 확인해 주세요.")
-        else:
-            st.success("제출 완료! (설정에 따라 구글시트에는 저장하지 않았어요)")
-
-    st.markdown("---")
+    topic_label = {
+        "love":"연애/관계",
+        "money":"금전/재물",
+        "work":"일/학업",
+        "health":"건강"
+    }
     colA, colB = st.columns(2)
-    with colA:
-        if st.button("전체 초기화", use_container_width=True):
-            for k in list(st.session_state.keys()):
-                del st.session_state[k]
-            st.query_params.clear()
-            st.rerun()
-    with colB:
-        if st.button("다시 입력", use_container_width=True):
-            ss["stage"] = "input"
-            st.query_params.clear()
-            st.rerun()
+    st.session_state.tarot_topic = colA.selectbox("질문 유형", list(topic_label.keys()),
+                                                 format_func=lambda k: topic_label[k],
+                                                 index=list(topic_label.keys()).index(st.session_state.tarot_topic)
+                                                 if st.session_state.tarot_topic in topic_label else 0)
+    st.session_state.tarot_spread = colB.selectbox("뽑는 장수", [1,3], index=0 if st.session_state.tarot_spread == 1 else 1)
 
-def main():
-    ensure_state()
-    render_header()
+    # draw button
+    if st.button("타로 뽑기", use_container_width=True):
+        # seed를 질문유형/뽑는장수까지 포함해서 고정
+        seed_int = stable_seed("tarot", y, m, d, name, mbti, zodiac_ko, st.session_state.tarot_topic, st.session_state.tarot_spread)
+        picks = tarot_draw(tarot_db, seed_int, n_cards=int(st.session_state.tarot_spread))
 
-    # query param으로 새창 결과보기 지원
-    view = st.query_params.get("view", "")
-    if view == "result" and st.session_state.get("result_payload"):
-        st.session_state["stage"] = "result"
+        drawn = []
+        for card, revflag in picks:
+            title, base_meaning, topic_meaning = tarot_interpret(card, revflag, st.session_state.tarot_topic)
+            img_path = tarot_image_path(card)
+            if not image_exists(img_path):
+                img_path = TAROT_BACK_IMG
 
-    try:
-        db = load_db()
-    except Exception as e:
-        st.error(f"DB 로딩 실패: {e}")
-        st.stop()
+            drawn.append({
+                "title": title,
+                "reversed": bool(revflag),
+                "base": base_meaning,
+                "topic": topic_meaning,
+                "img_path": img_path,
+            })
+        st.session_state.tarot_drawn = drawn
+        st.rerun()
 
-    if st.session_state["stage"] == "input":
-        render_input(db)
-    else:
-        render_result(db)
+    # render drawn cards
+    if st.session_state.tarot_drawn:
+        st.markdown("<div class='tarot-grid'>", unsafe_allow_html=True)
+        for item in st.session_state.tarot_drawn:
+            st.markdown("<div class='tarot-item'>", unsafe_allow_html=True)
+            img = open_image(item["img_path"])
+            if img is not None:
+                # 역방향이면 이미지를 회전
+                if item["reversed"]:
+                    img = img.rotate(180, expand=True)
+                st.image(img, use_container_width=True)
+            else:
+                st.image(TAROT_BACK_IMG, use_container_width=True)
 
-if __name__ == "__main__":
-    main()
+            st.markdown(f"<div class='tarot-title'>{item['title']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='tarot-meta'>{'역방향' if item['reversed'] else '정방향'} · {topic_label.get(st.session_state.tarot_topic,'')}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='soft-box' style='margin-top:8px;'>{item['base']}</div>", unsafe_allow_html=True)
+            if item["topic"]:
+                st.markdown(f"<div class='soft-box' style='margin-top:8px;'><b>질문유형 해석</b><br>{item['topic']}</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ===== 다시하기 =====
+    if st.button("처음부터 다시하기", use_container_width=True):
+        # 전체 초기화(타로/운세 포함)
+        keys_to_keep = []
+        cur = dict(st.session_state)
+        st.session_state.clear()
+        for k in keys_to_keep:
+            if k in cur:
+                st.session_state[k] = cur[k]
+        st.session_state.stage = "input"
+        st.session_state.name = ""
+        st.session_state.y, st.session_state.m, st.session_state.d = 2005, 1, 1
+        st.session_state.mbti_mode = "direct"
+        st.session_state.mbti = "ENFP"
+        st.session_state.tarot_topic = "love"
+        st.session_state.tarot_spread = 1
+        st.session_state.tarot_drawn = []
+        st.rerun()
+
+    st.caption(APP_URL)
+
+# =========================================================
+# 12) Router
+# =========================================================
+if st.session_state.stage == "input":
+    render_input()
+else:
+    render_result()
