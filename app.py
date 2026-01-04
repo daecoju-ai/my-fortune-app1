@@ -1,519 +1,416 @@
-import os
-import json
-import time
-import math
-import glob
-import hashlib
-import datetime as dt
+
+import os, json, time, math, hashlib, glob, datetime as dt
 from typing import Any, Dict, List, Optional, Tuple
 
 import streamlit as st
-from PIL import Image
 
-# ============================================================
+# =========================================================
 # Config
-# ============================================================
-APP_TITLE = "운세 + 타로"
-DATA_DIR = "data"
-DEFAULT_DB_CANDIDATES = [
-    os.path.join(DATA_DIR, "fortunes_ko.json"),
-    os.path.join(DATA_DIR, "fortunes_ko_NO_COMBOS.json"),
-    os.path.join(DATA_DIR, "fortune_db.json"),
-]
+# =========================================================
+st.set_page_config(
+    page_title="운세 · 타로",
+    page_icon="🔮",
+    layout="centered",
+    initial_sidebar_state="collapsed",
+)
 
-# Mini-game (stopwatch) settings
-# "success window": stop time must be between these seconds (inclusive)
+APP_TITLE = "운세 · 타로"
+
+# Success window for stopwatch game (seconds)
 GAME_TARGET_MIN = 20.260
 GAME_TARGET_MAX = 20.269
-GAME_DEFAULT_ATTEMPTS = 3          # 기본 도전 횟수
-GAME_REVIVE_BONUS = 1              # 공유로 부활 1회
-GAME_TICK_SEC = 0.05               # 실시간 타이머 업데이트 간격
-GAME_MAX_RUN_SEC = 60.0            # 너무 오래 눌러도 끊기게 안전장치
+GAME_MAX_ATTEMPTS_PER_DAY = 3  # reset daily per user
 
-KST_OFFSET = dt.timedelta(hours=9)
+# Data files (we will load the first one that exists)
+DB_CANDIDATES = [
+    "data/fortunes_ko_NO_COMBOS.json",
+    "data/fortunes_ko.json",
+    "data/fortunes_ko_FULL_FIXED.json",
+    "data/fortune_db.json",
+]
 
-# ============================================================
-# Helpers: deterministic RNG
-# ============================================================
+TAROT_DB_CANDIDATES = [
+    "data/tarot_db_ko.json",
+    "data/tarot_db.json",
+]
+
+FRAME_IMAGE_CANDIDATES = ["frame.png", "assets/frame.png"]
+
+FONT_CANDIDATES = ["NotoSansKR-Regular.otf", "assets/NotoSansKR-Regular.otf"]
+
+# =========================================================
+# Helpers
+# =========================================================
 def _stable_int_hash(s: str) -> int:
     h = hashlib.sha256(s.encode("utf-8")).hexdigest()
     return int(h[:16], 16)
 
 def _pick(items: List[str], seed: str) -> str:
     if not items:
-        return "—"
+        return "-"
     idx = _stable_int_hash(seed) % len(items)
     return items[idx]
 
 def _now_kst() -> dt.datetime:
-    # Streamlit Cloud is usually UTC; convert to KST
-    return dt.datetime.utcnow() + KST_OFFSET
+    # Streamlit Cloud is usually UTC. We normalize to KST for "today" logic.
+    return dt.datetime.utcnow() + dt.timedelta(hours=9)
 
-def _today_kst_date() -> dt.date:
-    return _now_kst().date()
-
-# ============================================================
-# Zodiac (띠) - "연도 기준 12띠" (현재 구현: 양력 연도 기준)
-# ============================================================
-ZODIAC_ORDER = ["rat", "ox", "tiger", "rabbit", "dragon", "snake",
-                "horse", "goat", "monkey", "rooster", "dog", "pig"]
-
+# Zodiac (12 animal signs) - YEAR based
+ZODIAC_ORDER = ["rat","ox","tiger","rabbit","dragon","snake","horse","goat","monkey","rooster","dog","pig"]
 ZODIAC_LABELS = {
-    "rat": "쥐띠",
-    "ox": "소띠",
-    "tiger": "호랑이띠",
-    "rabbit": "토끼띠",
-    "dragon": "용띠",
-    "snake": "뱀띠",
-    "horse": "말띠",
-    "goat": "양띠",
-    "monkey": "원숭이띠",
-    "rooster": "닭띠",
-    "dog": "개띠",
-    "pig": "돼지띠",
+    "rat":"쥐띠","ox":"소띠","tiger":"호랑이띠","rabbit":"토끼띠","dragon":"용띠","snake":"뱀띠",
+    "horse":"말띠","goat":"양띠","monkey":"원숭이띠","rooster":"닭띠","dog":"개띠","pig":"돼지띠",
 }
 
-def zodiac_from_year(year: int) -> Tuple[str, str]:
-    # 기준: 1900년이 쥐띠
+def zodiac_from_year_solar(year: int) -> Tuple[str, str]:
     idx = (year - 1900) % 12
     key = ZODIAC_ORDER[idx]
     return key, ZODIAC_LABELS.get(key, key)
 
-# ============================================================
-# DB Loading
-# ============================================================
 @st.cache_data(show_spinner=False)
-def load_db() -> Dict[str, Any]:
-    # 1) candidates
-    for p in DEFAULT_DB_CANDIDATES:
-        if os.path.exists(p):
-            with open(p, "r", encoding="utf-8") as f:
+def load_json_first(paths: List[str]) -> Dict[str, Any]:
+    # Expand globs too (defensive)
+    expanded: List[str] = []
+    for p in paths:
+        if any(ch in p for ch in ["*", "?", "["]):
+            expanded.extend(sorted(glob.glob(p)))
+        else:
+            expanded.append(p)
+
+    for path in expanded:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
                 return json.load(f)
 
-    # 2) fallback: any fortunes_ko*.json in data
-    for p in sorted(glob.glob(os.path.join(DATA_DIR, "fortunes_ko*.json"))):
-        if os.path.exists(p):
-            with open(p, "r", encoding="utf-8") as f:
-                return json.load(f)
-
-    return {"__error__": f"DB 파일을 찾을 수 없습니다. data 폴더에 fortunes_ko.json 이 있어야 합니다."}
+    # Not found: give readable error
+    raise FileNotFoundError(
+        "DB 파일을 찾을 수 없습니다. 다음 중 하나가 저장되어 있어야 합니다: "
+        + ", ".join(paths)
+    )
 
 def get_pool(db: Dict[str, Any]) -> Dict[str, List[str]]:
-    # expected: db["pools"]
-    pools = db.get("pools", {})
+    # supports both {pools:{...}} and flat
+    pools = db.get("pools")
     if isinstance(pools, dict):
         return pools
-    return {}
+    # legacy: top-level lists
+    return {k: v for k, v in db.items() if isinstance(v, list)}
 
-# ============================================================
-# Tarot image pick
-# ============================================================
 def pick_tarot_image(seed: str) -> Optional[str]:
-    # assets/tarot/majors/*.png, assets/tarot/minors/*.png, assets/tarot/*.png
+    # Prefer local images in assets/tarot/*
     patterns = [
         "assets/tarot/majors/*.png",
-        "assets/tarot/minors/*.png",
+        "assets/tarot/minor/*.png",
         "assets/tarot/*.png",
-        "assets/tarot/majors/*.jpg",
-        "assets/tarot/minors/*.jpg",
-        "assets/tarot/*.jpg",
-        "assets/tarot/majors/*.webp",
-        "assets/tarot/minors/*.webp",
-        "assets/tarot/*.webp",
+        "assets/tarot/**/*.png",
     ]
     candidates: List[str] = []
     for pat in patterns:
-        candidates.extend(glob.glob(pat))
-    candidates = [c for c in candidates if os.path.exists(c)]
-
+        candidates.extend(sorted(glob.glob(pat, recursive=True)))
     if not candidates:
         return None
-
-    idx = _stable_int_hash(seed) % len(candidates)
+    idx = _stable_int_hash(seed + "|tarot") % len(candidates)
     return candidates[idx]
 
-# ============================================================
-# Build result (NO COMBOS)
-# ============================================================
-MBTI_TRAITS = {
-    "ISTJ": "내향 · 감각 · 논리 · 계획",
-    "ISFJ": "내향 · 감각 · 감정 · 계획",
-    "INFJ": "내향 · 직관 · 감정 · 계획",
-    "INTJ": "내향 · 직관 · 논리 · 계획",
-    "ISTP": "내향 · 감각 · 논리 · 유연",
-    "ISFP": "내향 · 감각 · 감정 · 유연",
-    "INFP": "내향 · 직관 · 감정 · 유연",
-    "INTP": "내향 · 직관 · 논리 · 유연",
-    "ESTP": "외향 · 감각 · 논리 · 유연",
-    "ESFP": "외향 · 감각 · 감정 · 유연",
-    "ENFP": "외향 · 직관 · 감정 · 유연",
-    "ENTP": "외향 · 직관 · 논리 · 유연",
-    "ESTJ": "외향 · 감각 · 논리 · 계획",
-    "ESFJ": "외향 · 감각 · 감정 · 계획",
-    "ENFJ": "외향 · 직관 · 감정 · 계획",
-    "ENTJ": "외향 · 직관 · 논리 · 계획",
-}
+def share_block(title: str, text: str) -> None:
+    """
+    Web Share API (mobile share sheet).
+    Works on most mobile browsers if user action triggers it.
+    """
+    import streamlit.components.v1 as components
+    # We keep the JS minimal; Streamlit wraps in iframe, but on mobile it often still works.
+    js = f"""
+    <script>
+    const shareData = {{
+      title: {json.dumps(title)},
+      text: {json.dumps(text)},
+      url: window.location.href
+    }};
+    async function doShare(){{
+      try {{
+        if (navigator.share) {{
+          await navigator.share(shareData);
+          const el = document.getElementById("share-status");
+          if (el) el.innerText = "공유창을 열었습니다.";
+        }} else {{
+          const el = document.getElementById("share-status");
+          if (el) el.innerText = "이 기기는 공유 기능을 지원하지 않습니다. 주소를 복사해 주세요.";
+        }}
+      }} catch (e) {{
+        const el = document.getElementById("share-status");
+        if (el) el.innerText = "공유를 취소했거나, 브라우저 제한이 있습니다.";
+      }}
+    }}
+    doShare();
+    </script>
+    <div id="share-status" style="font-size:14px; opacity:0.8; margin-top:4px;"></div>
+    """
+    components.html(js, height=40)
 
+def ensure_session_defaults():
+    if "page" not in st.session_state:
+        st.session_state.page = "home"  # home | result | game
+    if "last_result" not in st.session_state:
+        st.session_state.last_result = None
+    if "game" not in st.session_state:
+        st.session_state.game = {
+            "running": False,
+            "t0": None,
+            "last_elapsed": None,
+            "attempts": 0,
+            "day_key": None,
+        }
+
+def reset_attempts_if_new_day(user_key: str):
+    g = st.session_state.game
+    today = _now_kst().date().isoformat()
+    day = f"{today}|{user_key}"
+    if g.get("day_key") != day:
+        g["day_key"] = day
+        g["attempts"] = 0
+        g["running"] = False
+        g["t0"] = None
+        g["last_elapsed"] = None
+
+# =========================================================
+# Business logic
+# =========================================================
 def build_result(db: Dict[str, Any], birth: dt.date, mbti: str) -> Dict[str, Any]:
     pools = get_pool(db)
 
-    zodiac_key, zodiac_label = zodiac_from_year(birth.year)
+    zodiac_key, zodiac_label = zodiac_from_year_solar(birth.year)
 
-    # seed base: birth + today
-    today = _today_kst_date()
-    seed_base = f"{birth.isoformat()}|{mbti}|{zodiac_key}|{today.isoformat()}"
+    now = _now_kst()
+    today = now.date()
+    tomorrow = today + dt.timedelta(days=1)
+    year = today.year
 
-    def pick_pool(pool_name: str, extra: str = "") -> str:
+    # Seed base: birth + mbti + zodiac + date
+    seed_today = f"{birth.isoformat()}|{mbti}|{zodiac_key}|{today.isoformat()}"
+    seed_tomorrow = f"{birth.isoformat()}|{mbti}|{zodiac_key}|{tomorrow.isoformat()}"
+    seed_year = f"{birth.isoformat()}|{mbti}|{zodiac_key}|{year}"
+
+    def pick_pool(pool_name: str, seed: str) -> str:
         items = pools.get(pool_name, [])
-        return _pick(items, seed_base + "|" + pool_name + "|" + extra)
-
-    # 띠 한마디: zodiac_one_liner or zodiac_one_liners
-    zodiac_one = "—"
-    if "zodiac_one_liner" in pools:
-        zodiac_one = pick_pool("zodiac_one_liner", zodiac_key)
-    elif "zodiac_one_liners" in pools:
-        zodiac_one = pick_pool("zodiac_one_liners", zodiac_key)
+        return _pick(items, seed)
 
     result = {
-        "zodiac_key": zodiac_key,
         "zodiac_label": zodiac_label,
         "mbti": mbti,
-        "mbti_traits": MBTI_TRAITS.get(mbti, "—"),
-        "zodiac_one_liner": zodiac_one or "—",
-        "saju_one_liner": pick_pool("saju_one_liners", "saju"),
-        "today_fortune": pick_pool("today_fortunes", "today"),
-        "tomorrow_fortune": pick_pool("tomorrow_fortunes", "tomorrow"),
-        "year_overall": pick_pool("year_overall_2026", "2026"),
-        # 조언(조합X): 그냥 advice 풀에서 뽑아서 보여줌
-        "advice": pick_pool("general_advice", "advice"),
-        # 추가 조언(카테고리)
-        "love_advice": pick_pool("love_advice", "love"),
-        "money_advice": pick_pool("money_advice", "money"),
-        "work_study_advice": pick_pool("work_study_advice", "work"),
-        "health_advice": pick_pool("health_advice", "health"),
-        "action_tip": pick_pool("action_tip", "action"),
+
+        "saju_one_liner": pick_pool("saju_one_liners", seed_today) if "saju_one_liners" in pools else pick_pool("saju_one_liner", seed_today),
+        "today_fortune": pick_pool("today_fortunes", seed_today) if "today_fortunes" in pools else pick_pool("today_fortune", seed_today),
+        "tomorrow_fortune": pick_pool("tomorrow_fortunes", seed_tomorrow) if "tomorrow_fortunes" in pools else pick_pool("tomorrow_fortune", seed_tomorrow),
+        "year_overall": pick_pool("year_overalls", seed_year) if "year_overalls" in pools else pick_pool("year_overall", seed_year),
+
+        # "조언" (we show pre-defined pool values; no combo logic)
+        "advice": {
+            "연애": pick_pool("love_advices", seed_today) if "love_advices" in pools else pick_pool("love_advice", seed_today),
+            "금전": pick_pool("money_advices", seed_today) if "money_advices" in pools else pick_pool("money_advice", seed_today),
+            "일/학업": pick_pool("work_study_advices", seed_today) if "work_study_advices" in pools else pick_pool("work_study_advice", seed_today),
+            "건강": pick_pool("health_advices", seed_today) if "health_advices" in pools else pick_pool("health_advice", seed_today),
+            "오늘의 액션": pick_pool("action_tips", seed_today) if "action_tips" in pools else pick_pool("action_tip", seed_today),
+            "조언": pick_pool("advice", seed_today),
+        },
+        "tarot_path": pick_tarot_image(seed_today),
     }
+    # normalize blanks
+    for k in ["saju_one_liner","today_fortune","tomorrow_fortune","year_overall"]:
+        if not result.get(k):
+            result[k] = "-"
+    for k,v in list(result["advice"].items()):
+        if not v:
+            result["advice"][k] = "-"
     return result
 
-# ============================================================
-# UI helpers
-# ============================================================
-def inject_styles():
-    st.markdown(
-        """
-        <style>
-          .card {
-            border-radius: 14px;
-            padding: 16px 18px;
-            border: 1px solid rgba(0,0,0,0.08);
-            background: rgba(255,255,255,0.7);
-            backdrop-filter: blur(6px);
-          }
-          .card-result {
-            background: linear-gradient(135deg, rgba(255, 240, 246, 0.7), rgba(240, 248, 255, 0.7));
-          }
-          .small-muted { color: rgba(0,0,0,0.55); font-size: 0.92rem; }
-          .big { font-size: 2.1rem; font-weight: 800; margin: 0.4rem 0 0.2rem 0; }
-          .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-          .game-box {
-            border-radius: 14px;
-            padding: 14px 16px;
-            border: 1px dashed rgba(0,0,0,0.18);
-            background: rgba(255,255,255,0.55);
-          }
-          .pill {
-            display:inline-block;
-            padding: 6px 10px;
-            border-radius: 999px;
-            border: 1px solid rgba(0,0,0,0.12);
-            background: rgba(255,255,255,0.75);
-            margin-right: 6px;
-            font-size: 0.9rem;
-          }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+# =========================================================
+# UI: Home
+# =========================================================
+def render_home(db: Dict[str, Any]):
+    st.title(APP_TITLE)
+    st.caption("생년월일 + MBTI로 오늘의 한 줄 운세와 타로를 보여드려요.")
 
-def copy_url_button(label: str = "친구에게 공유하기 (URL 복사)"):
-    # JS clipboard copy
-    st.components.v1.html(
-        f"""
-        <button id="copyBtn" style="
-            width:100%;
-            padding:12px 14px;
-            border-radius:12px;
-            border:1px solid rgba(0,0,0,0.15);
-            background:white;
-            font-weight:700;
-            cursor:pointer;
-        ">{label}</button>
-        <script>
-          const btn = document.getElementById("copyBtn");
-          btn.addEventListener("click", async () => {{
-            try {{
-              await navigator.clipboard.writeText(window.location.href);
-              btn.innerText = "복사 완료! (붙여넣기 하면 돼요)";
-              setTimeout(()=>btn.innerText="{label}", 1600);
-            }} catch (e) {{
-              btn.innerText = "복사 실패: 브라우저 권한 확인";
-              setTimeout(()=>btn.innerText="{label}", 1600);
-            }}
-          }});
-        </script>
-        """,
-        height=60
-    )
-
-# ============================================================
-# Mini-game state stored in URL query params + session
-# ============================================================
-def _get_query_int(key: str, default: int) -> int:
-    try:
-        # Streamlit new API
-        v = st.query_params.get(key, None)
-        if v is None:
-            return default
-        if isinstance(v, list):
-            v = v[0] if v else None
-        return int(v)
-    except Exception:
-        return default
-
-def _set_query_int(key: str, value: int):
-    try:
-        st.query_params[key] = str(value)
-    except Exception:
-        # fallback for older streamlit
-        st.experimental_set_query_params(**{key: str(value)})
-
-def _get_query_str(key: str, default: str = "") -> str:
-    try:
-        v = st.query_params.get(key, None)
-        if v is None:
-            return default
-        if isinstance(v, list):
-            v = v[0] if v else ""
-        return str(v)
-    except Exception:
-        return default
-
-def _set_query_str(key: str, value: str):
-    try:
-        st.query_params[key] = value
-    except Exception:
-        st.experimental_set_query_params(**{key: value})
-
-def init_game_state():
-    if "game_inited" in st.session_state:
-        return
-
-    # attempts persisted in URL
-    attempts = _get_query_int("attempts", GAME_DEFAULT_ATTEMPTS)
-    revived_day = _get_query_str("revived_day", "")
-
-    st.session_state.game_attempts = max(0, attempts)
-    st.session_state.game_revived_day = revived_day
-    st.session_state.game_running = False
-    st.session_state.game_start_ts = None
-    st.session_state.game_last_stop = None
-    st.session_state.game_message = ""
-    st.session_state.game_inited = True
-
-def persist_attempts():
-    _set_query_int("attempts", int(st.session_state.game_attempts))
-
-def can_revive_today() -> bool:
-    today = _today_kst_date().isoformat()
-    return st.session_state.game_revived_day != today
-
-def mark_revived_today():
-    today = _today_kst_date().isoformat()
-    st.session_state.game_revived_day = today
-    _set_query_str("revived_day", today)
-
-def start_game():
-    if st.session_state.game_attempts <= 0:
-        st.session_state.game_message = "도전 횟수가 없어요. 공유로 1회 부활할 수 있어요."
-        return
-    st.session_state.game_attempts -= 1
-    persist_attempts()
-
-    st.session_state.game_running = True
-    st.session_state.game_start_ts = time.time()
-    st.session_state.game_last_stop = None
-    st.session_state.game_message = "시작! 목표 구간에 맞춰 STOP!"
-
-def stop_game():
-    if not st.session_state.game_running or not st.session_state.game_start_ts:
-        return
-    elapsed = time.time() - st.session_state.game_start_ts
-    st.session_state.game_running = False
-    st.session_state.game_last_stop = elapsed
-
-    if GAME_TARGET_MIN <= elapsed <= GAME_TARGET_MAX:
-        st.session_state.game_message = f"✅ 성공! {elapsed:.3f}s (목표 {GAME_TARGET_MIN:.3f}~{GAME_TARGET_MAX:.3f})"
-    else:
-        st.session_state.game_message = f"❌ 실패… {elapsed:.3f}s (목표 {GAME_TARGET_MIN:.3f}~{GAME_TARGET_MAX:.3f})"
-
-# ============================================================
-# Main
-# ============================================================
-def main():
-    st.set_page_config(page_title=APP_TITLE, page_icon="🔮", layout="centered")
-    inject_styles()
-
-    DB = load_db()
-    if "__error__" in DB:
-        st.error(DB["__error__"])
-        st.stop()
-
-    st.title("🔮 운세 + 타로")
-    st.caption("생년월일 + MBTI로 오늘/내일/연간 운세와 타로를 보여줘요.")
-
-    # Input
     with st.form("input_form", clear_on_submit=False):
-        col1, col2 = st.columns(2)
-        with col1:
-            birth = st.date_input("생년월일", value=dt.date(2000, 1, 1), min_value=dt.date(1900, 1, 1), max_value=dt.date(2100, 12, 31))
-        with col2:
-            mbti = st.selectbox("MBTI", options=list(MBTI_TRAITS.keys()), index=list(MBTI_TRAITS.keys()).index("INTJ"))
-        submitted = st.form_submit_button("결과 보기")
+        birth = st.date_input("생년월일", value=dt.date(1995,1,1), min_value=dt.date(1900,1,1), max_value=_now_kst().date())
+        mbti = st.text_input("MBTI (예: INTP)", value="INTP", max_chars=4).upper().strip()
+        submit = st.form_submit_button("결과 보기")
 
-    if not submitted:
-        st.stop()
+    if submit:
+        if len(mbti) != 4:
+            st.error("MBTI는 4글자여야 해요. 예: INTP, ENFJ")
+            return
+        result = build_result(db, birth, mbti)
+        st.session_state.last_result = result
+        st.session_state.page = "result"
+        st.rerun()
 
-    # Build result
-    result = build_result(DB, birth, mbti)
+    st.divider()
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("⏱️ 스톱워치 미니게임"):
+            st.session_state.page = "game"
+            st.rerun()
+    with col2:
+        if st.button("📤 친구에게 공유하기"):
+            share_block(APP_TITLE, "내 운세/타로 결과 확인해봐!")
 
-    # Result header card
-    st.markdown('<div class="card card-result">', unsafe_allow_html=True)
-    st.markdown(f"**띠 운세:** {result['zodiac_label']}")
-    st.markdown(f"**MBTI 특징:** {result['mbti_traits']}")
-    st.markdown("</div>", unsafe_allow_html=True)
-    st.write("")
+# =========================================================
+# UI: Result
+# =========================================================
+def render_result():
+    result = st.session_state.last_result
+    if not result:
+        st.warning("결과가 없습니다. 먼저 입력부터 해주세요.")
+        if st.button("처음으로"):
+            st.session_state.page = "home"
+            st.rerun()
+        return
 
-    # Tarot image
-    tarot_seed = f"{birth.isoformat()}|{mbti}|{result['zodiac_key']}|{_today_kst_date().isoformat()}"
-    tarot_path = pick_tarot_image(tarot_seed)
-    if tarot_path and os.path.exists(tarot_path):
-        try:
-            img = Image.open(tarot_path)
-            st.image(img, use_container_width=True)
-        except Exception:
-            st.image(tarot_path, use_container_width=True)
+    st.title("결과")
+    st.write(f"**띠 운세:** {result.get('zodiac_label','-')}")
+    st.write(f"**MBTI:** {result.get('mbti','-')}")
+
+    if result.get("tarot_path") and os.path.exists(result["tarot_path"]):
+        st.image(result["tarot_path"], use_container_width=True)
 
     st.markdown("---")
-
-    # Sections
-    st.subheader("띠 한 마디")
-    st.write(result["zodiac_one_liner"] or "—")
-
     st.subheader("사주 한 마디")
-    st.write(result["saju_one_liner"] or "—")
+    st.write(result.get("saju_one_liner","-"))
 
     st.subheader("오늘 운세")
-    st.write(result["today_fortune"] or "—")
+    st.write(result.get("today_fortune","-"))
 
     st.subheader("내일 운세")
-    st.write(result["tomorrow_fortune"] or "—")
+    st.write(result.get("tomorrow_fortune","-"))
 
     st.subheader("2026 전체 운세")
-    st.write(result["year_overall"] or "—")
+    st.write(result.get("year_overall","-"))
 
     st.subheader("조언")
-    st.write(result["advice"] or "—")
+    # show "조언" pool first if meaningful, then categories
+    adv = result.get("advice", {}) if isinstance(result.get("advice"), dict) else {}
+    if adv.get("조언") and adv.get("조언") != "-":
+        st.write(adv["조언"])
+        st.markdown("---")
+    for label in ["연애","금전","일/학업","건강","오늘의 액션"]:
+        if label in adv and adv[label] and adv[label] != "-":
+            st.markdown(f"**{label}:** {adv[label]}")
 
-    with st.expander("추가 조언(카테고리)", expanded=False):
-        st.markdown(f"- ❤️ 연애: {result['love_advice']}")
-        st.markdown(f"- 💰 금전: {result['money_advice']}")
-        st.markdown(f"- 📚 일/공부: {result['work_study_advice']}")
-        st.markdown(f"- 🧘 건강: {result['health_advice']}")
-        st.markdown(f"- ✅ 오늘의 액션팁: {result['action_tip']}")
+    st.divider()
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        if st.button("⬅️ 처음"):
+            st.session_state.page = "home"
+            st.rerun()
+    with c2:
+        if st.button("📤 공유"):
+            share_block(APP_TITLE, "내 운세/타로 결과 확인해봐!")
+    with c3:
+        if st.button("⏱️ 게임"):
+            st.session_state.page = "game"
+            st.rerun()
 
-    st.markdown("---")
+# =========================================================
+# UI: Stopwatch Game
+# =========================================================
+def render_game():
+    st.title("⏱️ 스톱워치 미니게임")
+    st.caption(f"{GAME_TARGET_MIN:.3f}~{GAME_TARGET_MAX:.3f}초에 맞추면 성공! (하루 {GAME_MAX_ATTEMPTS_PER_DAY}회)")
 
-    # ========================================================
-    # Mini-game (Stopwatch) - restored version
-    # ========================================================
-    st.subheader("🎯 스톱워치 미니게임")
-    st.caption("STOP을 목표 구간에 맞추면 성공! (실시간 타이머)")
+    # user key for daily attempts (semi-stable, privacy-safe)
+    # Uses browser session id if present, else hash of user agent/time bucket
+    user_key = st.session_state.get("_user_key")
+    if not user_key:
+        # This is not perfect, but good enough for daily attempts per session.
+        user_key = hex(_stable_int_hash(str(st.session_state)))[2:10]
+        st.session_state["_user_key"] = user_key
 
-    init_game_state()
+    reset_attempts_if_new_day(user_key)
 
-    # attempts / revive info
-    st.markdown(
-        f"""
-        <div class="game-box">
-          <div class="pill">남은 도전: <b>{st.session_state.game_attempts}</b>회</div>
-          <div class="pill">목표: <span class="mono">{GAME_TARGET_MIN:.3f}~{GAME_TARGET_MAX:.3f}s</span></div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    st.write("")
+    g = st.session_state.game
+    attempts_left = max(0, GAME_MAX_ATTEMPTS_PER_DAY - int(g.get("attempts", 0)))
 
-    # Controls
-    colA, colB = st.columns(2)
-    with colA:
-        if st.button("▶️ START", use_container_width=True, disabled=st.session_state.game_running):
-            start_game()
-    with colB:
-        if st.button("⏹️ STOP", use_container_width=True, disabled=not st.session_state.game_running):
-            stop_game()
-
-    # Live timer area
+    # Display
     timer_box = st.empty()
+    status_box = st.empty()
+    info_box = st.empty()
 
-    if st.session_state.game_running and st.session_state.game_start_ts:
-        # run live update loop for this rerun
-        start_ts = st.session_state.game_start_ts
-        # keep updating for a short time in this script run;
-        # if user hits STOP, streamlit reruns and will exit loop naturally
-        t0 = time.time()
-        while st.session_state.game_running:
-            elapsed = time.time() - start_ts
-            timer_box.markdown(f"<div class='big mono'>{elapsed:0.3f}s</div>", unsafe_allow_html=True)
+    now = time.time()
+    elapsed = None
+    if g.get("running") and g.get("t0") is not None:
+        elapsed = now - float(g["t0"])
 
-            # safety cutoff
-            if elapsed >= GAME_MAX_RUN_SEC or (time.time() - t0) > GAME_MAX_RUN_SEC:
-                st.session_state.game_running = False
-                st.session_state.game_last_stop = elapsed
-                st.session_state.game_message = f"시간 초과로 종료 ({elapsed:.3f}s)"
-                break
+    # UI controls
+    colA, colB, colC = st.columns(3)
+    with colA:
+        start_disabled = g.get("running") or attempts_left <= 0
+        if st.button("START", disabled=start_disabled, use_container_width=True):
+            g["running"] = True
+            g["t0"] = time.time()
+            g["last_elapsed"] = None
+            g["attempts"] = int(g.get("attempts", 0)) + 1
+            st.rerun()
 
-            time.sleep(GAME_TICK_SEC)
-            # allow UI to breathe
-            st.session_state.game_running = st.session_state.game_running
-        # after loop ends, show final time
-        if st.session_state.game_last_stop is not None:
-            timer_box.markdown(f"<div class='big mono'>{st.session_state.game_last_stop:0.3f}s</div>", unsafe_allow_html=True)
+    with colB:
+        stop_disabled = (not g.get("running"))
+        if st.button("STOP", disabled=stop_disabled, use_container_width=True):
+            g["running"] = False
+            if g.get("t0") is not None:
+                g["last_elapsed"] = time.time() - float(g["t0"])
+            st.rerun()
+
+    with colC:
+        if st.button("처음으로", use_container_width=True):
+            st.session_state.page = "home"
+            st.rerun()
+
+    # Render timer + status
+    shown = elapsed if elapsed is not None else g.get("last_elapsed")
+    if shown is None:
+        timer_box.markdown("### 0.000 s")
     else:
-        # not running
-        if st.session_state.game_last_stop is not None:
-            timer_box.markdown(f"<div class='big mono'>{st.session_state.game_last_stop:0.3f}s</div>", unsafe_allow_html=True)
+        timer_box.markdown(f"### {shown:0.3f} s")
+
+    info_box.write(f"남은 도전: **{attempts_left}** / {GAME_MAX_ATTEMPTS_PER_DAY}")
+
+    if (not g.get("running")) and g.get("last_elapsed") is not None:
+        val = float(g["last_elapsed"])
+        if GAME_TARGET_MIN <= val <= GAME_TARGET_MAX:
+            status_box.success("🎉 성공! 완벽합니다.")
         else:
-            timer_box.markdown(f"<div class='big mono'>0.000s</div>", unsafe_allow_html=True)
+            status_box.error("아쉽! 다시 도전해보세요.")
 
-    if st.session_state.game_message:
-        st.info(st.session_state.game_message)
+    # LIVE timer: while running, rerun frequently
+    if g.get("running"):
+        # throttle (20 fps)
+        time.sleep(0.05)
+        st.rerun()
 
-    st.write("")
+# =========================================================
+# Main
+# =========================================================
+def main():
+    ensure_session_defaults()
 
-    # Share + revive (once per day)
-    st.markdown("**친구에게 공유하면 부활 찬스 1회! (하루 1번)**")
-    copy_url_button("친구에게 공유하기 (URL 복사)")
+    # Load DB
+    try:
+        db = load_json_first(DB_CANDIDATES)
+    except Exception as e:
+        st.error(f"DB 로딩 실패: {e}")
+        st.stop()
 
-    if st.button("공유 완료했어요 → 부활 1회 받기", use_container_width=True):
-        if can_revive_today():
-            st.session_state.game_attempts += GAME_REVIVE_BONUS
-            persist_attempts()
-            mark_revived_today()
-            st.success("부활 1회 지급 완료! 남은 도전 횟수가 늘었어요.")
-        else:
-            st.warning("오늘은 이미 부활을 받았어요. 내일 다시 받을 수 있어요.")
+    # Simple router (session_state 기반)
+    page = st.session_state.get("page", "home")
 
-    st.caption("※ 도전 횟수는 URL에 저장되어 새로고침해도 유지됩니다.")
+    if page == "home":
+        render_home(db)
+    elif page == "result":
+        render_result()
+    elif page == "game":
+        render_game()
+    else:
+        st.session_state.page = "home"
+        st.rerun()
 
 if __name__ == "__main__":
     main()
