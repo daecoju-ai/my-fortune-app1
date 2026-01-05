@@ -1,448 +1,528 @@
+
 import streamlit as st
 import json, os, hashlib
 from datetime import date, datetime, timedelta
-import streamlit.components.v1 as components
+from typing import Any, Dict, List, Optional
 
-# ============================================================
-# 2026 운세 + 타로 + 이벤트 스톱워치 (Streamlit)
-# - DB 조합(combo) 금지: DB는 "pools"만 사용
-# - DB 파일명 고정: data/fortunes_ko_2026.json
-# ============================================================
-
-APP_TITLE = "2026 운세 | 띠 + MBTI + 사주 + 오늘/내일 운세 + 타로"
-DB_PATH = "data/fortunes_ko_2026.json"
-
-# ------------------------------------------------------------
-# Helpers
-# ------------------------------------------------------------
-def _sha_int(s: str) -> int:
-    return int(hashlib.sha256(s.encode("utf-8")).hexdigest(), 16)
-
-@st.cache_data(show_spinner=False)
-def load_db() -> dict:
-    if not os.path.exists(DB_PATH):
-        st.error(f"DB 파일이 없습니다: {DB_PATH}\n\nGitHub 저장소에 이 파일이 업로드되어 있는지 확인해주세요.")
-        st.stop()
-    with open(DB_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-def pick_pool(pools: dict, key: str, seed: str) -> str:
-    arr = pools.get(key) or []
-    if not arr:
-        return ""
-    idx = _sha_int(seed) % len(arr)
-    return arr[idx]
-
-def norm_mbti(s: str) -> str:
-    s = (s or "").strip().upper()
-    if len(s) != 4:
-        return ""
-    ok = set("EISNTFJP")
-    return s if all(c in ok for c in s) else ""
-
-def zodiac_from_year_solar(y: int) -> str:
-    # 1900=rat 기준
-    order = ["쥐","소","호랑이","토끼","용","뱀","말","양","원숭이","닭","개","돼지"]
-    return order[(y - 1900) % 12]
-
-def seed_for_day(birth: date, mbti: str, d: date, salt: str) -> str:
-    # 날짜별(오늘/내일) 고정 결과: 같은 날 같은 입력이면 동일
-    return f"{birth.isoformat()}|{mbti}|{d.isoformat()}|{salt}|2026"
-
-# ------------------------------------------------------------
-# Share component (Web Share API + URL copy)
-# ------------------------------------------------------------
-def share_block(title: str, text: str):
-    # 공유가 막히면 URL 복사로 안내
-    html = f"""
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button id="shareBtn" style="padding:10px 14px;border-radius:12px;border:1px solid rgba(120,120,160,.35);background:white;cursor:pointer;">
-        친구에게 공유하기
-      </button>
-      <button id="copyBtn" style="padding:10px 14px;border-radius:12px;border:1px solid rgba(120,120,160,.35);background:white;cursor:pointer;">
-        URL 복사
-      </button>
-      <span id="msg" style="font-size:14px; color: #444;"></span>
-    </div>
-    <script>
-      const msg = document.getElementById('msg');
-      async function copyUrl() {{
-        try {{
-          await navigator.clipboard.writeText(window.location.href);
-          msg.textContent = "URL이 복사되었습니다.";
-        }} catch(e) {{
-          msg.textContent = "복사가 막혔습니다. 주소창 URL을 길게 눌러 복사해주세요.";
-        }}
-      }}
-      document.getElementById('copyBtn').addEventListener('click', copyUrl);
-      document.getElementById('shareBtn').addEventListener('click', async () => {{
-        try {{
-          if (!navigator.share) throw new Error("no share");
-          await navigator.share({{
-            title: {json.dumps(title)},
-            text: {json.dumps(text)},
-            url: window.location.href
-          }});
-          msg.textContent = "공유창을 열었습니다.";
-        }} catch(e) {{
-          // 카톡 인앱 브라우저 등에서 share가 막힐 수 있음 -> URL 복사로 우회
-          await copyUrl();
-        }}
-      }});
-    </script>
-    """
-    components.html(html, height=80)
-
-# ------------------------------------------------------------
-# Stopwatch component (Start/Stop -> stop 순간 기록을 Streamlit로 전달)
-# - 표시: 00.000 (초만, 소수 3자리)
-# - Stop 누르면 즉시 멈춘 화면/기록이 유지됨
-# - Start/Stop 버튼 비활성화 상태 표시
-# ------------------------------------------------------------
-def stopwatch_component(disabled: bool, key: str = "sw") -> float | None:
-    disabled_js = "true" if disabled else "false"
-
-    html = """
-    <div style="
-      background: rgba(255,255,255,0.96);
-      border-radius: 18px;
-      padding: 16px;
-      border: 1px solid rgba(120,120,160,0.18);
-      box-shadow: 0 10px 28px rgba(0,0,0,0.10);
-      max-width: 520px;
-    ">
-      <div style="font-size: 18px; font-weight: 700; margin-bottom: 10px;">⏱️ STOPWATCH</div>
-      <div id="time" style="
-        font-size: 64px; font-weight: 800; letter-spacing: 1px;
-        padding: 16px 18px; border-radius: 16px;
-        background: rgba(84, 84, 255, 0.08);
-        border: 1px solid rgba(84,84,255,0.15);
-        text-align:center;
-      ">00.000</div>
-
-      <div style="display:flex; gap:12px; margin-top:14px;">
-        <button id="startBtn" style="
-          flex:1; padding: 14px 0; border-radius: 14px; border:0;
-          background: #6B5BFF; color: white; font-size: 18px; font-weight: 700; cursor: pointer;
-          opacity: 1;
-        ">START</button>
-        <button id="stopBtn" style="
-          flex:1; padding: 14px 0; border-radius: 14px; border:0;
-          background: #F39B63; color: white; font-size: 18px; font-weight: 700; cursor: pointer;
-          opacity: 0.55;
-        " disabled>STOP</button>
-      </div>
-
-      <div style="margin-top:10px; font-size:14px; color:#444;">
-        START 후 STOP을 눌러 기록을 제출하세요.
-      </div>
-    </div>
-
-    <script>
-      const DISABLED = __DISABLED__;
-      const timeEl = document.getElementById("time");
-      const startBtn = document.getElementById("startBtn");
-      const stopBtn = document.getElementById("stopBtn");
-
-      let running = false;
-      let startTs = 0;
-      let raf = null;
-      let frozen = false;
-      let lastValue = 0;
-
-      function fmt(sec) {
-        // 00.000 형태 (초만 표시)
-        const s = Math.max(0, sec);
-        return s.toFixed(3).padStart(6, "0");
-      }
-
-      function setBtnState() {
-        if (DISABLED) {
-          startBtn.disabled = true;
-          stopBtn.disabled = true;
-          startBtn.style.opacity = "0.55";
-          stopBtn.style.opacity = "0.55";
-          return;
-        }
-        // frozen이면 둘 다 비활성
-        if (frozen) {
-          startBtn.disabled = true;
-          stopBtn.disabled = true;
-          startBtn.style.opacity = "0.55";
-          stopBtn.style.opacity = "0.55";
-          return;
-        }
-        startBtn.disabled = running;
-        stopBtn.disabled = !running;
-
-        startBtn.style.opacity = running ? "0.55" : "1";
-        stopBtn.style.opacity = running ? "1" : "0.55";
-      }
-
-      function tick() {
-        if (!running) return;
-        const now = performance.now();
-        const sec = (now - startTs) / 1000.0;
-        lastValue = sec;
-        timeEl.textContent = fmt(sec);
-        raf = requestAnimationFrame(tick);
-      }
-
-      function sendValue(v) {
-        try {
-          const u = new URL(window.location.href);
-          u.searchParams.set("sw", String(v));
-          u.searchParams.set("sw_ts", String(Date.now()));
-          window.location.href = u.toString();
-        } catch(e) {
-          // 마지막 수단: alert
-          alert("기록: " + String(v));
-        }
-      }
-
-      startBtn.addEventListener("click", () => {
-        if (DISABLED || frozen) return;
-        running = true;
-        frozen = false;
-        startTs = performance.now();
-        lastValue = 0;
-        timeEl.textContent = "00.000";
-        setBtnState();
-        raf = requestAnimationFrame(tick);
-      });
-
-      stopBtn.addEventListener("click", () => {
-        if (DISABLED || frozen) return;
-        if (!running) return;
-        running = false;
-        frozen = true;
-        if (raf) cancelAnimationFrame(raf);
-        // timeEl은 이미 마지막 tick 값이 표시되어 있음
-        setBtnState();
-        sendValue(lastValue);
-      });
-
-      // init
-      setBtnState();
-    </script>
-    """
-    html = html.replace("__DISABLED__", disabled_js)
-    return components.html(html, height=320, key=key)
-
-# ------------------------------------------------------------
-# MBTI 16문항 (모르는 사람용)
-# ------------------------------------------------------------
-MBTI_Q = [
-    ("사람들과 함께 있을 때 에너지가 차는 편이다", "E", "I"),
-    ("새로운 사람을 만나는 것이 비교적 편하다", "E", "I"),
-    ("말로 생각을 정리하는 편이다", "E", "I"),
-    ("혼자 있는 시간이 꼭 필요하다", "I", "E"),
-    ("현실적/구체적인 정보를 더 신뢰한다", "S", "N"),
-    ("아이디어/가능성을 떠올리는 게 즐겁다", "N", "S"),
-    ("경험으로 검증된 방법을 선호한다", "S", "N"),
-    ("비유/상징/숨은 의미를 잘 찾는 편이다", "N", "S"),
-    ("결정할 때 논리가 더 중요하다", "T", "F"),
-    ("결정할 때 사람의 감정이 더 중요하다", "F", "T"),
-    ("피드백이 직설적일 수 있다", "T", "F"),
-    ("분위기를 해치지 않으려 배려한다", "F", "T"),
-    ("계획대로 진행될 때 편하다", "J", "P"),
-    ("즉흥적으로 바꾸는 것도 괜찮다", "P", "J"),
-    ("마감 전에 여유 있게 끝내는 편", "J", "P"),
-    ("마감 직전에 집중력이 올라간다", "P", "J"),
+# =========================
+# 0) App Config
+# =========================
+APP_TITLE = "2026 운세 | 띠 + MBTI + 사주 + 오늘/내일 운세 (타로 포함)"
+DB_PATHS = [
+    os.path.join("data", "fortunes_ko_2026.json"),
+    os.path.join("data", "fortunes_ko_2026_LARGE.json"),  # optional alt name
 ]
 
-def mbti_quiz() -> str:
-    st.markdown("### MBTI를 모르는 분은 16문항으로 선택해보세요")
-    scores = {c: 0 for c in "EISNTFJP"}
-    for i,(q,a,b) in enumerate(MBTI_Q, start=1):
-        v = st.radio(f"{i}. {q}", ["그렇다", "아니다"], horizontal=True, key=f"q{i}")
-        pick = a if v == "그렇다" else b
-        scores[pick] += 1
-    mbti = ""
-    mbti += "E" if scores["E"] >= scores["I"] else "I"
-    mbti += "S" if scores["S"] >= scores["N"] else "N"
-    mbti += "T" if scores["T"] >= scores["F"] else "F"
-    mbti += "J" if scores["J"] >= scores["P"] else "P"
-    st.info(f"예상 MBTI: **{mbti}**")
-    return mbti
+st.set_page_config(page_title=APP_TITLE, page_icon="🔮", layout="centered")
 
-# ------------------------------------------------------------
-# UI
-# ------------------------------------------------------------
-def main():
-    st.set_page_config(page_title=APP_TITLE, page_icon="🔮", layout="centered")
-    db = load_db()
-    pools = db.get("pools") or {}
+# =========================
+# 1) Utilities (No fallback)
+# =========================
+@st.cache_data(show_spinner=False)
+def load_json_first(paths: List[str]) -> Dict[str, Any]:
+    for p in paths:
+        if os.path.exists(p):
+            with open(p, "r", encoding="utf-8") as f:
+                return json.load(f)
+    # fallback 금지: 여기서 바로 에러
+    raise FileNotFoundError("DB 파일을 찾을 수 없습니다: " + ", ".join(paths))
 
-    # pool 필수 확인(없으면 바로 원인 표시)
-    required = ["year_all", "today", "tomorrow", "advice", "action_tip"]
-    missing = [k for k in required if not (pools.get(k) and len(pools.get(k)) > 0)]
+def require_pools(db: Dict[str, Any], keys: List[str]) -> Dict[str, List[str]]:
+    pools = db.get("pools")
+    if not isinstance(pools, dict):
+        raise TypeError("DB 형식 오류: 최상위 'pools'가 없습니다.")
+    missing = [k for k in keys if not pools.get(k)]
     if missing:
-        st.error("DB에 필요한 풀이 비어있습니다: " + ", ".join(missing))
-        st.stop()
+        raise KeyError("DB에 필요한 pool이 비어있습니다: " + ", ".join(missing))
+    return pools  # type: ignore
 
-    st.markdown(
+def stable_int_hash(s: str) -> int:
+    h = hashlib.sha256(s.encode("utf-8")).hexdigest()
+    return int(h[:16], 16)
+
+def pick_from_pool(pool: List[str], seed_key: str) -> str:
+    if not pool:
+        raise ValueError("pool이 비어있습니다.")
+    idx = stable_int_hash(seed_key) % len(pool)
+    return pool[idx]
+
+def fmt_seconds(ms: float) -> str:
+    # seconds with 3 decimals, no minutes
+    sec = max(0.0, ms / 1000.0)
+    return f"{sec:0.3f}"
+
+def phone_normalize(s: str) -> str:
+    return "".join(ch for ch in s if ch.isdigit())
+
+
+def get_query_params() -> Dict[str, List[str]]:
+    """
+    Streamlit 버전별 query param 호환.
+    - 최신: st.query_params (mapping-like, 값이 str 또는 list일 수 있음)
+    - 구버전: st.experimental_get_query_params()
+    """
+    try:
+        qp = getattr(st, "query_params", None)
+        if qp is not None:
+            # qp는 mapping-like
+            out: Dict[str, List[str]] = {}
+            for k in qp.keys():
+                v = qp.get(k)
+                if v is None:
+                    continue
+                if isinstance(v, list):
+                    out[k] = [str(x) for x in v]
+                else:
+                    out[k] = [str(v)]
+            return out
+    except Exception:
+        pass
+    try:
+        return st.experimental_get_query_params()  # type: ignore[attr-defined]
+    except Exception:
+        return {}
+
+def set_query_params(params: Dict[str, str]):
+    try:
+        qp = getattr(st, "query_params", None)
+        if qp is not None:
+            # clear then set
+            try:
+                qp.clear()
+            except Exception:
+                pass
+            for k, v in params.items():
+                qp[k] = v
+            return
+    except Exception:
+        pass
+    try:
+        st.experimental_set_query_params(**params)  # type: ignore[attr-defined]
+    except Exception:
+        return
+
+
+# =========================
+# 2) Share block (Kakao webview safe)
+# =========================
+def share_block(title: str, subtitle: str):
+    st.markdown(f"## {title}")
+    st.markdown(subtitle)
+
+    st.components.v1.html(
         """
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin: 10px 0 4px 0;">
+          <button id="shareBtn" style="padding:10px 14px; border-radius:10px; border:1px solid #ddd; background:white; font-weight:600;">
+            친구에게 공유하기
+          </button>
+          <button id="copyBtn" style="padding:10px 14px; border-radius:10px; border:1px solid #ddd; background:white; font-weight:600;">
+            URL 복사
+          </button>
+        </div>
+        <div id="msg" style="font-size:14px; color:#444; margin-top:6px;"></div>
+
+        <script>
+          const msg = document.getElementById("msg");
+          function show(t){ msg.textContent = t; }
+
+          async function copyUrl(){
+            const url = window.location.href;
+            // 1) Clipboard API
+            try{
+              if (navigator.clipboard && navigator.clipboard.writeText){
+                await navigator.clipboard.writeText(url);
+                show("URL이 복사되었습니다.");
+                return true;
+              }
+            }catch(e){}
+            // 2) execCommand fallback
+            try{
+              const ta = document.createElement("textarea");
+              ta.value = url;
+              ta.style.position = "fixed";
+              ta.style.left = "-9999px";
+              document.body.appendChild(ta);
+              ta.focus();
+              ta.select();
+              const ok = document.execCommand("copy");
+              document.body.removeChild(ta);
+              if(ok){ show("URL이 복사되었습니다."); return true; }
+            }catch(e){}
+            show("이 브라우저에서는 자동 복사가 막혔습니다. 주소창 URL을 길게 눌러 복사해 주세요.");
+            return false;
+          }
+
+          document.getElementById("copyBtn").addEventListener("click", async () => {
+            await copyUrl();
+          });
+
+          document.getElementById("shareBtn").addEventListener("click", async () => {
+            const url = window.location.href;
+            // Kakao/인앱 브라우저에서 navigator.share가 막히는 경우가 많아서 try/catch 후 URL 복사로 우회
+            try{
+              if (navigator.share){
+                await navigator.share({ title: document.title, text: document.title, url });
+                try{
+                  const u = new URL(window.location.href);
+                  u.searchParams.set('shared','1');
+                  window.location.href = u.toString();
+                }catch(e){}
+                show("공유 창이 열렸습니다.");
+              } else {
+                await copyUrl();
+              }
+            } catch(e){
+              await copyUrl();
+            }
+          });
+        </script>
+        """,
+        height=120,
+    )
+
+# =========================
+# 3) Stopwatch component (no manual input)
+# =========================
+def stopwatch_component(disabled: bool):
+    disabled_js = "true" if disabled else "false"
+
+    st.components.v1.html(
+        f"""
         <div style="
-          background: linear-gradient(135deg, rgba(142, 78, 255, .22), rgba(110, 170, 255, .22));
-          border: 1px solid rgba(120,120,160,0.15);
+          background: rgba(255,255,255,0.96);
           border-radius: 18px;
-          padding: 18px 16px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+          padding: 16px;
+          border: 1px solid rgba(140,120,200,0.25);
+          box-shadow: 0 10px 28px rgba(0,0,0,0.08);
+          max-width: 520px;
+        ">
+          <div style="font-weight:800; font-size: 18px; margin-bottom: 10px;">⏱️ STOPWATCH</div>
+
+          <div id="timeBox" style="
+            width: 100%;
+            border-radius: 16px;
+            padding: 18px 10px;
+            text-align:center;
+            font-size: 54px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: rgba(120,90,200,0.08);
+            border: 1px solid rgba(120,90,200,0.18);
+          ">00.000</div>
+
+          <div style="display:flex; gap:12px; margin-top:14px;">
+            <button id="startBtn" style="
+              flex:1; padding:14px 0; border:none; border-radius: 14px;
+              background:#6f59d9; color:white; font-weight:900; font-size:18px;
+              opacity: 1;
+            ">START</button>
+            <button id="stopBtn" style="
+              flex:1; padding:14px 0; border:none; border-radius: 14px;
+              background:#f09a63; color:white; font-weight:900; font-size:18px;
+              opacity: 1;
+            ">STOP</button>
+          </div>
+
+          <div style="margin-top:10px; color:#444; font-size:14px;">
+            START 후 STOP을 눌러 기록을 제출하세요.
+          </div>
+        </div>
+
+        <script>
+          const disabled = {disabled_js};
+
+          const timeBox = document.getElementById("timeBox");
+          const startBtn = document.getElementById("startBtn");
+          const stopBtn = document.getElementById("stopBtn");
+
+          let running = false;
+          let t0 = 0;
+          let raf = null;
+
+          function fmt(ms){
+            const sec = Math.max(0, ms/1000);
+            return sec.toFixed(3).padStart(6, "0"); // e.g., 00.000 ~ 99.999
+          }
+
+          function setDisabled(on){
+            startBtn.disabled = on;
+            stopBtn.disabled = on;
+            const op = on ? 0.45 : 1;
+            startBtn.style.opacity = op;
+            stopBtn.style.opacity = op;
+          }
+
+          function tick(){
+            if (!running) return;
+            const ms = performance.now() - t0;
+            timeBox.textContent = fmt(ms);
+            raf = requestAnimationFrame(tick);
+          }
+
+          function redirectWithResult(s){
+            try{
+              const u = new URL(window.location.href);
+              u.searchParams.set('sw', s);
+              u.searchParams.set('sw_ts', String(Date.now()));
+              window.location.href = u.toString();
+            }catch(e){}
+          }
+
+          function sendValue(obj){
+            // Streamlit component protocol
+            window.parent.postMessage(
+              {{
+                isStreamlitMessage: true,
+                type: "streamlit:setComponentValue",
+                value: obj
+              }},
+              "*"
+            );
+          }
+
+          if (disabled){
+            setDisabled(true);
+          }
+
+          startBtn.addEventListener("click", () => {{
+            if (disabled) return;
+            if (running) return;
+            running = true;
+            t0 = performance.now();
+            timeBox.textContent = "00.000";
+            tick();
+          }});
+
+          stopBtn.addEventListener("click", () => {{
+            if (disabled) return;
+            if (!running) return;
+            running = false;
+            if (raf) cancelAnimationFrame(raf);
+            const ms = performance.now() - t0;
+            const s = fmt(ms);
+            timeBox.textContent = s;
+            // disable immediately after one attempt
+            setDisabled(true);
+            redirectWithResult(s);
+          }});
+        </script>
+        """,
+        height=310,
+    )
+
+# =========================
+# 4) UI (keep simple, don't redesign ads)
+# =========================
+def header_card(birth: Optional[date], mbti: Optional[str]):
+    btxt = birth.isoformat() if birth else "생년월일 입력"
+    mtxt = mbti if mbti else "MBTI 선택"
+    st.markdown(
+        f"""
+        <div style="
+          background: linear-gradient(135deg, rgba(173,127,255,0.35), rgba(120,190,255,0.35));
+          border-radius: 22px;
+          padding: 18px 18px;
+          border: 1px solid rgba(255,255,255,0.55);
+          box-shadow: 0 14px 30px rgba(0,0,0,0.08);
           margin-bottom: 12px;
         ">
-          <div style="font-size:32px; font-weight:800; margin-bottom:6px;">🔮 2026년 운세</div>
-          <div style="font-size:16px; opacity:.85;">띠 + MBTI + 사주 + 오늘/내일 운세 + 타로</div>
-          <div style="font-size:14px; opacity:.75; margin-top:4px;">완전 무료</div>
+          <div style="font-size: 28px; font-weight: 900; margin-bottom: 6px;">🔮 2026년 운세</div>
+          <div style="font-size: 16px; opacity: 0.9;">{btxt} · {mtxt}</div>
+          <div style="margin-top: 10px; display:inline-block; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.65); background: rgba(255,255,255,0.25); font-weight: 800;">
+            🃏 타로 포함
+          </div>
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
+
+MBTI_TYPES = [
+    "ISTJ","ISFJ","INFJ","INTJ",
+    "ISTP","ISFP","INFP","INTP",
+    "ESTP","ESFP","ENFP","ENTP",
+    "ESTJ","ESFJ","ENFJ","ENTJ"
+]
+
+MBTI_QS = [
+    ("에너지", "사람들과 있으면 에너지가 차나요?", "혼자 있을 때 에너지가 차나요?", "E", "I"),
+    ("정보", "사실/경험 중심으로 판단하나요?", "직감/가능성 중심으로 판단하나요?", "S", "N"),
+    ("판단", "논리/원칙이 중요하나요?", "감정/관계가 중요하나요?", "T", "F"),
+    ("생활", "계획대로 하는 편인가요?", "즉흥적으로 하는 편인가요?", "J", "P"),
+]*4  # 16문항
+
+def mbti_from_answers(ans: List[str]) -> str:
+    # 16문항 -> 4축 다수결
+    cnt = {"E":0,"I":0,"S":0,"N":0,"T":0,"F":0,"J":0,"P":0}
+    for a in ans:
+        if a in cnt: cnt[a]+=1
+    return ("E" if cnt["E"]>=cnt["I"] else "I") + \
+           ("S" if cnt["S"]>=cnt["N"] else "N") + \
+           ("T" if cnt["T"]>=cnt["F"] else "F") + \
+           ("J" if cnt["J"]>=cnt["P"] else "P")
+
+# =========================
+# 5) Main
+# =========================
+def main():
+    # Ads (do not change)
+    share_block("다나눔렌탈 상담/이벤트", "다나눔렌탈 1660-2445")
+
+    # Load DB (no fallback)
+    try:
+        db = load_json_first(DB_PATHS)
+        pools = require_pools(db, [
+            "year_all","today","tomorrow",
+            "advice","love_advices","money_advices","work_study_advices","health_advices","action_tips",
+            "saju_one_liner"
+        ])
+    except Exception as e:
+        st.error(str(e))
+        st.stop()
 
     tab1, tab2 = st.tabs(["운세 보기", "이벤트 스톱워치"])
 
+    # -------------------------
+    # TAB 1: Fortune
+    # -------------------------
     with tab1:
-        colA, colB = st.columns([1,1])
-        with colA:
-            birth = st.date_input("생년월일", value=date(2000,1,1), min_value=date(1900,1,1), max_value=date(2026,12,31))
-        with colB:
-            mbti_mode = st.radio("MBTI 입력 방식", ["직접 선택", "16문항"], horizontal=True)
+        # Inputs
+        col1, col2 = st.columns([1,1])
+        with col1:
+            birth = st.date_input("생년월일", value=None)
+        with col2:
+            mbti_mode = st.radio("MBTI 입력 방식", ["드롭다운 선택", "MBTI 모르면 질문 16개"], horizontal=True)
 
-        mbti = ""
-        if mbti_mode == "직접 선택":
-            mbti = st.selectbox("MBTI 선택", [
-                "","ISTJ","ISFJ","INFJ","INTJ",
-                "ISTP","ISFP","INFP","INTP",
-                "ESTP","ESFP","ENFP","ENTP",
-                "ESTJ","ESFJ","ENFJ","ENTJ"
-            ])
+        mbti = None
+        if mbti_mode == "드롭다운 선택":
+            mbti = st.selectbox("MBTI", ["선택"] + MBTI_TYPES)
+            if mbti == "선택":
+                mbti = None
         else:
-            mbti = mbti_quiz()
+            st.caption("MBTI를 모르면 아래 16개 질문에 답하면 자동 계산됩니다.")
+            answers=[]
+            for i, (title, a_txt, b_txt, a_key, b_key) in enumerate(MBTI_QS, start=1):
+                choice = st.radio(f"{i}. {title}", [a_txt, b_txt], horizontal=False, key=f"mbti_q_{i}")
+                answers.append(a_key if choice==a_txt else b_key)
+            mbti = mbti_from_answers(answers)
+            st.info(f"추정 MBTI: **{mbti}**")
 
-        mbti = norm_mbti(mbti)
-        if not mbti:
-            st.warning("MBTI를 선택/완료하면 결과를 보여드릴게요.")
-            return
+        header_card(birth if isinstance(birth, date) else None, mbti)
 
-        zodiac = zodiac_from_year_solar(birth.year)
+        if birth is None or mbti is None:
+            st.warning("생년월일과 MBTI를 입력하면 운세가 표시됩니다.")
+        else:
+            # Seeds (no combo keys; only pools)
+            birth_key = birth.isoformat()
+            today_d = date.today()
+            tomorrow_d = today_d + timedelta(days=1)
 
-        st.markdown("## 결과")
-        st.write(f"띠 운세: **{zodiac}**")
-        st.write(f"MBTI 특징: **{mbti}**")
+            year_text = pick_from_pool(pools["year_all"], f"2026|year_all|{birth_key}|{mbti}")
+            today_text = pick_from_pool(pools["today"], f"2026|today|{today_d.isoformat()}|{birth_key}|{mbti}")
+            tomorrow_text = pick_from_pool(pools["tomorrow"], f"2026|tomorrow|{tomorrow_d.isoformat()}|{birth_key}|{mbti}")
+            saju_one = pick_from_pool(pools["saju_one_liner"], f"2026|saju|{birth_key}|{mbti}")
 
-        # 2026 전체운세: birth+mbti 기반으로 고정
-        seed_year = f"{birth.isoformat()}|{mbti}|year_all|2026"
-        year_text = pick_pool(pools, "year_all", seed_year)
+            # advice categories are fixed per day
+            love = pick_from_pool(pools["love_advices"], f"2026|love|{today_d.isoformat()}|{birth_key}|{mbti}")
+            money = pick_from_pool(pools["money_advices"], f"2026|money|{today_d.isoformat()}|{birth_key}|{mbti}")
+            work = pick_from_pool(pools["work_study_advices"], f"2026|work|{today_d.isoformat()}|{birth_key}|{mbti}")
+            health = pick_from_pool(pools["health_advices"], f"2026|health|{today_d.isoformat()}|{birth_key}|{mbti}")
+            action = pick_from_pool(pools["action_tips"], f"2026|action|{today_d.isoformat()}|{birth_key}|{mbti}")
+            advice = pick_from_pool(pools["advice"], f"2026|advice|{today_d.isoformat()}|{birth_key}|{mbti}")
 
-        # 오늘/내일: 날짜별 seed (같은 날엔 고정)
-        today = date.today()
-        tomorrow = today + timedelta(days=1)
-        today_text = pick_pool(pools, "today", seed_for_day(birth, mbti, today, "today"))
-        tomorrow_text = pick_pool(pools, "tomorrow", seed_for_day(birth, mbti, tomorrow, "tomorrow"))
+            st.markdown("## 결과")
+            st.write(f"**사주 한 줄:** {saju_one}")
+            st.write("")
+            st.write(f"**2026 전체 운세:** {year_text}")
+            st.write("")
+            st.write(f"**오늘 운세:** {today_text}")
+            st.write("")
+            st.write(f"**내일 운세:** {tomorrow_text}")
 
-        advice_text = pick_pool(pools, "advice", seed_for_day(birth, mbti, today, "advice"))
-        action_tip = pick_pool(pools, "action_tip", seed_for_day(birth, mbti, today, "action_tip"))
+            st.markdown("### 조언")
+            st.write(f"- **연애:** {love}")
+            st.write(f"- **금전:** {money}")
+            st.write(f"- **일/학업:** {work}")
+            st.write(f"- **건강:** {health}")
+            st.write(f"- **오늘의 액션:** {action}")
+            st.write(f"- **한 줄 조언:** {advice}")
 
-        st.markdown("### 2026년 전체 운세")
-        st.info(year_text)
-
-        st.markdown("### 오늘 운세")
-        st.success(today_text)
-
-        st.markdown("### 내일 운세")
-        st.warning(tomorrow_text)
-
-        st.markdown("### 조언")
-        st.write(advice_text)
-        st.write(action_tip)
-
-        st.markdown("---")
-        st.markdown("### 다나눔렌탈 상담/이벤트")
-        st.write("다나눔렌탈 1660-2445")
-
-        share_block("2026년 운세", "내 2026년 운세 확인해봐! (띠+MBTI+오늘/내일 운세)")
-
+    # -------------------------
+    # TAB 2: Stopwatch event
+    # -------------------------
     with tab2:
-        st.markdown("### ☕ 커피쿠폰 이벤트")
-        st.caption("선착순 지급 / 소진 시 조기 종료될 수 있습니다.")
-        st.write("목표 구간: **20.260 ~ 20.269초**")
-        # tries
+        st.markdown("## ☕ 커피쿠폰 이벤트")
+        st.write("선착순 지급 / 소진 시 조기 종료될 수 있습니다.")
+        st.write("**목표 구간: 20.260 ~ 20.269초**")
+
         if "tries_left" not in st.session_state:
             st.session_state.tries_left = 1
-        st.write(f"도전 횟수: **{st.session_state.tries_left}/1**")
+        if "sw_result" not in st.session_state:
+            st.session_state.sw_result = None  # dict
 
-        disabled = st.session_state.tries_left <= 0
+        st.write(f"**도전 횟수: {st.session_state.tries_left}/1**")
 
-        value = stopwatch_component(disabled=disabled, key="stopwatch_2026")
+        disabled = st.session_state.tries_left <= 0 or st.session_state.sw_result is not None
+        stopwatch_component(disabled=disabled)
 
-        # STOP을 누르면 JS가 URL에 ?sw=<seconds>&sw_ts=<ms> 를 붙여서 새로고침합니다.
-        qp = dict(st.query_params) if hasattr(st, "query_params") else st.experimental_get_query_params()
-        sw = None
-        try:
-            if isinstance(qp.get("sw"), list):
-                sw = qp.get("sw", [None])[0]
-            else:
-                sw = qp.get("sw")
-        except Exception:
-            sw = None
+        # Query params processing (STOP 결과/공유 보너스)
+        qp = get_query_params()
 
-        if sw is not None:
-            # 같은 값이 새로고침마다 반복 소비되는 것 방지
-            if st.session_state.get("_last_sw_ts") == (qp.get("sw_ts")[0] if isinstance(qp.get("sw_ts"), list) else qp.get("sw_ts")):
-                sw = None
+        # 공유 보너스: shared=1 이면 1회 추가(최대 1회만)
+        if qp.get("shared", ["0"])[0] == "1":
+            if not st.session_state.get("shared_bonus_given", False):
+                st.session_state.shared_bonus_given = True
+                st.session_state.tries_left = min(2, st.session_state.tries_left + 1)  # +1회, 상한 2
+            # shared 파라미터는 지워서 반복 적용 방지
+            set_query_params({k: v[0] for k, v in qp.items() if k != "shared"})
 
-        if sw is not None:
+        sw = qp.get("sw", [None])[0]
+        sw_ts = qp.get("sw_ts", [None])[0]
+        last_ts = st.session_state.get("_last_sw_ts")
 
-            # consume try
+        if sw and sw_ts and sw_ts != last_ts:
+            st.session_state._last_sw_ts = sw_ts
+            # 1회 차감
             if st.session_state.tries_left > 0:
                 st.session_state.tries_left -= 1
 
-            record = float(sw)
-            # query param 정리
-            ts_val = (qp.get("sw_ts")[0] if isinstance(qp.get("sw_ts"), list) else qp.get("sw_ts"))
-            st.session_state["_last_sw_ts"] = ts_val
+            # 성공 판정
             try:
-                st.query_params.clear()
+                t = float(sw)
             except Exception:
-                try:
-                    st.experimental_set_query_params()
-                except Exception:
-                    pass
+                t = -1.0
 
-            st.markdown("#### 기록")
-            st.write(f"**{record:0.3f}초**")
+            success = (20.260 <= t <= 20.269)
+            st.session_state.sw_result = {"t": t, "success": success}
 
-            success = (20.260 <= record <= 20.269)
+            # sw 파라미터 제거(새로고침 시 반복 차감 방지)
+            set_query_params({k: v[0] for k, v in qp.items() if k not in ("sw", "sw_ts")})
+
+        # 결과 표시
+        if st.session_state.sw_result:
+            t = st.session_state.sw_result["t"]
+            success = st.session_state.sw_result["success"]
+            st.markdown("### 결과")
+            st.write(f"기록: **{t:0.3f}초**")
             if success:
-                st.success(f"성공! **{record:0.3f}초** 기록. 쿠폰 지급을 위해 정보를 입력해주세요.")
+                st.success("성공! 쿠폰지급을 위해 아래 정보를 입력해주세요.")
                 with st.form("winner_form"):
                     name = st.text_input("이름")
                     phone = st.text_input("전화번호")
-                    submitted = st.form_submit_button("쿠폰 지급 신청")
+                    submitted = st.form_submit_button("제출")
                 if submitted:
-                    if name.strip() and phone.strip():
-                        st.success("접수되었습니다. 확인 후 쿠폰을 발송해드릴게요.")
+                    if not name.strip() or len(phone_normalize(phone)) < 10:
+                        st.error("이름과 전화번호를 정확히 입력해주세요.")
                     else:
-                        st.error("이름/전화번호를 모두 입력해주세요.")
+                        st.success("접수되었습니다. 담당자가 확인 후 안내드립니다.")
             else:
-                st.error(f"실패! **{record:0.3f}초** 기록.")
-                st.markdown("도전 기회 추가:")
-                st.write("- 친구 공유 시 도전 기회 1회 추가")
-                st.write("- 또는 정수기 렌탈 상담 신청 후 커피쿠폰 응모")
+                st.error("아쉽게도 실패! 공유하면 도전기회 1회 추가됩니다. 또는 정수기렌탈 상담신청 후 커피쿠폰 응모!")
 
-                share_block("커피쿠폰 도전!", "20.260~20.269초 맞추면 커피쿠폰! 같이 해보자.")
-                st.markdown("#### 정수기 렌탈 상담")
-                st.write("다나눔렌탈 1660-2445")
+        st.markdown("---")
+        st.write("성공 구간: **20.260 ~ 20.269초**")
+        st.write("성공시 00.000초 기록. 쿠폰지급을 위해 이름, 전화번호 입력해주세요")
+        st.write("실패시 00.000초 기록 친구공유시 도전기회 1회추가 또는 정수기렌탈 상담신청 후 커피쿠폰 응모")
 
-                if st.button("처음부터 다시"):
-                    # 버튼은 기록 확인 후에만 보이므로, 누르면 새로고침/초기화
-                    st.session_state.tries_left = 1
-                    st.rerun()
-
-        else:
-            # value=None인 경우, 여기는 대기 상태
-            if disabled:
-                st.info("도전 횟수를 모두 사용했습니다. 공유/상담으로 기회 추가 후 다시 시도하세요.")
+        # URL 복사 버튼은 상단 공유 블록에 있음.
 
 if __name__ == "__main__":
     main()
