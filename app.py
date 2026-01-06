@@ -176,7 +176,7 @@ T = {
         "saju": "사주 한 마디",
         "today": "오늘 운세",
         "tomorrow": "내일 운세",
-        "year_all": "2026 전체 운세",
+        "2026_all": "2026 전체 운세",
         "advice": "조언",
     },
 
@@ -203,7 +203,7 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 PATH_FORTUNE_2026 = os.path.join(DATA_DIR, "fortunes_ko_2026.json")
 PATH_TODAY = os.path.join(DATA_DIR, "fortunes_ko_today.json")
 PATH_TOMORROW = os.path.join(DATA_DIR, "fortunes_ko_tomorrow.json")
-PATH_YEAR = os.path.join(DATA_DIR, "fortunes_ko_2026_year.json")
+PATH_2026 = os.path.join(DATA_DIR, "fortunes_ko_2026.json")
 
 PATH_ZODIAC = os.path.join(DATA_DIR, "zodiac_fortunes_ko_2026.json")
 PATH_MBTI = os.path.join(DATA_DIR, "mbti_traits_ko.json")
@@ -213,7 +213,7 @@ PATH_LNY = os.path.join(DATA_DIR, "lunar_new_year_1920_2026.json")
 fortune_2026_db = load_required_json(PATH_FORTUNE_2026, "fortunes_ko_2026.json")
 today_db = load_required_json(PATH_TODAY, "fortunes_ko_today.json")
 tomorrow_db = load_required_json(PATH_TOMORROW, "fortunes_ko_tomorrow.json")
-year_db = load_required_json(PATH_YEAR, "fortunes_ko_2026_year.json")
+2026_db = load_required_json(PATH_YEAR, "fortunes_ko_2026_year.json")
 
 zodiac_db = load_required_json(PATH_ZODIAC, "zodiac_fortunes_ko_2026.json")
 mbti_db = load_required_json(PATH_MBTI, "mbti_traits_ko.json")
