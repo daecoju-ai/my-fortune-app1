@@ -1,149 +1,128 @@
 import streamlit as st
 import json
 import random
-from datetime import date
+import datetime
+from pathlib import Path
 
-# =============================
-# 기본 설정
-# =============================
-st.set_page_config(page_title="2026년 운세", layout="centered")
+DATA_DIR = Path("data")
 
-DATA_PATH = "data/"
-
-# =============================
+# -----------------------------
 # 공통 유틸
-# =============================
-def load_json(filename: str):
-    try:
-        with open(DATA_PATH + filename, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        st.error(f"필수 DB 파일을 읽을 수 없습니다: {filename}\n{e}")
+# -----------------------------
+def load_json(name):
+    path = DATA_DIR / name
+    if not path.exists():
+        st.error(f"필수 DB 파일을 읽을 수 없습니다: {path}")
         st.stop()
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
-def seeded_choice(items, seed):
-    rng = random.Random(seed)
-    return rng.choice(items)
+def seeded_choice(arr, seed):
+    random.seed(seed)
+    return random.choice(arr)
 
-def today_seed(extra=0):
-    return int(date.today().strftime("%Y%m%d")) + extra
+today = datetime.date.today()
+seed_base = int(today.strftime("%Y%m%d"))
 
-# =============================
+# -----------------------------
 # DB 로드
-# =============================
+# -----------------------------
 year_db = load_json("fortunes_ko_2026.json")
 today_db = load_json("fortunes_ko_today.json")
 tomorrow_db = load_json("fortunes_ko_tomorrow.json")
 zodiac_db = load_json("zodiac_fortunes_ko_2026.json")
 mbti_db = load_json("mbti_traits_ko.json")
 saju_db = load_json("saju_ko.json")
+tarot_db = load_json("tarot_db_ko.json")
 
-# =============================
-# 헤더 (디자인 고정)
-# =============================
-st.markdown("## 2026년 운세")
-st.caption("타로 포함 · 완전 무료")
+# -----------------------------
+# UI
+# -----------------------------
+st.title("2026년 운세")
 
-birth = st.date_input("생년월일", value=date(2000, 1, 1))
-mbti = st.selectbox(
-    "MBTI",
-    sorted(mbti_db.keys())
-)
+tab1, tab2, tab3, tab4 = st.tabs([
+    "오늘의 운세",
+    "내일의 운세",
+    "2026년 전체 운세",
+    "성향/확장 운세"
+])
 
-# =============================
-# 기본 시드
-# =============================
-base_seed = int(birth.strftime("%Y%m%d"))
-
-# =============================
-# 연간 운세
-# =============================
-st.markdown("### 2026년 전체 운세")
-year_text = seeded_choice(year_db["texts"], base_seed)
-st.info(year_text)
-
-# =============================
+# -----------------------------
 # 오늘 운세
-# =============================
-st.markdown("### 오늘 운세")
-today_text = seeded_choice(today_db["texts"], today_seed())
-st.success(today_text)
+# -----------------------------
+with tab1:
+    zodiac = st.selectbox("띠 선택", list(today_db.keys()))
+    data = today_db.get(zodiac, {})
+    texts = data if isinstance(data, list) else data.get("today", [])
 
-# =============================
+    if texts:
+        st.write(seeded_choice(texts, seed_base))
+    else:
+        st.warning("해당 띠의 오늘 운세 데이터가 없습니다.")
+
+# -----------------------------
 # 내일 운세
-# =============================
-st.markdown("### 내일 운세")
-tomorrow_text = seeded_choice(tomorrow_db["texts"], today_seed(1))
-st.warning(tomorrow_text)
+# -----------------------------
+with tab2:
+    zodiac = st.selectbox("띠 선택 ", list(tomorrow_db.keys()))
+    data = tomorrow_db.get(zodiac, {})
+    texts = data if isinstance(data, list) else data.get("tomorrow", [])
 
-# =============================
-# MBTI 해석
-# =============================
-st.markdown("### MBTI 운세 해석")
-if mbti in mbti_db and isinstance(mbti_db[mbti], list):
-    mbti_text = seeded_choice(mbti_db[mbti], base_seed + 20)
-    st.info(mbti_text)
-else:
-    st.error(f"MBTI DB 구조 오류: {mbti}")
+    if texts:
+        st.write(seeded_choice(texts, seed_base + 1))
+    else:
+        st.warning("해당 띠의 내일 운세 데이터가 없습니다.")
 
-# =============================
-# 띠 계산
-# =============================
-ZODIAC_ORDER = [
-    "rat", "ox", "tiger", "rabbit", "dragon", "snake",
-    "horse", "goat", "monkey", "rooster", "dog", "pig"
-]
+# -----------------------------
+# 연간 운세
+# -----------------------------
+with tab3:
+    zodiac = st.selectbox("띠 선택  ", list(zodiac_db.keys()))
+    year_texts = zodiac_db[zodiac].get("year", [])
 
-zodiac_index = (birth.year - 4) % 12
-zodiac_key = ZODIAC_ORDER[zodiac_index]
+    if year_texts:
+        st.write(seeded_choice(year_texts, seed_base))
+    else:
+        st.warning("연간 운세 데이터가 없습니다.")
 
-# =============================
-# 띠별 운세
-# =============================
-st.markdown("### 띠별 운세")
+# -----------------------------
+# 확장 운세
+# -----------------------------
+with tab4:
+    st.subheader("MBTI 운세")
+    mbti = st.selectbox("MBTI 선택", list(mbti_db.keys()))
 
-if zodiac_key in zodiac_db:
-    z = zodiac_db[zodiac_key]
+    mbti_data = mbti_db.get(mbti)
+    if mbti_data:
+        st.write("**설명**")
+        st.write(mbti_data.get("description", ""))
 
-    z_today = seeded_choice(z["today"], today_seed())
-    z_tomorrow = seeded_choice(z["tomorrow"], today_seed(1))
-    z_year = seeded_choice(z["year"], base_seed)
+        if "strengths" in mbti_data:
+            st.write("**강점**")
+            st.write(seeded_choice(mbti_data["strengths"], seed_base))
 
-    st.success(f"오늘 ({zodiac_key})\n\n{z_today}")
-    st.warning(f"내일 ({zodiac_key})\n\n{z_tomorrow}")
-    st.info(f"2026년 ({zodiac_key})\n\n{z_year}")
-else:
-    st.error(f"띠 DB 구조 오류: {zodiac_key}")
+        if "weaknesses" in mbti_data:
+            st.write("**주의점**")
+            st.write(seeded_choice(mbti_data["weaknesses"], seed_base))
+    else:
+        st.warning("MBTI 데이터 없음")
 
-# =============================
-# 사주 요약
-# =============================
-st.markdown("### 사주 한 줄 요약")
+    st.divider()
 
-year_key = str(birth.year)
-if year_key in saju_db:
-    saju_text = seeded_choice(saju_db[year_key], base_seed + 50)
-    st.info(saju_text)
-else:
-    st.caption("사주 데이터가 없는 연도입니다.")
+    st.subheader("사주 오행")
+    element = st.selectbox("오행 선택", list(saju_db.keys()))
+    element_data = saju_db.get(element)
 
-# =============================
-# 하단 광고 (문구 고정)
-# =============================
-st.markdown("---")
-st.markdown("### 다나눔렌탈 상담 / 이벤트")
-st.markdown(
-    """
-[광고]  
-정수기 렌탈 제휴카드 적용 시 **월 렌탈비 0원**,  
-설치 당일 **최대 현금 50만원 + 사은품 증정**
+    if element_data:
+        st.write(seeded_choice(element_data.get("texts", []), seed_base))
+    else:
+        st.warning("사주 데이터 없음")
 
-👉 이름 · 전화번호 작성 → 무료 상담
-"""
-)
+    st.divider()
 
-if st.button("친구에게 공유하기"):
-    st.warning("모바일 환경에서는 URL 복사 버튼을 이용해주세요.")
+    st.subheader("타로 카드")
+    card = seeded_choice(list(tarot_db.keys()), seed_base)
+    card_data = tarot_db[card]
 
-if st.button("URL 복사"):
-    st.success("URL이 복사되었습니다.")
+    st.write(f"**{card}**")
+    st.write(card_data.get("meaning", ""))
