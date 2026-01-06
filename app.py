@@ -51,7 +51,7 @@ def normalize_phone(phone: str) -> str:
 
 def load_required_json(path: str, label: str):
     if not os.path.exists(path):
-        st.error(f"❌ {label} 파일이 없습니다.\n\n필요 파일 경로:\n`{path}`")
+        st.error(f"❌ 필수 DB 파일을 읽을 수 없습니다: `{path}`\n\n({label})")
         st.stop()
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -61,7 +61,6 @@ def load_required_json(path: str, label: str):
         st.stop()
 
 def seed_int(*parts) -> int:
-    # 같은 입력이면 항상 같은 결과(신뢰성 고정)
     s = "|".join(map(str, parts))
     h = 2166136261
     for ch in s:
@@ -103,7 +102,7 @@ def clear_param(param_key: str):
 # =========================================================
 def inject_seo():
     description = "2026 운세: 띠운세 + MBTI + 사주 + 오늘/내일 운세 + 미니게임 이벤트 + 타로"
-    keywords = "2026 운세, 띠운세, MBTI 운세, 사주, 오늘 운세, 내일 운세, 무료 운세, 타로, 연애운, 재물운, 건강운"
+    keywords = "2026 운세, 띠운세, MBTI 운세, 사주, 오늘 운세, 내일 운세, 무료 운세, 타로"
     title = "2026 운세 | 띠 + MBTI + 사주 + 오늘/내일"
 
     try:
@@ -195,11 +194,11 @@ T = {
 }
 
 # =========================================================
-# 5) DB 로드 (고정 파일명만)
+# 5) DB 로드 (data 폴더 파일명: 스샷 기준으로 고정)
 # =========================================================
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
-PATH_FORTUNE_2026 = os.path.join(DATA_DIR, "fortunes_ko_2026.json")  # year_all + advice
+PATH_FORTUNE_2026 = os.path.join(DATA_DIR, "fortunes_ko_2026.json")
 PATH_TODAY = os.path.join(DATA_DIR, "fortunes_ko_today.json")
 PATH_TOMORROW = os.path.join(DATA_DIR, "fortunes_ko_tomorrow.json")
 
@@ -207,6 +206,7 @@ PATH_ZODIAC = os.path.join(DATA_DIR, "zodiac_fortunes_ko_2026.json")
 PATH_MBTI = os.path.join(DATA_DIR, "mbti_traits_ko.json")
 PATH_SAJU = os.path.join(DATA_DIR, "saju_ko.json")
 PATH_LNY = os.path.join(DATA_DIR, "lunar_new_year_1920_2026.json")
+PATH_TAROT = os.path.join(DATA_DIR, "tarot_db_ko.json")  # 지금은 읽기만(나중에 화면 적용)
 
 fortune_2026_db = load_required_json(PATH_FORTUNE_2026, "fortunes_ko_2026.json")
 today_db = load_required_json(PATH_TODAY, "fortunes_ko_today.json")
@@ -216,6 +216,7 @@ zodiac_db = load_required_json(PATH_ZODIAC, "zodiac_fortunes_ko_2026.json")
 mbti_db = load_required_json(PATH_MBTI, "mbti_traits_ko.json")
 saju_db = load_required_json(PATH_SAJU, "saju_ko.json")
 lny_db = load_required_json(PATH_LNY, "lunar_new_year_1920_2026.json")
+_ = load_required_json(PATH_TAROT, "tarot_db_ko.json")  # 로딩만 (운영상 파일 누락 방지)
 
 # =========================================================
 # 6) Lunar New Year(설날 기준 띠 계산)
@@ -288,7 +289,8 @@ def compute_mbti_from_answers(answers):
     return mbti if mbti in MBTI_LIST else "ENFP"
 
 # =========================================================
-# 8) Google Sheet (컬럼 구조 고정)
+# 8) Google Sheet (컬럼 구조 고정: A~G)
+# A 시간 / B 이름 / C 전화번호 / D 기록초 / E 공유여부 / F 항목 / G 상담신청
 # =========================================================
 def get_sheet():
     try:
@@ -344,17 +346,17 @@ def phone_exists(ws, phone_norm: str) -> bool:
 def append_row(ws, name, phone, seconds, shared_bool, entry_type, consult_ox):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ws.append_row([
-        now_str,                   # A 시간
-        name,                      # B 이름
-        phone,                     # C 전화번호
-        f"{seconds:.3f}",          # D 기록초
+        now_str,                       # A 시간
+        name,                          # B 이름
+        phone,                         # C 전화번호
+        f"{seconds:.3f}",              # D 기록초
         "TRUE" if shared_bool else "FALSE",  # E 공유여부
-        entry_type,                # F
-        consult_ox                 # G
+        entry_type,                    # F
+        consult_ox                     # G 상담신청
     ])
 
 # =========================================================
-# 9) Share (시스템 공유창 + 실패 시 URL복사 버튼)
+# 9) Share (시스템 공유창 + URL 복사)
 # =========================================================
 def get_query_params_value(qp, key, default=None):
     v = qp.get(key, default)
@@ -430,7 +432,7 @@ def copy_url_button():
     )
 
 # =========================================================
-# 10) Stopwatch (00.000 표시 / STOP 시 정지 화면 유지 / START·STOP 1회 누르면 비활성)
+# 10) Stopwatch (00.000 표시 / STOP 시 정지 화면 유지)
 # =========================================================
 def stopwatch_component(tries_left: int):
     disabled_all = "true" if tries_left <= 0 else "false"
@@ -689,6 +691,7 @@ def pick_zodiac_text_dynamic(zdb: dict, zkey: str, s: int) -> str:
     지원하는 구조:
       1) {"zodiac": {"rabbit": {"texts":[...]}}}
       2) {"rabbit": {"today":[...], "tomorrow":[...], ...}}  (현재 스샷 구조)
+      3) {"rabbit":[...]} 같은 단순 리스트도 지원
     """
     # 1) 루트에 zodiac가 있으면 그 안에서 찾기
     if isinstance(zdb, dict) and "zodiac" in zdb and isinstance(zdb["zodiac"], dict):
@@ -708,16 +711,14 @@ def pick_zodiac_text_dynamic(zdb: dict, zkey: str, s: int) -> str:
     if isinstance(node, list) and node:
         return rng.choice(node)
 
-    # node가 dict면 우선순위 키로 리스트 찾기
     if isinstance(node, dict):
-        # "texts"가 없고 "today"가 있는 구조를 지원
+        # 우선순위: 연간용(있으면 먼저), 없으면 today 사용
         priority_keys = ["texts", "year_all", "year", "all", "general", "today", "tomorrow", "advice"]
         for k in priority_keys:
             v = node.get(k)
             if isinstance(v, list) and v:
                 return rng.choice(v)
 
-        # 어떤 키도 리스트가 아니면 에러에 키 목록 출력
         st.error(
             "DB 구조 오류: 띠 데이터 안에서 사용 가능한 리스트가 없습니다.\n\n"
             f"찾은 위치: {src}.{zkey}\n"
@@ -734,9 +735,7 @@ def make_result(birth: date, mbti: str):
 
     base = seed_int(birth.isoformat(), mbti, "2026")
 
-    # ✅ 여기만 변경: 띠 DB 구조 자동 대응
     zodiac_text = pick_zodiac_text_dynamic(zodiac_db, zkey, base + 11)
-
     mbti_trait = pick_from_pool(mbti_db, ["mbti", mbti, "traits"], base + 22)
     saju_line = pick_from_pool(saju_db, ["saju", "lines"], base + 33)
 
@@ -882,7 +881,7 @@ def render_result():
     st.markdown(f"**{s['advice']}**: {res['advice']}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 결과 바로 아래: 공유
+    # 공유
     share_native_with_copy(T["share_link_btn"])
     copy_url_button()
     st.caption(T["share_link_hint"])
