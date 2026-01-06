@@ -1,49 +1,142 @@
 import json
-import os
-import re
 import hashlib
+import random
 from datetime import date, datetime, timedelta
 
 import streamlit as st
 
 
 # =========================================================
-# 0) 고정 설정 (1번만)
+# 0) Config
 # =========================================================
-APP_URL = "https://my-fortune.streamlit.app"  # 필요하면 너 주소로 유지/수정
-DATA_DIR = "data"
-
-DB_TODAY_PATH = os.path.join(DATA_DIR, "fortunes_ko_today.json")
-DB_TOMORROW_PATH = os.path.join(DATA_DIR, "fortunes_ko_tomorrow.json")
-DB_YEAR_PATH = os.path.join(DATA_DIR, "fortunes_ko_2026_year.json")
-
-# 키 이름 고정(혼용 금지)
-KEY_TODAY = "today"
-KEY_TOMORROW = "tomorrow"
-KEY_YEAR_ALL = "year_all"
+APP_URL = "https://my-fortune.streamlit.app"
 
 st.set_page_config(
-    page_title="2026 운세 | 띠 + MBTI + 사주 + 오늘/내일 + 타로",
+    page_title="2026 운세 | 띠 + MBTI + 사주 + 오늘/내일",
     page_icon="🔮",
-    layout="centered"
+    layout="centered",
 )
 
 # =========================================================
-# 1) 디자인(사용자가 좋아한 스타일 유지 전제)
-#    - 여기선 1번만 구현이 목표라서: 기존 CSS가 이미 있었다면 그대로 붙여넣어도 됨
-#    - 현재는 최소한의 카드 스타일만 넣음(크게 바꾸지 않음)
+# 1) DB Loader (NO fallback)
+# =========================================================
+def load_json_required(path: str) -> dict:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        st.error(f"필수 DB 파일을 읽을 수 없습니다: `{path}`\n\n에러: {e}")
+        st.stop()
+
+
+LNY_DB = load_json_required("data/lunar_new_year_1920_2026.json")
+ZODIAC_DB = load_json_required("data/zodiac_fortunes_ko_2026.json")
+TODAY_DB = load_json_required("data/fortunes_ko_today.json")
+TOMORROW_DB = load_json_required("data/fortunes_ko_tomorrow.json")
+YEAR_DB = load_json_required("data/fortunes_ko_2026_year.json")
+MBTI_DB = load_json_required("data/mbti_traits_ko.json")
+SAJU_DB = load_json_required("data/saju_ko.json")
+
+
+# =========================================================
+# 2) Seeded random (같은 입력이면 항상 같은 결과)
+# =========================================================
+def stable_seed(*parts: str) -> int:
+    raw = "|".join([p if p is not None else "" for p in parts])
+    h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    return int(h[:16], 16)
+
+def seeded_pick(pool: list[str], seed_key: str) -> str:
+    if not isinstance(pool, list) or len(pool) == 0:
+        st.error("DB 풀(pool)이 비어 있습니다. (JSON 확인 필요)")
+        st.stop()
+    r = random.Random(stable_seed(seed_key))
+    return r.choice(pool)
+
+
+# =========================================================
+# 3) 음력 설(한국설) 기준 띠 계산
+# =========================================================
+ZODIAC_KEYS = ["rat","ox","tiger","rabbit","dragon","snake","horse","goat","monkey","rooster","dog","pig"]
+ZODIAC_LABEL_KO = {
+    "rat":"쥐띠","ox":"소띠","tiger":"호랑이띠","rabbit":"토끼띠",
+    "dragon":"용띠","snake":"뱀띠","horse":"말띠","goat":"양띠",
+    "monkey":"원숭이띠","rooster":"닭띠","dog":"개띠","pig":"돼지띠",
+}
+
+def parse_yyyy_mm_dd(s: str) -> date:
+    y, m, d = s.split("-")
+    return date(int(y), int(m), int(d))
+
+def lunar_zodiac_key_for_birth(birth: date) -> tuple[str, int]:
+    y = birth.year
+    y_str = str(y)
+    if y_str not in LNY_DB:
+        st.error(f"음력설 DB에 {y}년 데이터가 없습니다. (지원 범위 밖)")
+        st.stop()
+
+    lny = parse_yyyy_mm_dd(LNY_DB[y_str])  # 그 해 음력설(한국설)
+    zodiac_year = y - 1 if birth < lny else y
+    idx = (zodiac_year - 4) % 12
+    return ZODIAC_KEYS[idx], zodiac_year
+
+
+# =========================================================
+# 4) MBTI (직접 선택 + 12문항 + 16문항)
+# =========================================================
+MBTI_LIST = [
+    "INTJ","INTP","ENTJ","ENTP","INFJ","INFP","ENFJ","ENFP",
+    "ISTJ","ISFJ","ESTJ","ESFJ","ISTP","ISFP","ESTP","ESFP"
+]
+
+MBTI_Q_12 = [
+    ("EI","사람들과 있을 때 에너지가 더 생긴다","혼자 있을 때 에너지가 더 생긴다"),
+    ("SN","현실적인 정보가 편하다","가능성/아이디어가 편하다"),
+    ("TF","결정은 논리/원칙이 우선","결정은 사람/상황 배려가 우선"),
+    ("JP","계획대로 진행해야 마음이 편하다","유연하게 바뀌어도 괜찮다"),
+
+    ("EI","말하며 생각이 정리된다","생각한 뒤 말하는 편이다"),
+    ("SN","경험/사실을 믿는 편","직감/영감을 믿는 편"),
+    ("TF","피드백은 직설이 낫다","피드백은 부드럽게가 낫다"),
+    ("JP","마감 전에 미리 끝내는 편","마감 직전에 몰아서 하는 편"),
+
+    ("EI","주말엔 약속이 있으면 좋다","주말엔 혼자 쉬고 싶다"),
+    ("SN","설명은 구체적으로","설명은 큰그림으로"),
+    ("TF","갈등은 원인/해결이 우선","갈등은 감정/관계가 우선"),
+    ("JP","정리/정돈이 잘 되어야 편하다","어수선해도 일단 진행 가능"),
+]
+
+MBTI_Q_16_EXTRA = [
+    ("EI","새로운 사람을 만나면 설렌다","새로운 사람은 적응 시간이 필요"),
+    ("SN","지금 필요한 현실이 중요","미래 가능성이 더 중요"),
+    ("TF","공정함이 최우선","조화로움이 최우선"),
+    ("JP","일정이 확정되어야 안심","상황에 따라 바뀌는 게 자연스럽다"),
+]
+
+def compute_mbti(answers: list[tuple[str, bool]]) -> str:
+    scores = {"EI":0, "SN":0, "TF":0, "JP":0}
+    counts = {"EI":0, "SN":0, "TF":0, "JP":0}
+    for axis, left in answers:
+        if axis in scores:
+            counts[axis] += 1
+            if left:
+                scores[axis] += 1
+
+    def decide(axis: str, left_char: str, right_char: str) -> str:
+        if counts[axis] == 0:
+            return left_char
+        return left_char if scores[axis] >= (counts[axis]/2) else right_char
+
+    mbti = f"{decide('EI','E','I')}{decide('SN','S','N')}{decide('TF','T','F')}{decide('JP','J','P')}"
+    return mbti if mbti in MBTI_LIST else "ENFP"
+
+
+# =========================================================
+# 5) Style (큰틀 유지)
 # =========================================================
 st.markdown("""
 <style>
 .block-container { padding-top: 1.0rem; padding-bottom: 2.5rem; max-width: 720px; }
-.card {
-  background: rgba(255,255,255,0.96);
-  border-radius: 18px;
-  padding: 18px 16px;
-  box-shadow: 0 10px 28px rgba(0,0,0,0.10);
-  border: 1px solid rgba(140,120,200,0.18);
-  margin: 12px 0;
-}
 .header-hero {
   border-radius: 20px;
   padding: 18px 16px;
@@ -56,227 +149,83 @@ st.markdown("""
 .hero-title { font-size: 1.5rem; font-weight: 900; margin: 0; }
 .hero-sub { font-size: 0.95rem; opacity: 0.95; margin-top: 6px; }
 .badge {
-  display:inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  background: rgba(255,255,255,0.20);
-  border: 1px solid rgba(255,255,255,0.25);
-  margin-top: 10px;
+  display:inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.85rem;
+  background: rgba(255,255,255,0.20); border: 1px solid rgba(255,255,255,0.25); margin-top: 10px;
 }
+.card { border-radius: 18px; padding: 18px 16px; box-shadow: 0 10px 28px rgba(0,0,0,0.10);
+  border: 1px solid rgba(140,120,200,0.18); margin: 12px 0; }
+.bg-zodiac { background: rgba(250,245,255,0.92); }
+.bg-mbti   { background: rgba(245,255,250,0.92); }
+.bg-saju   { background: rgba(245,250,255,0.92); }
+.bg-today  { background: rgba(255,255,255,0.96); }
+.bg-tom    { background: rgba(255,248,245,0.92); }
+.bg-year   { background: rgba(255,252,240,0.92); }
+
 .soft-box {
   background: rgba(245,245,255,0.78);
   border: 1px solid rgba(130,95,220,0.18);
   padding: 12px 12px;
   border-radius: 14px;
-  line-height: 1.7;
+  line-height: 1.65;
   font-size: 1.0rem;
 }
-.bigbtn > button {
-  border-radius: 999px !important;
-  font-weight: 900 !important;
-  padding: 0.75rem 1.2rem !important;
-}
+.bigbtn > button { border-radius: 999px !important; font-weight: 900 !important; padding: 0.75rem 1.2rem !important; }
 hr.soft { border:0; height:1px; background: rgba(120, 90, 210, 0.15); margin: 14px 0; }
 </style>
 """, unsafe_allow_html=True)
 
 
 # =========================================================
-# 2) 1번 핵심: DB 로드 + 안정 해시 seed 선택
-# =========================================================
-def _read_json_or_fail(path: str) -> dict:
-    if not os.path.exists(path):
-        st.error(f"DB 파일이 없습니다: `{path}`\n\n- GitHub에 `data/` 폴더 만들고 파일 업로드했는지 확인하세요.")
-        st.stop()
-
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        st.error(f"DB 파일을 JSON으로 읽는 중 오류가 났습니다: `{path}`\n\n오류: {e}")
-        st.stop()
-
-
-def _get_pool(db: dict, pool_key: str, path_for_msg: str) -> list:
-    if not isinstance(db, dict):
-        st.error(f"DB 구조가 dict가 아닙니다: `{path_for_msg}`")
-        st.stop()
-
-    pools = db.get("pools")
-    if not isinstance(pools, dict):
-        st.error(f"DB에 `pools`가 없습니다 또는 dict가 아닙니다: `{path_for_msg}`")
-        st.stop()
-
-    arr = pools.get(pool_key)
-    if not isinstance(arr, list) or len(arr) == 0:
-        st.error(
-            f"DB에 `pools.{pool_key}` 리스트가 비어있거나 없습니다.\n\n"
-            f"- 파일: `{path_for_msg}`\n"
-            f"- 필요한 키: `pools.{pool_key}`"
-        )
-        st.stop()
-
-    # 각 항목은 문자열이길 권장 (텍스트)
-    bad = [i for i, x in enumerate(arr[:50]) if not isinstance(x, str)]
-    if bad:
-        st.error(
-            f"`pools.{pool_key}` 안에 문자열이 아닌 항목이 있습니다(예: index {bad[:5]}).\n\n"
-            f"- 파일: `{path_for_msg}`"
-        )
-        st.stop()
-
-    return arr
-
-
-def stable_index(seed: str, n: int) -> int:
-    # 파이썬 내장 hash() 금지 → sha256 안정 해시 사용
-    h = hashlib.sha256(seed.encode("utf-8")).hexdigest()
-    # 앞 16 hex만으로도 충분히 균등
-    v = int(h[:16], 16)
-    return v % n
-
-
-def pick_seeded(pool: list, seed: str) -> str:
-    idx = stable_index(seed, len(pool))
-    return pool[idx]
-
-
-def normalize_birth(y: int, m: int, d: int) -> str:
-    # YYYY-MM-DD 고정
-    try:
-        dt = date(int(y), int(m), int(d))
-        return dt.strftime("%Y-%m-%d")
-    except Exception:
-        st.error("생년월일이 올바르지 않습니다. 다시 확인해주세요.")
-        st.stop()
-
-
-def yyyyMMdd(dt: date) -> str:
-    return dt.strftime("%Y%m%d")
-
-
-# =========================================================
-# 3) MBTI (직접선택 / 12 / 16 유지)
-#    - 1번에서는 “DB 신뢰성”만 목표라서 MBTI는 기존 UI 유지용 최소 구현
-# =========================================================
-MBTI_LIST = [
-    "INTJ","INTP","ENTJ","ENTP",
-    "INFJ","INFP","ENFJ","ENFP",
-    "ISTJ","ISFJ","ESTJ","ESFJ",
-    "ISTP","ISFP","ESTP","ESFP"
-]
-
-# 12문항/16문항 (간단 버전, 기존처럼 유지 원칙)
-# axis: EI, SN, TF, JP / left 선택이면 +1
-MBTI_Q_12 = [
-    ("EI","사람들과 있을 때 에너지가 생긴다","혼자 있을 때 에너지가 생긴다"),
-    ("SN","현실적인 정보가 편하다","가능성/아이디어가 편하다"),
-    ("TF","결정은 논리/원칙이 우선","결정은 사람/상황 배려가 우선"),
-    ("JP","계획대로 진행해야 편하다","유연하게 바뀌어도 괜찮다"),
-    ("EI","말하며 생각이 정리된다","생각한 뒤 말하는 편이다"),
-    ("SN","경험/사실을 믿는다","직감/영감을 믿는다"),
-    ("TF","피드백은 직설이 낫다","피드백은 부드럽게가 낫다"),
-    ("JP","마감 전에 미리 끝낸다","마감 직전에 몰아서 한다"),
-    ("EI","주말엔 약속이 있으면 좋다","주말엔 혼자 쉬고 싶다"),
-    ("SN","설명은 구체적으로","설명은 큰그림으로"),
-    ("TF","갈등은 원인/해결이 우선","갈등은 감정/관계가 우선"),
-    ("JP","정리/정돈이 잘 되어야 편하다","어수선해도 진행 가능"),
-]
-MBTI_Q_16_EXTRA = [
-    ("EI","새로운 사람을 만나면 설렌다","적응 시간이 필요하다"),
-    ("SN","지금 필요한 현실이 중요","미래 가능성이 더 중요"),
-    ("TF","공정함이 최우선","조화로움이 최우선"),
-    ("JP","일정이 확정되어야 안심","상황에 따라 바뀌는 게 자연스러움"),
-]
-
-def compute_mbti(answers):
-    scores = {"EI":0,"SN":0,"TF":0,"JP":0}
-    counts = {"EI":0,"SN":0,"TF":0,"JP":0}
-    for axis, pick_left in answers:
-        counts[axis]+=1
-        if pick_left:
-            scores[axis]+=1
-
-    def decide(axis, left, right):
-        return left if scores[axis] >= (counts[axis]/2) else right
-
-    mbti = decide("EI","E","I") + decide("SN","S","N") + decide("TF","T","F") + decide("JP","J","P")
-    return mbti if mbti in MBTI_LIST else "ENFP"
-
-
-# =========================================================
-# 4) 상태
+# 6) Session
 # =========================================================
 if "stage" not in st.session_state:
     st.session_state.stage = "input"
-
-if "mbti_mode" not in st.session_state:
-    st.session_state.mbti_mode = "direct"
-
 if "mbti" not in st.session_state:
     st.session_state.mbti = "ENFP"
 
-if "name" not in st.session_state:
-    st.session_state.name = ""
-
-if "birth_y" not in st.session_state:
-    st.session_state.birth_y = 2005
-if "birth_m" not in st.session_state:
-    st.session_state.birth_m = 1
-if "birth_d" not in st.session_state:
-    st.session_state.birth_d = 1
-
 
 # =========================================================
-# 5) 화면
+# 7) Input
 # =========================================================
 def render_input():
     st.markdown("""
     <div class="header-hero">
-      <p class="hero-title">🔮 2026 띠 + MBTI + 사주 + 오늘/내일 운세</p>
-      <p class="hero-sub">완전 무료</p>
+      <p class="hero-title">🔮 2026 운세 | 띠 + MBTI + 사주 + 오늘/내일</p>
+      <p class="hero-sub">음력 설(한국설) 기준 띠 적용</p>
       <span class="badge">2026</span>
     </div>
     """, unsafe_allow_html=True)
 
-    st.session_state.name = st.text_input("이름 입력 (결과에 표시돼요)", value=st.session_state.name)
+    st.session_state.name = st.text_input("이름(선택)", value=st.session_state.get("name",""))
 
-    st.markdown("<div class='card'><b>생년월일 입력</b></div>", unsafe_allow_html=True)
-
-    # ✅ 달력 UI(요청했던 “달력 나오는” 버전 느낌)
-    # 단, Streamlit date_input은 연도 범위 제한이 애매하므로 안전하게 처리
-    # (원하면 여기만 더 정교하게 조정 가능)
-    default_dt = date(int(st.session_state.birth_y), int(st.session_state.birth_m), int(st.session_state.birth_d))
-    picked = st.date_input("생년월일", value=default_dt, min_value=date(1900,1,1), max_value=date(2030,12,31))
-    st.session_state.birth_y = picked.year
-    st.session_state.birth_m = picked.month
-    st.session_state.birth_d = picked.day
+    st.session_state.birth = st.date_input(
+        "생년월일",
+        value=st.session_state.get("birth", date(2005,1,1)),
+        min_value=date(1920,1,1),
+        max_value=date(2026,12,31),
+    )
 
     st.markdown("<div class='card'><b>MBTI를 어떻게 할까요?</b></div>", unsafe_allow_html=True)
     mode = st.radio(
         "",
-        ["직접 선택", "간단 테스트 (12문항)", "상세 테스트 (16문항)"],
-        index=0 if st.session_state.mbti_mode=="direct" else (1 if st.session_state.mbti_mode=="12" else 2),
+        ["직접 선택", "간단 테스트(12문항)", "상세 테스트(16문항)"],
+        index=st.session_state.get("mbti_mode_idx", 0),
         horizontal=True
     )
-    st.session_state.mbti_mode = "direct" if mode=="직접 선택" else ("12" if "12" in mode else "16")
+    st.session_state.mbti_mode_idx = ["직접 선택","간단 테스트(12문항)","상세 테스트(16문항)"].index(mode)
 
-    if st.session_state.mbti_mode == "direct":
+    if mode == "직접 선택":
         st.session_state.mbti = st.selectbox("MBTI", MBTI_LIST, index=MBTI_LIST.index(st.session_state.mbti))
     else:
-        qs = MBTI_Q_12 + (MBTI_Q_16_EXTRA if st.session_state.mbti_mode=="16" else [])
-        title = "MBTI 12문항 (각 축 3문항)" if st.session_state.mbti_mode=="12" else "MBTI 16문항 (각 축 4문항)"
-        st.markdown(f"<div class='card'><b>{title}</b><br><span style='opacity:0.85;'>각 문항에서 더 가까운 쪽을 선택하세요.</span></div>", unsafe_allow_html=True)
-
+        questions = MBTI_Q_12[:] + (MBTI_Q_16_EXTRA[:] if mode == "상세 테스트(16문항)" else [])
         answers = []
-        for i, (axis, left, right) in enumerate(qs, start=1):
-            choice = st.radio(f"{i}. {axis}", [left, right], index=0, key=f"mbti_q_{st.session_state.mbti_mode}_{i}")
-            answers.append((axis, choice == left))
-
+        st.markdown("<div class='card'><b>문항에 더 가까운 쪽을 선택하세요.</b></div>", unsafe_allow_html=True)
+        for i, (axis, left, right) in enumerate(questions, start=1):
+            pick = st.radio(f"{i}. {axis}", [left, right], index=0, key=f"mbti_{mode}_{i}")
+            answers.append((axis, pick == left))
         if st.button("제출하고 MBTI 확정", use_container_width=True):
             st.session_state.mbti = compute_mbti(answers)
-            st.success(f"MBTI: {st.session_state.mbti}")
+            st.success(f"확정 MBTI: {st.session_state.mbti}")
 
     st.markdown('<div class="bigbtn">', unsafe_allow_html=True)
     if st.button("2026년 운세 보기!", use_container_width=True):
@@ -285,67 +234,131 @@ def render_input():
     st.markdown('</div>', unsafe_allow_html=True)
 
 
+# =========================================================
+# 8) Result (띠/MBTI/사주/오늘/내일/2026전체 전부 DB)
+# =========================================================
+def require_pool(db: dict, path_hint: str, *keys: str) -> list[str]:
+    cur = db
+    for k in keys:
+        cur = cur.get(k, None) if isinstance(cur, dict) else None
+    if not isinstance(cur, list) or len(cur) == 0:
+        st.error(f"DB 내용이 비어 있습니다: {path_hint} ({'.'.join(keys)})")
+        st.stop()
+    return cur
+
 def render_result():
-    # ---- DB 로드 (1번 핵심) ----
-    db_today = _read_json_or_fail(DB_TODAY_PATH)
-    db_tom = _read_json_or_fail(DB_TOMORROW_PATH)
-    db_year = _read_json_or_fail(DB_YEAR_PATH)
+    birth: date = st.session_state.birth
+    mbti: str = st.session_state.mbti
+    name = (st.session_state.get("name","") or "").strip()
 
-    pool_today = _get_pool(db_today, KEY_TODAY, DB_TODAY_PATH)
-    pool_tomorrow = _get_pool(db_tom, KEY_TOMORROW, DB_TOMORROW_PATH)
-    pool_year = _get_pool(db_year, KEY_YEAR_ALL, DB_YEAR_PATH)
+    zodiac_key, zodiac_year = lunar_zodiac_key_for_birth(birth)
+    zodiac_label = ZODIAC_LABEL_KO.get(zodiac_key, zodiac_key)
 
-    # ---- seed 규칙 (확정) ----
-    birth_key = normalize_birth(st.session_state.birth_y, st.session_state.birth_m, st.session_state.birth_d)
+    birth_key = birth.strftime("%Y-%m-%d")
+    today = date.today()
+    tomorrow = today + timedelta(days=1)
 
-    today_dt = date.today()
-    tomorrow_dt = today_dt + timedelta(days=1)
+    # ===== Pools (NO fallback) =====
+    pool_today = require_pool(TODAY_DB, "data/fortunes_ko_today.json", "pools", "today")
+    pool_tom = require_pool(TOMORROW_DB, "data/fortunes_ko_tomorrow.json", "pools", "tomorrow")
+    pool_year = require_pool(YEAR_DB, "data/fortunes_ko_2026_year.json", "pools", "year_all")
 
-    seed_year = f"{birth_key}"
-    seed_today = f"{birth_key}|TODAY_{yyyyMMdd(today_dt)}"
-    seed_tomorrow = f"{birth_key}|TOM_{yyyyMMdd(tomorrow_dt)}"
+    z = ZODIAC_DB.get(zodiac_key)
+    if not isinstance(z, dict):
+        st.error(f"띠 DB 키 없음: {zodiac_key} (data/zodiac_fortunes_ko_2026.json 확인)")
+        st.stop()
 
-    # ---- 선택 (항상 고정) ----
-    msg_today = pick_seeded(pool_today, seed_today)
-    msg_tomorrow = pick_seeded(pool_tomorrow, seed_tomorrow)
-    msg_year = pick_seeded(pool_year, seed_year)
+    z_today_pool = z.get("today", [])
+    z_tom_pool = z.get("tomorrow", [])
+    z_year_pool = z.get("year_2026", [])
+    z_advice_pool = z.get("advice", [])
+    if not all(isinstance(p, list) and len(p) > 0 for p in [z_today_pool, z_tom_pool, z_year_pool, z_advice_pool]):
+        st.error(f"띠 DB 풀 비어있음: {zodiac_key} (today/tomorrow/year_2026/advice 확인)")
+        st.stop()
 
-    name = (st.session_state.name or "").strip()
-    display_name = f"{name}님" if name else ""
-    mbti = st.session_state.mbti or "ENFP"
+    mbti_obj = MBTI_DB.get(mbti)
+    if not isinstance(mbti_obj, dict):
+        st.error(f"MBTI DB 키 없음: {mbti} (data/mbti_traits_ko.json 확인)")
+        st.stop()
 
+    mbti_title = mbti_obj.get("title")
+    mbti_traits = mbti_obj.get("traits")
+    mbti_cautions = mbti_obj.get("cautions")
+    mbti_action = mbti_obj.get("action_tips")
+    if not (isinstance(mbti_title, str) and isinstance(mbti_traits, list) and isinstance(mbti_cautions, list) and isinstance(mbti_action, list)):
+        st.error(f"MBTI DB 형식 오류: {mbti} (title/traits/cautions/action_tips 확인)")
+        st.stop()
+
+    saju_pool = require_pool(SAJU_DB, "data/saju_ko.json", "pools", "saju")
+
+    # ===== Seeded picks =====
+    msg_today = seeded_pick(pool_today, f"today|{birth_key}|{today.isoformat()}|{mbti}")
+    msg_tom = seeded_pick(pool_tom, f"tomorrow|{birth_key}|{tomorrow.isoformat()}|{mbti}")
+    msg_year = seeded_pick(pool_year, f"year2026|{birth_key}|{mbti}")
+
+    z_msg_today = seeded_pick(z_today_pool, f"z_today|{birth_key}|{today.isoformat()}|{zodiac_key}")
+    z_msg_tom = seeded_pick(z_tom_pool, f"z_tom|{birth_key}|{tomorrow.isoformat()}|{zodiac_key}")
+    z_msg_year = seeded_pick(z_year_pool, f"z_year|{birth_key}|{zodiac_key}")
+    z_advice = seeded_pick(z_advice_pool, f"z_adv|{birth_key}|{zodiac_key}|{mbti}")
+
+    saju_msg = seeded_pick(saju_pool, f"saju|{birth_key}")
+
+    # MBTI도 “고정 출력 + 액션팁은 seed로 1개만”
+    mbti_action_one = seeded_pick(mbti_action, f"mbti_action|{birth_key}|{mbti}|{today.isoformat()}")
+
+    title_name = f"{name}님 " if name else ""
     st.markdown(f"""
     <div class="header-hero">
-      <p class="hero-title">{display_name} 2026년 운세</p>
-      <p class="hero-sub">MBTI · {mbti}</p>
-      <span class="badge">2026</span>
+      <p class="hero-title">{title_name}2026년 운세</p>
+      <p class="hero-sub">{zodiac_label} (음력설 기준: {zodiac_year}년 띠) · {mbti}</p>
+      <span class="badge">{birth_key}</span>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.markdown("**오늘 운세**")
-    st.markdown(f"<div class='soft-box'>{msg_today}</div>", unsafe_allow_html=True)
+    st.markdown("<div class='card bg-zodiac'>", unsafe_allow_html=True)
+    st.markdown(f"**🧧 띠 운세(오늘)**: {z_msg_today}")
+    st.markdown(f"**🧧 띠 운세(내일)**: {z_msg_tom}")
     st.markdown("<hr class='soft'/>", unsafe_allow_html=True)
-
-    st.markdown("**내일 운세**")
-    st.markdown(f"<div class='soft-box'>{msg_tomorrow}</div>", unsafe_allow_html=True)
+    st.markdown(f"**🧧 2026 띠 전체 운세**: {z_msg_year}")
     st.markdown("<hr class='soft'/>", unsafe_allow_html=True)
-
-    st.markdown("**2026 전체 운세**")
-    st.markdown(f"<div class='soft-box'>{msg_year}</div>", unsafe_allow_html=True)
+    st.markdown(f"**🧧 조언**: {z_advice}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown('<div class="bigbtn">', unsafe_allow_html=True)
+    st.markdown("<div class='card bg-mbti'>", unsafe_allow_html=True)
+    st.markdown(f"**🧠 MBTI 특징 — {mbti_title}**")
+    st.markdown("- " + "\n- ".join(mbti_traits))
+    st.markdown("<hr class='soft'/>", unsafe_allow_html=True)
+    st.markdown("**⚠️ 주의 포인트**")
+    st.markdown("- " + "\n- ".join(mbti_cautions))
+    st.markdown("<hr class='soft'/>", unsafe_allow_html=True)
+    st.markdown(f"**✅ 오늘의 액션팁(고정)**: {mbti_action_one}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='card bg-saju'>", unsafe_allow_html=True)
+    st.markdown(f"**🔎 사주 한 마디(고정)**: {saju_msg}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='card bg-today'>", unsafe_allow_html=True)
+    st.markdown(f"**☀️ 오늘 운세(고정)**: {msg_today}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='card bg-tom'>", unsafe_allow_html=True)
+    st.markdown(f"**🌙 내일 운세(고정)**: {msg_tom}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='card bg-year'>", unsafe_allow_html=True)
+    st.markdown(f"**📌 2026 전체 운세(고정)**: {msg_year}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
     if st.button("입력 화면으로", use_container_width=True):
         st.session_state.stage = "input"
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
     st.caption(APP_URL)
 
 
 # =========================================================
-# 6) 라우팅
+# 9) Router
 # =========================================================
 if st.session_state.stage == "input":
     render_input()
