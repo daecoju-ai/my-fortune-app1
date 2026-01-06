@@ -196,12 +196,10 @@ T = {
 
 # =========================================================
 # 5) DB 로드 (고정 파일명만)
-#    ✅ fortunes_ko_2026_year.json 삭제/미사용
-#    ✅ fortunes_ko_2026.json 하나에서 year_all + advice 같이 사용
 # =========================================================
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
-PATH_FORTUNE_2026 = os.path.join(DATA_DIR, "fortunes_ko_2026.json")  # ← year_all 포함
+PATH_FORTUNE_2026 = os.path.join(DATA_DIR, "fortunes_ko_2026.json")  # year_all + advice
 PATH_TODAY = os.path.join(DATA_DIR, "fortunes_ko_today.json")
 PATH_TOMORROW = os.path.join(DATA_DIR, "fortunes_ko_tomorrow.json")
 
@@ -346,11 +344,11 @@ def phone_exists(ws, phone_norm: str) -> bool:
 def append_row(ws, name, phone, seconds, shared_bool, entry_type, consult_ox):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ws.append_row([
-        now_str,                   # A
-        name,                      # B
-        phone,                     # C
-        f"{seconds:.3f}",          # D
-        "TRUE" if shared_bool else "FALSE",  # E
+        now_str,                   # A 시간
+        name,                      # B 이름
+        phone,                     # C 전화번호
+        f"{seconds:.3f}",          # D 기록초
+        "TRUE" if shared_bool else "FALSE",  # E 공유여부
         entry_type,                # F
         consult_ox                 # G
     ])
@@ -685,13 +683,60 @@ def pick_from_pool(db: dict, pool_path: list, s: int) -> str:
     rng = random.Random(s)
     return rng.choice(cur)
 
+def pick_zodiac_text_dynamic(zdb: dict, zkey: str, s: int) -> str:
+    """
+    ✅ 현재 깃허브에 올라간 zodiac DB 구조를 그대로 지원.
+    지원하는 구조:
+      1) {"zodiac": {"rabbit": {"texts":[...]}}}
+      2) {"rabbit": {"today":[...], "tomorrow":[...], ...}}  (현재 스샷 구조)
+    """
+    # 1) 루트에 zodiac가 있으면 그 안에서 찾기
+    if isinstance(zdb, dict) and "zodiac" in zdb and isinstance(zdb["zodiac"], dict):
+        node = zdb["zodiac"].get(zkey)
+        src = "zodiac"
+    else:
+        node = zdb.get(zkey) if isinstance(zdb, dict) else None
+        src = "root"
+
+    if node is None:
+        st.error(f"띠 DB에 '{zkey}' 키가 없습니다. (조회 위치: {src})")
+        st.stop()
+
+    rng = random.Random(s)
+
+    # node가 리스트면 바로 사용
+    if isinstance(node, list) and node:
+        return rng.choice(node)
+
+    # node가 dict면 우선순위 키로 리스트 찾기
+    if isinstance(node, dict):
+        # "texts"가 없고 "today"가 있는 구조를 지원
+        priority_keys = ["texts", "year_all", "year", "all", "general", "today", "tomorrow", "advice"]
+        for k in priority_keys:
+            v = node.get(k)
+            if isinstance(v, list) and v:
+                return rng.choice(v)
+
+        # 어떤 키도 리스트가 아니면 에러에 키 목록 출력
+        st.error(
+            "DB 구조 오류: 띠 데이터 안에서 사용 가능한 리스트가 없습니다.\n\n"
+            f"찾은 위치: {src}.{zkey}\n"
+            f"현재 키: {list(node.keys())}"
+        )
+        st.stop()
+
+    st.error(f"DB 구조 오류: 띠 데이터 타입이 지원되지 않습니다. type={type(node)}")
+    st.stop()
+
 def make_result(birth: date, mbti: str):
     zkey = zodiac_key_by_solar_birth(birth)
     zlabel = ZODIAC_LABEL.get(zkey, zkey)
 
     base = seed_int(birth.isoformat(), mbti, "2026")
 
-    zodiac_text = pick_from_pool(zodiac_db, ["zodiac", zkey, "texts"], base + 11)
+    # ✅ 여기만 변경: 띠 DB 구조 자동 대응
+    zodiac_text = pick_zodiac_text_dynamic(zodiac_db, zkey, base + 11)
+
     mbti_trait = pick_from_pool(mbti_db, ["mbti", mbti, "traits"], base + 22)
     saju_line = pick_from_pool(saju_db, ["saju", "lines"], base + 33)
 
@@ -701,7 +746,6 @@ def make_result(birth: date, mbti: str):
     today_msg = pick_from_pool(today_db, ["pools", "today"], seed_int(birth.isoformat(), mbti, today_key, "today"))
     tomorrow_msg = pick_from_pool(tomorrow_db, ["pools", "tomorrow"], seed_int(birth.isoformat(), mbti, tomorrow_key, "tomorrow"))
 
-    # ✅ year_all도 fortunes_ko_2026.json에서 읽음 (요구 반영)
     year_all = pick_from_pool(fortune_2026_db, ["pools", "year_all"], base + 44)
     advice = pick_from_pool(fortune_2026_db, ["pools", "advice"], base + 55)
 
@@ -917,12 +961,12 @@ def render_result():
                         st.session_state.win_pending = True
                         st.session_state.fail_pending = False
                         st.session_state.consult_enabled = False
-                        st.session_state.last_result_msg = f"성공! {sec:.3f}초 기록. 쿠폰지급을 위해 이름, 전화번호 입력해주세요{marker}"
+                        st.session_state.last_result_msg = f"성공시 {sec:.3f}초 기록. 쿠폰지급을 위해 이름, 전화번호 입력해주세요{marker}"
                     else:
                         st.session_state.win_pending = False
                         st.session_state.fail_pending = True
                         st.session_state.consult_enabled = True
-                        st.session_state.last_result_msg = f"실패! {sec:.3f}초 기록 친구공유시 도전기회 1회추가 또는 정수기렌탈 상담신청 후 커피쿠폰 응모{marker}"
+                        st.session_state.last_result_msg = f"실패시 {sec:.3f}초 기록 친구공유시 도전기회 1회추가 또는 정수기렌탈 상담신청 후 커피쿠폰 응모{marker}"
 
             if st.session_state.last_result_msg:
                 st.markdown(f"<div class='card'><b>결과</b><br/>{st.session_state.last_result_msg.split('@')[0]}</div>", unsafe_allow_html=True)
