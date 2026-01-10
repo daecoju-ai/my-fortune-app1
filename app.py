@@ -1,18 +1,17 @@
 import streamlit as st
 import streamlit.components.v1 as components
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 import json
+import os
 import re
 import random
 import hashlib
-import base64
-import time
 from pathlib import Path
 
 # =========================================================
 # 0) 기본 설정
 # =========================================================
-APP_URL = "https://my-fortune.streamlit.app"
+APP_URL = "https://my-fortune.streamlit.app"  # 네 Streamlit 앱 주소로 유지/수정 가능
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 
 st.set_page_config(
@@ -21,12 +20,17 @@ st.set_page_config(
     layout="centered",
 )
 
-BASE_DIR = Path(__file__).resolve().parent
-
 # =========================================================
 # 1) 경로/DB 로더
 # =========================================================
+DATA_DIR = Path("data")
+
 def _load_json_by_candidates(candidates):
+    """
+    candidates: ["data/a.json", "data/b.json", ...]
+    존재하는 첫 파일을 로드해서 반환.
+    없으면 예외(명확하게).
+    """
     for p in candidates:
         fp = Path(p)
         if fp.exists():
@@ -42,7 +46,6 @@ def load_all_dbs():
     fortunes_year, path_year = _load_json_by_candidates([
         "data/fortunes_ko_2026.json",
         "data/fortunes_ko_2026 (1).json",
-        "data/fortunes_ko_2026",
     ])
 
     fortunes_today, path_today = _load_json_by_candidates([
@@ -50,35 +53,29 @@ def load_all_dbs():
         "data/fortunes_ko_today (1).json",
         "data/fortunes_ko_today (2).json",
         "data/fortunes_ko_today (3).json",
-        "data/fortunes_ko_today",
     ])
     fortunes_tomorrow, path_tomorrow = _load_json_by_candidates([
         "data/fortunes_ko_tomorrow.json",
         "data/fortunes_ko_tomorrow (1).json",
         "data/fortunes_ko_tomorrow (2).json",
-        "data/fortunes_ko_tomorrow",
     ])
 
     lunar_lny, path_lny = _load_json_by_candidates([
         "data/lunar_new_year_1920_2026.json",
-        "data/lunar_new_year_1920_2026",
     ])
 
     zodiac_db, path_zodiac = _load_json_by_candidates([
         "data/zodiac_fortunes_ko_2026.json",
         "data/zodiac_fortunes_ko_2026_FIXED.json",
         "data/zodiac_fortunes_ko_2026_FIXED (1).json",
-        "data/zodiac_fortunes_ko_2026",
     ])
 
     mbti_db, path_mbti = _load_json_by_candidates([
         "data/mbti_traits_ko.json",
-        "data/mbti_traits_ko",
     ])
 
     saju_db, path_saju = _load_json_by_candidates([
         "data/saju_ko.json",
-        "data/saju_ko",
     ])
 
     tarot_db, path_tarot = _load_json_by_candidates([
@@ -86,7 +83,6 @@ def load_all_dbs():
         "data/tarot_db_ko (1).json",
         "tarot_db_ko (1).json",
         "tarot_db_ko.json",
-        "data/tarot_db_ko",
     ])
 
     return {
@@ -111,7 +107,7 @@ def load_all_dbs():
     }
 
 # =========================================================
-# 2) 유틸
+# 2) 유틸 - 시드 / 문자열 정리
 # =========================================================
 def stable_seed(*parts: str) -> int:
     s = "|".join([str(p) for p in parts])
@@ -137,14 +133,8 @@ def strip_html_like(text: str) -> str:
     text = re.sub(r"<[^>]*>", "", text)
     return text.strip()
 
-def file_to_data_uri(path: Path) -> str:
-    b = path.read_bytes()
-    ext = path.suffix.lower().lstrip(".")
-    mime = "image/png" if ext == "png" else "image/jpeg" if ext in ["jpg", "jpeg"] else "image/webp"
-    return f"data:{mime};base64," + base64.b64encode(b).decode("utf-8")
-
 # =========================================================
-# 3) 한국 설 기준 띠
+# 3) 한국 설 기준 띠 계산
 # =========================================================
 ZODIAC_ORDER = ["rat","ox","tiger","rabbit","dragon","snake","horse","goat","monkey","rooster","dog","pig"]
 ZODIAC_LABEL_KO = {
@@ -176,28 +166,6 @@ def zodiac_by_birth(birth: date, lny_map: dict) -> tuple[str, int]:
         zodiac_year = y - 1
     zk = zodiac_key_from_year(zodiac_year)
     return zk, zodiac_year
-
-def normalize_zodiac_text(text: str) -> str:
-    """
-    띠 운세 문장에 rooster띠 / rat띠 같은 영어키가 섞이는 문제 정리.
-    - "rooster띠" → "닭띠"
-    - "rooster띠의" → "닭띠의"
-    - 필요시 단독 "rooster"도 닭으로 치환(과하게 바꾸지 않게 최소치환)
-    """
-    if not text:
-        return ""
-    t = str(text)
-
-    # 1) 가장 많이 보이는 패턴: {key}띠 / {key}띠의
-    for k, ko in ZODIAC_LABEL_KO.items():
-        t = t.replace(f"{k}띠의", f"{ko}의")
-        t = t.replace(f"{k}띠", ko)
-
-    # 2) 혹시 "(rooster)" 같은 단독 키가 남는 경우 최소 치환
-    for k, ko in ZODIAC_LABEL_KO.items():
-        t = re.sub(rf"\b{k}\b", ko.replace("띠", ""), t)
-
-    return t
 
 # =========================================================
 # 4) MBTI
@@ -253,73 +221,8 @@ def compute_mbti_from_answers(answers):
     )
     return mbti if mbti in MBTI_TYPES else "ENFP"
 
-def _normalize_mbti_key(x: str) -> str:
-    return (x or "").strip().upper()
-
-def resolve_mbti_entry(mbti_db, mbti: str):
-    """
-    mbti_traits_ko.json 구조를 전부 대응:
-    - dict 평면: {"ISTJ": "..."} 또는 {"ISTJ": {...}}
-    - dict 중첩: {"mbti":{"ISTJ":...}} / {"types":{"ISTJ":...}}
-    - list 형태: [{"type":"ISTJ","summary":"..."}, ...] 등
-    """
-    m = _normalize_mbti_key(mbti)
-
-    if isinstance(mbti_db, dict):
-        # 평면
-        if m in mbti_db:
-            return mbti_db.get(m)
-
-        # 중첩 후보
-        for root_key in ["mbti", "types", "data", "traits"]:
-            node = mbti_db.get(root_key)
-            if isinstance(node, dict) and m in node:
-                return node.get(m)
-
-        # dict인데 키가 소문자/공백 섞인 경우 대비(전체 스캔)
-        for k, v in mbti_db.items():
-            if _normalize_mbti_key(k) == m:
-                return v
-
-    if isinstance(mbti_db, list):
-        for item in mbti_db:
-            if not isinstance(item, dict):
-                continue
-            t = _normalize_mbti_key(item.get("type") or item.get("mbti") or item.get("name"))
-            if t == m:
-                return item
-
-    return None
-
-def mbti_entry_to_text(entry):
-    if entry is None:
-        return ""
-    if isinstance(entry, str):
-        return strip_html_like(entry)
-    if isinstance(entry, list):
-        return strip_html_like(" · ".join([safe_str(x) for x in entry if safe_str(x).strip()]))
-    if isinstance(entry, dict):
-        # 가장 흔한 형태 우선
-        summary = strip_html_like(safe_str(entry.get("summary", "")))
-        advice = strip_html_like(safe_str(entry.get("advice", "")))
-
-        # 다른 키 후보들
-        if not summary:
-            summary = strip_html_like(safe_str(entry.get("desc", ""))) or strip_html_like(safe_str(entry.get("text", "")))
-        if not advice:
-            advice = strip_html_like(safe_str(entry.get("tip", ""))) or strip_html_like(safe_str(entry.get("tips", "")))
-
-        keywords = entry.get("keywords")
-        if not summary and isinstance(keywords, list) and keywords:
-            summary = "키워드: " + " · ".join([strip_html_like(safe_str(x)) for x in keywords if safe_str(x).strip()])
-
-        if summary and advice:
-            return f"{summary} {advice}"
-        return summary or advice or strip_html_like(safe_str(entry))
-    return strip_html_like(safe_str(entry))
-
 # =========================================================
-# 5) 친구 공유
+# 5) 친구 공유 버튼
 # =========================================================
 def share_block():
     share_html = f"""
@@ -402,184 +305,290 @@ def share_block():
     components.html(share_html, height=170)
 
 # =========================================================
-# 6) 타로 (Back 이미지 + 흔들림 + 하루 1회 + 랜덤 이미지 1장)
+# 6) 타로 (요구사항 반영)
+#   - "이미 뽑았다" 문구 금지
+#   - 하루 동안은 똑같은 카드만 나오게(버튼 여러번 눌러도 동일)
+#   - back 이미지 -> 뽑기 시 흔들림 -> 앞면 이미지 1장 표시
 # =========================================================
-def flatten_tarot_cards(tarot_db):
-    cards = []
-    if isinstance(tarot_db, dict):
-        if isinstance(tarot_db.get("cards"), list):
-            cards = tarot_db["cards"]
-        elif isinstance(tarot_db.get("majors"), list) or isinstance(tarot_db.get("minors"), list):
-            majors = tarot_db.get("majors") if isinstance(tarot_db.get("majors"), list) else []
-            minors = tarot_db.get("minors") if isinstance(tarot_db.get("minors"), list) else []
-            cards = majors + minors
-        else:
-            for k, v in tarot_db.items():
-                if isinstance(v, dict):
-                    cards.append({"name": k, **v})
-    elif isinstance(tarot_db, list):
-        cards = tarot_db
-
-    cleaned = []
-    for c in cards:
-        if not isinstance(c, dict):
-            continue
-        name = c.get("name") or c.get("title") or c.get("card") or c.get("name_ko") or c.get("name_en") or c.get("key")
-        meaning = c.get("meaning") or c.get("desc") or c.get("text")
-        if not meaning:
-            upright = c.get("upright")
-            if isinstance(upright, dict):
-                meaning = upright.get("summary") or upright.get("love") or upright.get("work") or upright.get("money")
-
-        if name and meaning:
-            cleaned.append({
-                "name": strip_html_like(str(name)),
-                "meaning": strip_html_like(str(meaning)),
-            })
-    return cleaned
-
-def scan_tarot_image_files():
+def _list_tarot_front_images() -> list[Path]:
     """
-    assets/tarot 폴더 내 png 전부 스캔
-    - assets/tarot/majors/*.png
-    - assets/tarot/minors/**.png
-    - assets/tarot/back.png 제외
+    assets/tarot 아래 모든 png/jpg/webp 이미지(단 back.* 제외) 수집
     """
-    root = BASE_DIR / "assets" / "tarot"
+    root = Path("assets/tarot")
     if not root.exists():
         return []
-    files = []
-    for p in root.rglob("*.png"):
-        if p.name.lower() == "back.png":
-            continue
-        files.append(p)
-    files.sort()
-    return files
+    imgs = []
+    for ext in ("*.png", "*.jpg", "*.jpeg", "*.webp"):
+        imgs.extend(root.rglob(ext))
+    # back.* 제외
+    imgs = [p for p in imgs if p.is_file() and p.stem.lower() != "back"]
+    return imgs
 
-def pick_tarot_image_of_day(user_seed: int, today: date):
-    imgs = scan_tarot_image_files()
-    if not imgs:
-        return None
-    r = random.Random(stable_seed(str(today), str(user_seed), "tarot_img"))
-    return r.choice(imgs)
+def _get_tarot_back_path() -> Path | None:
+    candidates = [
+        Path("assets/tarot/back.png"),
+        Path("assets/tarot/back.jpg"),
+        Path("assets/tarot/back.webp"),
+        Path("assets/tarot/back.jpeg"),
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return None
 
-def pick_tarot_text_of_day(tarot_db, user_seed: int, today: date):
-    cards = flatten_tarot_cards(tarot_db)
-    if not cards:
+def _normalize_key(s: str) -> str:
+    return re.sub(r"[^a-z0-9_]+", "_", (s or "").strip().lower()).strip("_")
+
+def _flatten_tarot_db(tarot_db):
+    """
+    tarot_db 다양한 형태 방어적으로 평탄화
+    반환: list[dict] with keys: key, name, meaning, image(optional)
+    """
+    cards = []
+
+    if isinstance(tarot_db, dict):
+        # {"cards":[...]} or {"the_fool": {...}}
+        if isinstance(tarot_db.get("cards"), list):
+            raw = tarot_db["cards"]
+            for c in raw:
+                if isinstance(c, dict):
+                    name = c.get("name") or c.get("title") or c.get("card")
+                    meaning = c.get("meaning") or c.get("desc") or c.get("text")
+                    key = c.get("key") or c.get("id") or c.get("slug")
+                    image = c.get("image") or c.get("img")
+                    if name and meaning:
+                        cards.append({
+                            "key": _normalize_key(str(key or name)),
+                            "name": strip_html_like(str(name)),
+                            "meaning": strip_html_like(str(meaning)),
+                            "image": str(image or "").strip(),
+                        })
+        else:
+            for k, v in tarot_db.items():
+                if not isinstance(v, dict):
+                    continue
+                name = v.get("name") or v.get("title") or k
+                meaning = v.get("meaning") or v.get("desc") or v.get("text") or v.get("today")
+                image = v.get("image") or v.get("img")
+                if name and meaning:
+                    cards.append({
+                        "key": _normalize_key(str(k)),
+                        "name": strip_html_like(str(name)),
+                        "meaning": strip_html_like(str(meaning)),
+                        "image": str(image or "").strip(),
+                    })
+
+    elif isinstance(tarot_db, list):
+        for c in tarot_db:
+            if not isinstance(c, dict):
+                continue
+            name = c.get("name") or c.get("title") or c.get("card")
+            meaning = c.get("meaning") or c.get("desc") or c.get("text") or c.get("today")
+            key = c.get("key") or c.get("id") or c.get("slug") or name
+            image = c.get("image") or c.get("img")
+            if name and meaning:
+                cards.append({
+                    "key": _normalize_key(str(key)),
+                    "name": strip_html_like(str(name)),
+                    "meaning": strip_html_like(str(meaning)),
+                    "image": str(image or "").strip(),
+                })
+
+    return cards
+
+def _resolve_image_from_card(card: dict, all_front_images: list[Path]) -> Path | None:
+    """
+    card["image"]에 경로/파일명이 들어있으면 우선 매칭.
+    없거나 매칭 실패면 None 반환.
+    """
+    if not card:
         return None
-    r = random.Random(stable_seed(str(today), str(user_seed), "tarot_txt"))
-    return r.choice(cards)
+    img = (card.get("image") or "").strip()
+    if not img:
+        return None
+
+    # 1) 절대/상대 경로로 존재하면 그대로
+    p = Path(img)
+    if p.exists() and p.is_file():
+        return p
+
+    # 2) assets 기준 상대경로로 시도
+    p2 = Path("assets") / img
+    if p2.exists() and p2.is_file():
+        return p2
+
+    # 3) 파일명만 들어있을 경우, 전체 이미지 목록에서 stem/이름 매칭
+    target_name = Path(img).name.lower()
+    for fp in all_front_images:
+        if fp.name.lower() == target_name:
+            return fp
+
+    # 4) stem 기준 느슨한 매칭
+    tstem = Path(img).stem.lower()
+    for fp in all_front_images:
+        if fp.stem.lower() == tstem:
+            return fp
+
+    return None
+
+def get_tarot_of_day(tarot_db, birth: date, name: str):
+    """
+    하루 동안 고정:
+      - 날짜 + (birth + name) 기반 seed로
+      - "카드 의미(DB)" 1개 + "앞면 이미지" 1개를 고정 선택
+    """
+    today = date.today()
+    user_seed = stable_seed(str(birth), (name or "").strip(), "tarot_user")
+
+    # DB 카드 목록
+    flattened = _flatten_tarot_db(tarot_db)
+    # 이미지 파일 목록
+    all_front_images = _list_tarot_front_images()
+
+    seed_int = stable_seed(str(today), str(user_seed), "tarot_of_day")
+    r = random.Random(seed_int)
+
+    chosen_card = None
+    if flattened:
+        chosen_card = r.choice(flattened)
+
+    # 이미지 결정:
+    # 1) DB에 image가 있으면 그것 우선
+    # 2) 아니면 전체 이미지에서 랜덤 1개 (하루 고정)
+    chosen_img = None
+    if chosen_card:
+        chosen_img = _resolve_image_from_card(chosen_card, all_front_images)
+
+    if chosen_img is None and all_front_images:
+        chosen_img = r.choice(all_front_images)
+
+    return chosen_card, chosen_img
 
 def tarot_ui(tarot_db, birth: date, name: str):
     st.markdown("<div class='card tarot-card'>", unsafe_allow_html=True)
-    st.markdown("### 🃏 오늘의 타로카드", unsafe_allow_html=True)
-    st.markdown("<div class='soft-box'>뒷면 카드를 보고, <b>뽑기</b>를 누르면 오늘의 카드가 공개됩니다. (하루 동안 고정)</div>", unsafe_allow_html=True)
+    st.markdown("### 🃏 오늘의 타로카드 <span style='font-size:0.95rem;opacity:0.85'>(하루 1회 가능)</span>", unsafe_allow_html=True)
 
-    # 사용자 식별(세션 기준이지만, 이름/생일 기반으로 하루1회 제약 강하게)
-    user_key = hashlib.sha256(f"{name}|{birth}".encode("utf-8")).hexdigest()[:16]
-    today_str = str(date.today())
+    # 고정 설명(요구사항)
+    st.markdown(
+        "<div class='soft-box'>"
+        "뒷면 카드를 보고, <b>뽑기</b>를 누르면 오늘의 카드가 공개됩니다.<br/>"
+        "오늘 하루 동안은 같은 카드(같은 의미/이미지)로 고정됩니다."
+        "</div>",
+        unsafe_allow_html=True
+    )
 
-    if "tarot_drawn" not in st.session_state:
-        st.session_state.tarot_drawn = {}  # {user_key: "YYYY-MM-DD"}
-    if "tarot_anim_until" not in st.session_state:
-        st.session_state.tarot_anim_until = 0.0
+    back_path = _get_tarot_back_path()
+
+    # 세션
     if "tarot_revealed" not in st.session_state:
         st.session_state.tarot_revealed = False
+    if "tarot_clicked_at" not in st.session_state:
+        st.session_state.tarot_clicked_at = None
 
-    already = (st.session_state.tarot_drawn.get(user_key) == today_str)
+    # 카드(하루 고정) 미리 계산
+    chosen_card, chosen_img = get_tarot_of_day(tarot_db, birth, name)
 
-    # back.png 절대경로로 고정
-    back_path = BASE_DIR / "assets" / "tarot" / "back.png"
-    back_uri = file_to_data_uri(back_path) if back_path.exists() else ""
+    # 표시 영역
+    box = st.empty()
 
-    # 흔들림(HTML/CSS) — UI 분위기 유지, “이미지 영역만” 흔들림
-    now = time.time()
-    shaking = now < float(st.session_state.tarot_anim_until)
+    def render_back(shake: bool = False):
+        if back_path and back_path.exists():
+            if shake:
+                # 흔들림: HTML img로 렌더링 (streamlit image는 class 주기 어렵다)
+                b64 = None
+                try:
+                    import base64
+                    b64 = base64.b64encode(back_path.read_bytes()).decode("utf-8")
+                except Exception:
+                    b64 = None
 
-    shake_class = "shake" if shaking else ""
+                if b64:
+                    html = f"""
+                    <style>
+                      .tarot-shake {{
+                        width: 100%;
+                        border-radius: 18px;
+                        overflow: hidden;
+                        animation: shake 0.55s ease-in-out 1;
+                        transform-origin: center;
+                      }}
+                      @keyframes shake {{
+                        0% {{ transform: rotate(0deg) scale(1); }}
+                        15% {{ transform: rotate(-1.8deg) scale(1.01); }}
+                        30% {{ transform: rotate(1.8deg) scale(1.01); }}
+                        45% {{ transform: rotate(-1.2deg) scale(1.01); }}
+                        60% {{ transform: rotate(1.2deg) scale(1.01); }}
+                        100% {{ transform: rotate(0deg) scale(1); }}
+                      }}
+                    </style>
+                    <img class="tarot-shake" src="data:image/png;base64,{b64}" />
+                    """
+                    box.markdown(html, unsafe_allow_html=True)
+                    return
 
-    if back_uri:
-        components.html(
+            # 기본 back
+            box.image(str(back_path), use_container_width=True)
+        else:
+            box.markdown(
+                "<div style='height:220px;border-radius:18px;"
+                "background:linear-gradient(135deg,#2b2350,#6b4fd6,#fbc2eb);"
+                "display:flex;align-items:center;justify-content:center;"
+                "color:white;font-weight:900;font-size:1.2rem;'>TAROT BACK</div>",
+                unsafe_allow_html=True
+            )
+
+    def render_front():
+        # 이미지
+        if chosen_img and chosen_img.exists():
+            box.image(str(chosen_img), use_container_width=True)
+        else:
+            # 이미지가 없어도 앱이 죽지 않도록 방어
+            box.markdown(
+                "<div style='height:220px;border-radius:18px;"
+                "background:linear-gradient(135deg,#111827,#374151,#6b7280);"
+                "display:flex;align-items:center;justify-content:center;"
+                "color:white;font-weight:900;font-size:1.05rem;'>이미지 없음</div>",
+                unsafe_allow_html=True
+            )
+
+        # 의미
+        if not chosen_card:
+            st.info("타로 DB에서 카드를 불러오지 못했습니다. (tarot_db_ko.json 확인)")
+            return
+
+        cname = chosen_card.get("name", "오늘의 카드")
+        cmeaning = chosen_card.get("meaning", "")
+
+        st.markdown(
             f"""
-            <style>
-              .tarot-wrap {{
-                width: 100%;
-                border-radius: 18px;
-                overflow: hidden;
-              }}
-              .tarot-img {{
-                width: 100%;
-                display:block;
-                border-radius:18px;
-              }}
-              @keyframes shake {{
-                0% {{ transform: translate(0px,0px) rotate(0deg); }}
-                10% {{ transform: translate(-2px, 1px) rotate(-1deg); }}
-                20% {{ transform: translate(3px, 2px) rotate(1deg); }}
-                30% {{ transform: translate(-3px, -1px) rotate(-1deg); }}
-                40% {{ transform: translate(2px, -2px) rotate(1deg); }}
-                50% {{ transform: translate(-2px, 2px) rotate(0deg); }}
-                60% {{ transform: translate(3px, 1px) rotate(1deg); }}
-                70% {{ transform: translate(-3px, 1px) rotate(-1deg); }}
-                80% {{ transform: translate(2px, -1px) rotate(1deg); }}
-                90% {{ transform: translate(-2px, 2px) rotate(0deg); }}
-                100% {{ transform: translate(0px,0px) rotate(0deg); }}
-              }}
-              .shake {{
-                animation: shake 0.6s ease-in-out infinite;
-              }}
-            </style>
-            <div class="tarot-wrap">
-              <img class="tarot-img {shake_class}" src="{back_uri}" />
+            <div class="reveal">
+              <div class="reveal-title">✨ {strip_html_like(str(cname))}</div>
+              <div class="reveal-meaning">{strip_html_like(str(cmeaning))}</div>
             </div>
             """,
-            height=330,
-        )
-    else:
-        st.markdown(
-            "<div style='height:220px;border-radius:18px;"
-            "background:linear-gradient(135deg,#2b2350,#6b4fd6,#fbc2eb);"
-            "display:flex;align-items:center;justify-content:center;"
-            "color:white;font-weight:900;font-size:1.2rem;'>TAROT BACK</div>",
             unsafe_allow_html=True
         )
 
-    # 하루 1회 제한: 이미 뽑았으면 버튼 disabled + 안내
-    if already:
-        st.button("타로카드 뽑기", use_container_width=True, disabled=True)
-        st.info("오늘은 이미 뽑았어요. 내일 다시 뽑을 수 있어요 🙂")
-        st.session_state.tarot_revealed = True  # 이미 뽑은 경우 결과 보여주기(고정)
+    # 상태별 렌더
+    if not st.session_state.tarot_revealed:
+        render_back(shake=False)
     else:
-        if st.button("타로카드 뽑기", use_container_width=True):
-            # 흔들림 0.8초
-            st.session_state.tarot_anim_until = time.time() + 0.8
-            # 오늘 뽑음 기록
-            st.session_state.tarot_drawn[user_key] = today_str
-            # 결과 공개 상태
-            st.session_state.tarot_revealed = True
-            st.rerun()
-
-    # 공개 상태면 "오늘의 랜덤 1장 이미지" + "DB 의미" 출력
-    if st.session_state.tarot_revealed:
-        user_seed = stable_seed(str(birth), name, "user_tarot")
-        img_path = pick_tarot_image_of_day(user_seed, date.today())
-        card = pick_tarot_text_of_day(tarot_db, user_seed, date.today())
-
-        if img_path and img_path.exists():
-            st.image(img_path.read_bytes(), use_container_width=True)
-
-        if not card:
-            st.info("타로 DB에서 카드를 불러오지 못했습니다. (tarot_db_ko.json 확인)")
+        # 클릭 직후 0.6초는 흔들림 back 보여주고, 이후 front
+        clicked_at = st.session_state.tarot_clicked_at
+        if isinstance(clicked_at, float):
+            elapsed = (datetime.now().timestamp() - clicked_at)
+            if elapsed < 0.6:
+                render_back(shake=True)
+            else:
+                render_front()
         else:
-            st.markdown(
-                f"""
-                <div class="reveal">
-                  <div class="reveal-title">✨ {card['name']}</div>
-                  <div class="reveal-meaning">{card['meaning']}</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            render_front()
+
+    # 버튼(여러번 눌러도 "같은 카드"만 나오므로 '이미 뽑았어요' 문구가 필요 없음)
+    if st.button("타로카드 뽑기", use_container_width=True):
+        st.session_state.tarot_revealed = True
+        st.session_state.tarot_clicked_at = datetime.now().timestamp()
+        st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -605,7 +614,7 @@ def dananeum_ad_block():
     )
 
 # =========================================================
-# 8) 스타일 (✅ 절대 변경 금지 영역 유지)
+# 8) 스타일 (그라데이션 + 카드형 고정)
 # =========================================================
 st.markdown("""
 <style>
@@ -741,61 +750,22 @@ st.markdown("""
 # 9) 세션 상태
 # =========================================================
 if "stage" not in st.session_state:
-    st.session_state.stage = "input"
+    st.session_state.stage = "input"  # input / result
+
 if "name" not in st.session_state:
     st.session_state.name = ""
+
 if "birth" not in st.session_state:
     st.session_state.birth = date(2005, 1, 1)
+
 if "mbti_mode" not in st.session_state:
-    st.session_state.mbti_mode = "direct"
+    st.session_state.mbti_mode = "direct"  # direct / q16
+
 if "mbti" not in st.session_state:
     st.session_state.mbti = "ENFP"
 
 # =========================================================
-# 10) 사주 한마디 resolver (elements 구조 지원)
-# =========================================================
-def resolve_saju_text(saju_db, base_seed: int):
-    if isinstance(saju_db, dict):
-        if isinstance(saju_db.get("pools"), dict) and isinstance(saju_db["pools"].get("saju"), list):
-            pool = [strip_html_like(safe_str(x)) for x in saju_db["pools"]["saju"] if safe_str(x).strip()]
-            return pick_one(pool, stable_seed(str(base_seed), "saju"))
-        if isinstance(saju_db.get("saju"), list):
-            pool = [strip_html_like(safe_str(x)) for x in saju_db["saju"] if safe_str(x).strip()]
-            return pick_one(pool, stable_seed(str(base_seed), "saju"))
-        if isinstance(saju_db.get("lines"), list):
-            pool = [strip_html_like(safe_str(x)) for x in saju_db["lines"] if safe_str(x).strip()]
-            return pick_one(pool, stable_seed(str(base_seed), "saju"))
-
-    if isinstance(saju_db, dict) and isinstance(saju_db.get("elements"), list) and saju_db["elements"]:
-        elements = [e for e in saju_db["elements"] if isinstance(e, dict)]
-        if not elements:
-            return None
-        idx = stable_seed(str(base_seed), "saju_element") % len(elements)
-        el = elements[idx]
-        pools = el.get("pools") if isinstance(el.get("pools"), dict) else {}
-
-        combined = []
-        for k in ["overall", "advice", "love", "work", "money", "health", "relationship"]:
-            v = pools.get(k)
-            if isinstance(v, list):
-                combined.extend(v)
-
-        if not combined:
-            for k, v in el.items():
-                if isinstance(v, str) and v.strip():
-                    combined.append(v)
-
-        combined = [strip_html_like(safe_str(x)) for x in combined if safe_str(x).strip()]
-        return pick_one(combined, stable_seed(str(base_seed), "saju_pick"))
-
-    if isinstance(saju_db, list):
-        pool = [strip_html_like(safe_str(x)) for x in saju_db if safe_str(x).strip()]
-        return pick_one(pool, stable_seed(str(base_seed), "saju"))
-
-    return None
-
-# =========================================================
-# 11) 화면 렌더
+# 10) 메인 렌더
 # =========================================================
 def render_input(dbs):
     st.markdown("""
@@ -834,16 +804,11 @@ def render_input(dbs):
     st.session_state.mbti_mode = "direct" if mode == "직접 선택" else "q16"
 
     if st.session_state.mbti_mode == "direct":
-        st.session_state.mbti = st.selectbox(
-            "MBTI 직접 선택",
-            MBTI_TYPES,
-            index=MBTI_TYPES.index(st.session_state.mbti)
-        )
-
-        entry = resolve_mbti_entry(dbs["mbti_db"], st.session_state.mbti)
-        trait_text = mbti_entry_to_text(entry)
-        if trait_text:
-            st.markdown(f"<div class='soft-box'><b>{st.session_state.mbti}</b> · {trait_text}</div>", unsafe_allow_html=True)
+        st.session_state.mbti = st.selectbox("MBTI 직접 선택", MBTI_TYPES, index=MBTI_TYPES.index(st.session_state.mbti))
+        # 키는 무조건 대문자 기준
+        trait = dbs["mbti_db"].get(st.session_state.mbti.upper(), "")
+        if trait:
+            st.markdown(f"<div class='soft-box'><b>{st.session_state.mbti}</b> · {strip_html_like(safe_str(trait))}</div>", unsafe_allow_html=True)
 
     else:
         st.markdown("<div class='soft-box'>각 문항에서 더 가까운 쪽을 선택하세요. 제출하면 MBTI가 확정됩니다.</div>", unsafe_allow_html=True)
@@ -869,7 +834,7 @@ def render_input(dbs):
 def render_result(dbs):
     name = (st.session_state.name or "").strip()
     birth = st.session_state.birth
-    mbti = (st.session_state.mbti or "ENFP").strip().upper()
+    mbti = (st.session_state.mbti or "ENFP").upper()
 
     lny_map = parse_lny_map(dbs["lunar_lny"])
     zodiac_key, zodiac_year = zodiac_by_birth(birth, lny_map)
@@ -889,23 +854,30 @@ def render_result(dbs):
                 zodiac_pool = val["items"]
             elif isinstance(val.get("lines"), list):
                 zodiac_pool = val["lines"]
-            elif isinstance(val.get("today"), list):
-                zodiac_pool = val["today"]
-            elif isinstance(val.get("year"), list):
-                zodiac_pool = val["year"]
 
-    zodiac_text = pick_one(
-        [strip_html_like(safe_str(x)) for x in zodiac_pool if safe_str(x).strip()],
-        stable_seed(str(base_seed), "zodiac")
-    )
-    zodiac_text = normalize_zodiac_text(zodiac_text)
+    zodiac_text = pick_one([strip_html_like(safe_str(x)) for x in zodiac_pool if safe_str(x).strip()], stable_seed(str(base_seed), "zodiac"))
+    # 영어키 섞임 방지: 출력은 무조건 한글 띠 라벨 사용
+    if zodiac_text:
+        zodiac_text = zodiac_text.replace("rooster", "닭").replace("monkey", "원숭이").replace("rat", "쥐").replace("ox", "소") \
+                                 .replace("tiger", "호랑이").replace("rabbit", "토끼").replace("dragon", "용").replace("snake", "뱀") \
+                                 .replace("horse", "말").replace("goat", "양").replace("dog", "개").replace("pig", "돼지")
 
-    # 2) MBTI 특징 (✅ 완전 대응)
-    mbti_entry = resolve_mbti_entry(dbs["mbti_db"], mbti)
-    mbti_trait = mbti_entry_to_text(mbti_entry)
+    # 2) MBTI 특징 (대문자 키로 통일)
+    mbti_trait = strip_html_like(safe_str(dbs["mbti_db"].get(mbti, "")))
 
     # 3) 사주 한마디
-    saju_text = resolve_saju_text(dbs["saju_db"], base_seed)
+    saju_pool = []
+    sdb = dbs["saju_db"]
+    if isinstance(sdb, dict):
+        if isinstance(sdb.get("pools"), dict) and isinstance(sdb["pools"].get("saju"), list):
+            saju_pool = sdb["pools"]["saju"]
+        elif isinstance(sdb.get("saju"), list):
+            saju_pool = sdb["saju"]
+        elif isinstance(sdb.get("lines"), list):
+            saju_pool = sdb["lines"]
+    elif isinstance(sdb, list):
+        saju_pool = sdb
+    saju_text = pick_one([strip_html_like(safe_str(x)) for x in saju_pool if safe_str(x).strip()], stable_seed(str(base_seed), "saju"))
 
     # 4) 오늘/내일 운세
     today = date.today()
@@ -940,15 +912,10 @@ def render_result(dbs):
             year_pool = ydb["year_all"]
         elif isinstance(ydb.get("lines"), list):
             year_pool = ydb["lines"]
-        elif isinstance(ydb.get("year"), list):
-            year_pool = ydb["year"]
     elif isinstance(ydb, list):
         year_pool = ydb
 
-    year_text = pick_one(
-        [strip_html_like(safe_str(x)) for x in year_pool if safe_str(x).strip()],
-        stable_seed(str(base_seed), "year_2026")
-    )
+    year_text = pick_one([strip_html_like(safe_str(x)) for x in year_pool if safe_str(x).strip()], stable_seed(str(base_seed), "year_2026"))
 
     def ensure_text(val, label):
         if val and str(val).strip():
@@ -988,7 +955,7 @@ def render_result(dbs):
     share_block()
     dananeum_ad_block()
 
-    # ✅ 타로: back 이미지 + 흔들림 + 랜덤 이미지 + 하루1회
+    # ✅ 타로 (에러/문구/고정 로직 수정)
     tarot_ui(dbs["tarot_db"], birth, name)
 
     if st.button("입력 화면으로", use_container_width=True):
@@ -999,7 +966,7 @@ def render_result(dbs):
         st.write(dbs["paths"])
 
 # =========================================================
-# 12) 실행
+# 11) 실행
 # =========================================================
 try:
     dbs = load_all_dbs()
