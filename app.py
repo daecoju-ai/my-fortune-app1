@@ -25,7 +25,7 @@ from pathlib import Path
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
-APP_VERSION = "v2026.0003"
+APP_VERSION = "v2026.0004"
 APP_URL = "https://my-fortune.streamlit.app"
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 
@@ -639,6 +639,40 @@ def tarot_ui(tarot_db: dict, birth: str, name: str, mbti: str):
 
     # components.html height는 카드(정사각) + 버튼 + 설명 영역까지 여유있게
     components.html(html, height=820)
+def render_input(dbs):
+    """입력 화면"""
+    # 기본값
+    if "name" not in st.session_state:
+        st.session_state.name = ""
+    if "birth" not in st.session_state:
+        st.session_state.birth = "2005/01/01"
+    if "mbti" not in st.session_state:
+        st.session_state.mbti = "ENFP"
+
+    st.markdown("## 🔮 2026 운세 생성기")
+    st.caption("이름·생년월일·MBTI를 입력하면 결과가 생성됩니다.")
+
+    with st.form("input_form", clear_on_submit=False):
+        name = st.text_input("이름", value=st.session_state.name, placeholder="예) 김성흥")
+        birth = st.text_input("생년월일", value=st.session_state.birth, placeholder="YYYY/MM/DD")
+        mbti_list = [
+            "ISTJ","ISFJ","INFJ","INTJ",
+            "ISTP","ISFP","INFP","INTP",
+            "ESTP","ESFP","ENFP","ENTP",
+            "ESTJ","ESFJ","ENFJ","ENTJ",
+        ]
+        mbti = st.selectbox("MBTI", options=mbti_list, index=mbti_list.index(st.session_state.mbti) if st.session_state.mbti in mbti_list else 10)
+        submitted = st.form_submit_button("운세 보기", use_container_width=True)
+
+    if submitted:
+        st.session_state.name = (name or "").strip()
+        st.session_state.birth = (birth or "").strip()
+        st.session_state.mbti = (mbti or "").strip().upper()
+
+        # 결과 화면으로
+        st.session_state.stage = "result"
+        st.rerun()
+
 def render_result(dbs):
     name = (st.session_state.name or "").strip()
     birth = st.session_state.birth
