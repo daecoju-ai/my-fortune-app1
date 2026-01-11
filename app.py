@@ -10,8 +10,8 @@ from pathlib import Path
 APP_URL = "https://my-fortune.streamlit.app"
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 
-# ✅ 배포 확인용 (화면에 표시됨)
-BUILD_TAG = "BUILD_SAJU_FIX_V2"
+# ✅ 배포 확인용
+BUILD_TAG = "BUILD_SAJU_FIX_V3_MBQI_TAROTFX"
 
 st.set_page_config(
     page_title="2026 운세 | 띠 + MBTI + 사주 + 오늘/내일 + 타로",
@@ -65,7 +65,7 @@ def strip_trailing_index(text: str) -> str:
     return re.sub(r"\s*\(\d+\)\s*$", "", text).strip()
 
 def maybe_json_to_dict(x):
-    """✅ 문자열로 들어온 JSON을 dict/list로 복원"""
+    """문자열 JSON이면 dict/list로 복원"""
     if not isinstance(x, str):
         return x
     s = x.strip()
@@ -129,8 +129,15 @@ def unwrap_db(x):
 
 
 # ----------------------------
-# MBTI normalize
+# MBTI normalize + 질문지
 # ----------------------------
+MBTI_TYPES = [
+    "INTJ","INTP","ENTJ","ENTP",
+    "INFJ","INFP","ENFJ","ENFP",
+    "ISTJ","ISFJ","ESTJ","ESFJ",
+    "ISTP","ISFP","ESTP","ESFP",
+]
+
 def normalize_mbti_db(mbti_db):
     mbti_db = unwrap_db(mbti_db)
     if isinstance(mbti_db, dict):
@@ -177,6 +184,45 @@ def format_mbti_trait(val) -> str:
         return " ".join([p for p in parts if p.strip()]) if parts else strip_html_like(safe_str(val))
 
     return strip_html_like(safe_str(val))
+
+
+# ✅ 간단 MBTI 질문지(8문항)
+MBTI_QUIZ = [
+    ("E", "I", "사람들 속에서 에너지가 채워진다", "혼자 있을 때 에너지가 채워진다"),
+    ("E", "I", "생각을 말로 정리하는 편이다", "혼자 생각하며 정리하는 편이다"),
+    ("S", "N", "사실/경험 기반으로 판단한다", "가능성/패턴을 먼저 본다"),
+    ("S", "N", "디테일이 중요하다", "큰 흐름이 중요하다"),
+    ("T", "F", "논리/원칙이 우선이다", "관계/감정이 우선이다"),
+    ("T", "F", "피드백은 직설적인 편이 좋다", "피드백은 부드러운 편이 좋다"),
+    ("J", "P", "계획대로 진행할 때 편하다", "상황에 맞게 유연할 때 편하다"),
+    ("J", "P", "마감/정리가 되어야 마음이 놓인다", "열어두고 선택지를 보는 게 좋다"),
+]
+
+def run_mbti_quiz():
+    st.markdown("#### 🧩 MBTI 유형 질문지")
+    st.caption("모르겠으면 아래 질문지로 자동 계산할 수 있어요. (결과는 참고용)")
+    scores = {"E":0,"I":0,"S":0,"N":0,"T":0,"F":0,"J":0,"P":0}
+
+    for idx, (a, b, a_text, b_text) in enumerate(MBTI_QUIZ, start=1):
+        choice = st.radio(
+            f"{idx}. 더 가까운 쪽을 선택",
+            [a_text, b_text],
+            key=f"mbti_q_{idx}",
+            horizontal=False,
+        )
+        if choice == a_text:
+            scores[a] += 1
+        else:
+            scores[b] += 1
+
+    mbti = ""
+    mbti += "E" if scores["E"] >= scores["I"] else "I"
+    mbti += "S" if scores["S"] >= scores["N"] else "N"
+    mbti += "T" if scores["T"] >= scores["F"] else "F"
+    mbti += "J" if scores["J"] >= scores["P"] else "P"
+
+    st.success(f"계산된 MBTI: **{mbti}**  (E/I {scores['E']}:{scores['I']}, S/N {scores['S']}:{scores['N']}, T/F {scores['T']}:{scores['F']}, J/P {scores['J']}:{scores['P']})")
+    return mbti
 
 
 # ----------------------------
@@ -312,7 +358,7 @@ def get_zodiac_pool(zdb_raw, zodiac_key: str):
 
 
 # ----------------------------
-# SAJU (✅ 강제 한 줄 변환)
+# SAJU (강제 한 줄)
 # ----------------------------
 FIVE_ELEMENTS = ["wood", "fire", "earth", "metal", "water"]
 
@@ -379,14 +425,9 @@ def extract_saju_one_liner(saju_db_raw, birth: date, base_seed: int) -> str:
 
     return ""
 
-def force_one_liner(anything, birth: date, base_seed: int) -> str:
-    """✅ 화면에 찍기 직전에 마지막 방어: JSON 문자열/딕셔너리/리스트 전부 한 줄로"""
-    obj = maybe_json_to_dict(anything)
-    return saju_to_one_liner(obj, birth, base_seed)
-
 
 # ----------------------------
-# Tarot (LFS 포인터 방어)
+# Tarot (Flip + Shake, LFS 방어)
 # ----------------------------
 def is_git_lfs_pointer(data: bytes) -> bool:
     if not data:
@@ -409,10 +450,7 @@ def safe_st_image(data_or_path, use_container_width=True):
 
 def render_fallback_back():
     st.markdown(
-        "<div style='height:260px;border-radius:18px;"
-        "background:linear-gradient(135deg,#2b2350,#6b4fd6,#fbc2eb);"
-        "display:flex;align-items:center;justify-content:center;"
-        "color:white;font-weight:900;font-size:1.2rem;'>TAROT BACK</div>",
+        "<div class='tarot-fallback'>TAROT BACK</div>",
         unsafe_allow_html=True
     )
 
@@ -492,48 +530,35 @@ def tarot_ui(tarot_db, birth: date, name: str, mbti: str):
 
     if "tarot_revealed" not in st.session_state:
         st.session_state.tarot_revealed = False
-    if "tarot_shake" not in st.session_state:
-        st.session_state.tarot_shake = False
+    if "tarot_anim" not in st.session_state:
+        st.session_state.tarot_anim = False
 
-    shake_class = "shake" if st.session_state.tarot_shake else ""
-    st.markdown(f"<div class='tarot-stage {shake_class}'>", unsafe_allow_html=True)
+    # flip 상태: reveal 시 flip 클래스 적용
+    flip_class = "flip" if st.session_state.tarot_anim else ""
+    st.markdown(f"<div class='tarot-wrap {flip_class}'>", unsafe_allow_html=True)
 
-    if not st.session_state.tarot_revealed:
-        back_path = Path("assets/tarot/back.png")
-        back_bytes = read_file_bytes(back_path) if back_path.exists() else None
-        if back_bytes and is_git_lfs_pointer(back_bytes):
-            back_bytes = None
+    # 앞면(뒷면 카드 이미지)
+    st.markdown("<div class='tarot-face tarot-front'>", unsafe_allow_html=True)
+    back_path = Path("assets/tarot/back.png")
+    back_bytes = read_file_bytes(back_path) if back_path.exists() else None
+    if back_bytes and is_git_lfs_pointer(back_bytes):
+        back_bytes = None
 
-        if back_bytes:
-            ok = safe_st_image(back_bytes, use_container_width=True)
-            if not ok:
-                render_fallback_back()
-        else:
+    if back_bytes:
+        ok = safe_st_image(back_bytes, use_container_width=True)
+        if not ok:
             render_fallback_back()
-
+    else:
+        render_fallback_back()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    if st.button("타로카드 뽑기", use_container_width=True):
-        st.session_state.tarot_shake = True
-        st.session_state.tarot_revealed = True
-        st.rerun()
+    # 뒷면(공개 카드)
+    st.markdown("<div class='tarot-face tarot-back'>", unsafe_allow_html=True)
 
-    if st.session_state.tarot_revealed:
-        if st.session_state.tarot_shake:
-            components.html(
-                "<script>setTimeout(()=>{window.parent.postMessage({type:'streamlit:rerun'}, '*');}, 350);</script>",
-                height=0
-            )
-            st.session_state.tarot_shake = False
+    tarot_cards = parse_tarot_db(tarot_db)
+    picked = tarot_pick_for_today(tarot_cards, name, birth, mbti)
 
-        tarot_cards = parse_tarot_db(tarot_db)
-        picked = tarot_pick_for_today(tarot_cards, name, birth, mbti)
-
-        if not picked:
-            st.info("타로 DB에서 카드를 불러오지 못했습니다. (tarot_db_ko.json 확인)")
-            st.markdown("</div>", unsafe_allow_html=True)
-            return
-
+    if st.session_state.tarot_revealed and picked:
         all_images = list_tarot_images()
 
         img_path = None
@@ -566,6 +591,32 @@ def tarot_ui(tarot_db, birth: date, name: str, mbti: str):
             """,
             unsafe_allow_html=True
         )
+    else:
+        st.markdown("<div class='tarot-placeholder'>뽑기를 누르면 카드가 공개됩니다</div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)  # tarot-back
+    st.markdown("</div>", unsafe_allow_html=True)  # tarot-wrap
+
+    # 버튼
+    cols = st.columns([1,1])
+    with cols[0]:
+        if st.button("타로카드 뽑기", use_container_width=True):
+            st.session_state.tarot_revealed = True
+            st.session_state.tarot_anim = True
+            st.rerun()
+    with cols[1]:
+        if st.button("연출 다시보기", use_container_width=True):
+            # 애니메이션만 다시
+            st.session_state.tarot_anim = True
+            st.rerun()
+
+    # 애니메이션 플래그 자동 해제(1회성)
+    if st.session_state.tarot_anim:
+        components.html(
+            "<script>setTimeout(()=>{window.parent.postMessage({type:'streamlit:rerun'}, '*');}, 650);</script>",
+            height=0
+        )
+        st.session_state.tarot_anim = False
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -654,6 +705,57 @@ st.markdown("""
   box-shadow: 0 10px 26px rgba(0,0,0,0.10);
 }
 .ad-sub{ margin-top: 10px; font-size: 0.86rem; opacity: 0.85; }
+
+/* Tarot FX */
+.tarot-wrap{
+  position: relative;
+  width: 100%;
+  perspective: 1100px;
+  margin-top: 10px;
+}
+.tarot-face{
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transition: transform 0.62s ease;
+}
+.tarot-front{
+  transform: rotateY(0deg);
+}
+.tarot-back{
+  position:absolute;
+  top:0; left:0; right:0;
+  transform: rotateY(180deg);
+}
+.tarot-wrap.flip .tarot-front{
+  transform: rotateY(-180deg);
+  animation: shake 0.32s ease-in-out 1;
+}
+.tarot-wrap.flip .tarot-back{
+  transform: rotateY(0deg);
+}
+@keyframes shake {
+  0% { transform: translateX(0px) rotate(0deg); }
+  20% { transform: translateX(-6px) rotate(-1deg); }
+  40% { transform: translateX(6px) rotate(1deg); }
+  60% { transform: translateX(-5px) rotate(-0.8deg); }
+  80% { transform: translateX(5px) rotate(0.8deg); }
+  100% { transform: translateX(0px) rotate(0deg); }
+}
+.tarot-fallback{
+  height: 260px;
+  border-radius: 18px;
+  background: linear-gradient(135deg,#2b2350,#6b4fd6,#fbc2eb);
+  display:flex; align-items:center; justify-content:center;
+  color:white; font-weight:900; font-size:1.2rem;
+}
+.tarot-placeholder{
+  height: 260px;
+  border-radius: 18px;
+  background: rgba(245,245,255,0.78);
+  border: 1px dashed rgba(130,95,220,0.28);
+  display:flex; align-items:center; justify-content:center;
+  color:#2b2350; font-weight:900;
+}
 .reveal{
   margin-top: 12px; border-radius: 18px; padding: 14px 14px;
   background: rgba(245,245,255,0.85);
@@ -663,15 +765,6 @@ st.markdown("""
 .reveal-title{ font-weight: 900; font-size: 1.2rem; color:#2b2350; }
 .reveal-meaning{ margin-top: 8px; line-height: 1.7; color:#1f1747; }
 @keyframes pop{ from { transform: scale(0.97); opacity: 0.5; } to { transform: scale(1.0); opacity: 1; } }
-.tarot-stage.shake { animation: shake 0.32s ease-in-out 1; }
-@keyframes shake {
-  0% { transform: translateX(0px) rotate(0deg); }
-  20% { transform: translateX(-6px) rotate(-1deg); }
-  40% { transform: translateX(6px) rotate(1deg); }
-  60% { transform: translateX(-5px) rotate(-0.8deg); }
-  80% { transform: translateX(5px) rotate(0.8deg); }
-  100% { transform: translateX(0px) rotate(0deg); }
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -818,13 +911,6 @@ def get_pool_from_fortune_db(fdb, key_name):
 # ----------------------------
 # UI
 # ----------------------------
-MBTI_TYPES = [
-    "INTJ","INTP","ENTJ","ENTP",
-    "INFJ","INFP","ENFJ","ENFP",
-    "ISTJ","ISFJ","ESTJ","ESFJ",
-    "ISTP","ISFP","ESTP","ESFP",
-]
-
 def render_input(dbs):
     st.markdown(f"""
     <div class="header-hero">
@@ -843,16 +929,30 @@ def render_input(dbs):
         max_value=date(2026, 12, 31),
     )
 
-    mbti = st.selectbox(
-        "MBTI",
-        MBTI_TYPES,
-        index=MBTI_TYPES.index(st.session_state.get("mbti", "ENFP")) if st.session_state.get("mbti", "ENFP") in MBTI_TYPES else 0
+    mode = st.radio(
+        "MBTI 입력 방식",
+        ["MBTI를 알고 있어요 (직접 선택)", "MBTI를 모르겠어요 (질문지로 계산)"],
+        index=0,
+        horizontal=False,
     )
-    st.session_state.mbti = mbti
+
+    if mode.startswith("MBTI를 알고"):
+        mbti = st.selectbox(
+            "MBTI",
+            MBTI_TYPES,
+            index=MBTI_TYPES.index(st.session_state.get("mbti", "ENFP")) if st.session_state.get("mbti", "ENFP") in MBTI_TYPES else 0
+        )
+    else:
+        mbti = run_mbti_quiz()
+
+    st.session_state.mbti = (mbti or "ENFP").strip().upper()
 
     lny_map = parse_lny_map(dbs["lunar_lny"])
     zk, zy = zodiac_by_birth(st.session_state.birth, lny_map)
-    st.markdown(f"<div class='card'><div class='soft-box'>당신의 띠: <b>{ZODIAC_LABEL_KO.get(zk, zk)}</b> (설 기준 띠년도 {zy})</div></div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='card'><div class='soft-box'>당신의 띠: <b>{ZODIAC_LABEL_KO.get(zk, zk)}</b> (설 기준 띠년도 {zy})</div></div>",
+        unsafe_allow_html=True
+    )
 
     if st.button("운세 보기", use_container_width=True):
         st.session_state.stage = "result"
@@ -869,24 +969,23 @@ def render_result(dbs):
 
     base_seed = stable_seed(str(birth), name, mbti)
 
-    # ✅ Zodiac
+    # Zodiac
     zpool = get_zodiac_pool(dbs["zodiac_db"], zodiac_key)
     zodiac_text = pick_one(zpool, stable_seed(str(base_seed), "zodiac")) if zpool else ""
     zodiac_text = normalize_zodiac_text(zodiac_text or "")
     zodiac_text = strip_trailing_index(zodiac_text)
     zodiac_text = ensure_text(zodiac_text, "띠 운세")
 
-    # ✅ MBTI
+    # MBTI
     mbti_trait_val = dbs["mbti_db"].get(mbti, None) if isinstance(dbs["mbti_db"], dict) else None
     mbti_trait = format_mbti_trait(mbti_trait_val)
     mbti_trait = ensure_text(mbti_trait, "MBTI 특징")
 
-    # ✅ SAJU (최종 강제 변환)
+    # SAJU
     raw_saju = extract_saju_one_liner(dbs["saju_db"], birth, base_seed)
-    saju_text = force_one_liner(raw_saju, birth, base_seed)
-    saju_text = ensure_text(saju_text, "사주 한 마디")
+    saju_text = ensure_text(raw_saju, "사주 한 마디")
 
-    # ✅ today/tomorrow/year
+    # today/tomorrow/year
     today = date.today()
     tomorrow = today + timedelta(days=1)
 
