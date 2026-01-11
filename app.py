@@ -1,4 +1,4 @@
-# app.py (v2026.0001)
+# app.py (v2026.0002)
 # - 디자인 큰 틀 유지(그라데이션/카드형)
 # - DB는 data/의 JSON만 사용 (자동 생성/ fallback 문구 금지)
 # - MBTI/사주/띠 DB 인식 오류 수정
@@ -18,7 +18,7 @@ from pathlib import Path
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
-APP_VERSION = "v2026.0001"
+APP_VERSION = "v2026.0002"
 APP_URL = "https://my-fortune.streamlit.app"
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 
@@ -389,430 +389,249 @@ def get_tarot_of_day(tarot_db: dict, user_seed: int, today_: date):
     r = random.Random(seed_int)
     return r.choice(cleaned)
 
-def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
-    st.markdown("<div class='card tarot-card'>", unsafe_allow_html=True)
-    st.markdown("### 🃏 오늘의 타로카드 (하루 1회 가능)", unsafe_allow_html=True)
-    st.markdown("<div class='soft-box'>뒷면 카드를 보고 <b>뽑기</b>를 누르면 카드가 공개됩니다. 오늘 하루 동안은 <b>같은 카드(같은 의미/이미지)</b>로 고정됩니다.</div>", unsafe_allow_html=True)
 
-    # back.png
-    back_path = Path("assets/tarot/back.png")
-    back_b64 = read_image_b64(back_path)
+def tarot_ui(tarot_db: dict, birth: str, name: str, mbti: str):
+    """
+    - 하루 1회(하루 동안 동일 카드 고정): 날짜 단위로 seed를 고정해서 카드/이미지/해석이 하루 내내 동일
+    - "뽑기" 버튼 클릭 시 화면이 위로 튀는 문제 방지: Streamlit rerun 버튼 대신, HTML 내부 버튼으로 처리(리런 없이 애니메이션/사운드/이미지 전환)
+    - back.png가 미스테리한 배경음 + 흔들림 → 웅장한 소리 + 앞면 공개
+    """
+    import base64, random, datetime
+    import streamlit.components.v1 as components
 
-    # 오늘 카드(사용자+날짜로 고정)
-    user_seed = stable_seed(str(birth), (name or ""), (mbti or ""))
-    card = get_tarot_of_day(tarot_db, user_seed, date.today())
+    st.subheader("🃏 오늘의 타로카드 (하루 1회 가능)")
+    st.caption("뒷면 카드를 보고 **뽑기**를 누르면 오늘의 카드가 공개됩니다. "
+               "오늘 하루 동안은 **같은 카드(같은 의미/이미지)**로 고정됩니다.")
 
-    # 상태
-    if "tarot_revealed" not in st.session_state:
-        st.session_state.tarot_revealed = False
+    # --- 날짜 기준 고정(seed) ---
+    today = datetime.date.today().isoformat()
+    ss = st.session_state
 
-    # 버튼(클릭 시 rerun은 되지만, 아래 JS로 스크롤 복원)
-    if st.button("타로카드 뽑기", use_container_width=True, key="btn_tarot_draw"):
-        st.session_state.tarot_revealed = True
-        st.session_state.tarot_draw_ts = str(date.today())
-        st.rerun()
+    # seed는 (이름/생년월일/mbti/날짜) 기반 → 같은 사용자는 하루 동안 고정, 다음날 바뀜
+    base_seed = f"{(name or '').strip()}|{(birth or '').strip()}|{(mbti or '').strip()}|{today}"
+    if ss.get("tarot_day") != today or ss.get("tarot_seed") != base_seed:
+        ss["tarot_day"] = today
+        ss["tarot_seed"] = base_seed
+        ss.pop("tarot_pick", None)
+        ss.pop("tarot_revealed", None)
 
-    # 이미지 준비
-    front_b64 = None
-    front_label = ""
-    front_meaning = ""
-    if card:
-        front_label = card["name"]
-        front_meaning = card["meaning"]
-        img_path = Path(card.get("image",""))
-        if img_path.exists():
-            front_b64 = read_image_b64(img_path)
+    rng = random.Random(base_seed)
 
-    # 파일이 없을 때도 앱이 죽지 않게(에러 대신 안내)
-    if not back_b64:
-        st.info("tarot/back.png 를 찾지 못했습니다. (assets/tarot/back.png 확인)")
-        st.markdown("</div>", unsafe_allow_html=True)
+    # --- 카드 1장 선택(하루 고정) ---
+    if "tarot_pick" not in ss:
+        # tarot_db 구조: {"cards":[...]} 또는 {"major":[...], "minor":[...]} 등 다양할 수 있으니 유연하게
+        cards = []
+        if isinstance(tarot_db, dict):
+            if isinstance(tarot_db.get("cards"), list):
+                cards = tarot_db["cards"]
+            else:
+                # flatten: dict 안의 list들을 모으기
+                for v in tarot_db.values():
+                    if isinstance(v, list):
+                        cards.extend(v)
+        if not cards:
+            st.error("타로 DB(cards)를 찾지 못했습니다. tarot_db_ko.json 구조 확인 필요")
+            return
+        ss["tarot_pick"] = rng.choice(cards)
+
+    pick = ss["tarot_pick"]
+
+    # --- 이미지 경로/텍스트 추출(다양한 키 대응) ---
+    img_rel = pick.get("image") or pick.get("img") or pick.get("path") or ""
+    title = pick.get("title") or pick.get("name") or pick.get("card") or "오늘의 카드"
+    meaning = pick.get("meaning") or pick.get("desc") or pick.get("description") or ""
+    keywords = pick.get("keywords") or pick.get("tags") or []
+    if isinstance(keywords, str):
+        keywords = [keywords]
+
+    # --- 파일 읽기(이미지/사운드) ---
+    back_path = Path("tarot/back.png")
+    front_path = Path(img_rel) if img_rel else None
+
+    def _b64_bytes(path: Path) -> str:
+        return base64.b64encode(path.read_bytes()).decode("utf-8")
+
+    if not back_path.exists():
+        st.error("tarot/back.png 파일을 찾지 못했습니다. 경로: tarot/back.png")
+        return
+    if not front_path or not front_path.exists():
+        st.error(f"타로 앞면 이미지 파일을 찾지 못했습니다: {img_rel} (tarot_db_ko.json의 image/path 확인)")
         return
 
-    if st.session_state.tarot_revealed and (not card or not front_b64):
-        st.info("타로 DB 또는 이미지 경로를 읽지 못했습니다. (data/tarot_db_ko.json 및 assets/tarot 폴더 확인)")
-        st.markdown("</div>", unsafe_allow_html=True)
-        return
+    back_b64 = _b64_bytes(back_path)
+    front_b64 = _b64_bytes(front_path)
 
-    # HTML 애니메이션 (back 흔들림 → front 등장)
-    revealed = bool(st.session_state.tarot_revealed)
+    # 사운드 파일은 (사용자 요청대로) assets 폴더 루트에 둔 것으로 가정
+    sfx_mystery = Path("assets/mystery.mp3")
+    sfx_reveal = Path("assets/reveal.mp3")
 
-    # 효과음(파일이 있으면 사용)
-    sfx_mystery = Path("assets/tarot/sfx_mystery.mp3")
-    sfx_reveal = Path("assets/tarot/sfx_reveal.mp3")
-    sfx_mystery_b64 = read_image_b64(sfx_mystery)  # (mp3도 b64로 올리기 위해 같은 함수 사용)
-    sfx_reveal_b64 = read_image_b64(sfx_reveal)
+    mystery_b64 = _b64_bytes(sfx_mystery) if sfx_mystery.exists() else ""
+    reveal_b64 = _b64_bytes(sfx_reveal) if sfx_reveal.exists() else ""
 
-    def _data_uri(b64: str, mime: str) -> str:
-        return f"data:{mime};base64,{b64}"
-
-    back_src = _data_uri(back_b64, "image/png")
-
-    front_src = _data_uri(front_b64, "image/png") if front_b64 else ""
-
-    # mp3는 브라우저 정책상 '클릭(유저 제스처)' 후 재생이 안정적.
-    # Streamlit 버튼 클릭 후 rerun되더라도, revealed 상태에서 JS가 재생을 시도.
-    audio_html = ""
-    if revealed:
-        # reveal에 맞춰 재생(파일 없으면 무음)
-        if sfx_mystery_b64:
-            audio_html += f"<audio id='mystery' src='{_data_uri(sfx_mystery_b64,'audio/mpeg')}'></audio>"
-        if sfx_reveal_b64:
-            audio_html += f"<audio id='reveal' src='{_data_uri(sfx_reveal_b64,'audio/mpeg')}'></audio>"
-
-    tarot_html = f"""
-<div class="tarot-wrap">
-  {audio_html}
-  <div class="tarot-stage {'revealed' if revealed else ''}">
-    <img class="tarot-back" src="{back_src}" alt="tarot back" />
-    {"<img class='tarot-front' src='"+front_src+"' alt='tarot front' />" if revealed else ""}
-  </div>
-</div>
-
-<style>
-.tarot-wrap {{
-  margin-top: 10px;
-}}
-.tarot-stage {{
-  position: relative;
-  width: 100%;
-  max-width: 360px;        /* ✅ 카드 크기 조절(너무 커지지 않게) */
-  margin: 0 auto;
-  aspect-ratio: 1 / 1;
-}}
-.tarot-stage img {{
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  border-radius: 18px;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.18);
-  border: 1px solid rgba(140,120,200,0.20);
-}}
-.tarot-back {{
-  animation: none;
-}}
-.tarot-stage.revealed .tarot-back {{
-  animation: shake 0.7s ease-in-out 1;
-}}
-.tarot-front {{
-  opacity: 0;
-  transform: scale(0.98);
-  animation: popin 0.35s ease-out forwards;
-  animation-delay: 0.72s;
-}}
-@keyframes shake {{
-  0% {{ transform: translate(0px,0px) rotate(0deg); }}
-  15% {{ transform: translate(-3px,1px) rotate(-1deg); }}
-  30% {{ transform: translate(3px,-1px) rotate(1deg); }}
-  45% {{ transform: translate(-3px,1px) rotate(-1deg); }}
-  60% {{ transform: translate(3px,-1px) rotate(1deg); }}
-  75% {{ transform: translate(-2px,1px) rotate(0deg); }}
-  100% {{ transform: translate(0px,0px) rotate(0deg); }}
-}}
-@keyframes popin {{
-  from {{ opacity: 0; transform: scale(0.98); }}
-  to   {{ opacity: 1; transform: scale(1.00); }}
-}}
-</style>
-
-<script>
-(function(){{
-  // ✅ 스크롤 튐 완화: 복원
-  try {{
-    const y = localStorage.getItem("scrollY");
-    if (y) {{
-      window.scrollTo(0, parseInt(y, 10));
-      localStorage.removeItem("scrollY");
-    }}
-  }} catch(e){{}}
-
-  // ✅ revealed 상태면: 미스테리 → 웅장(리빌)
-  const revealed = {str(revealed).lower()};
-  if (revealed) {{
-    try {{
-      const m = document.getElementById("mystery");
-      const r = document.getElementById("reveal");
-      if (m) {{
-        m.volume = 0.85;
-        m.currentTime = 0;
-        m.play().catch(()=>{{}});
-        setTimeout(()=>{{ try{{ m.pause(); }}catch(e){{}} }}, 700);
+    # --- 카드 UI (리런 없이 JS로 애니메이션/사운드/전환) ---
+    # 크기: 모바일에서 보기 좋게 최대 폭 520px, 비율 고정, 공간(높이) 고정 → 레이아웃 점프 최소화
+    html = f"""
+    <style>
+      .tarot-wrap {{
+        max-width: 520px; margin: 0 auto;
+        user-select: none;
       }}
-      if (r) {{
-        r.volume = 0.95;
-        r.currentTime = 0;
-        setTimeout(()=>{{ r.play().catch(()=>{{}}); }}, 650);
+      .tarot-stage {{
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 16px 40px rgba(0,0,0,.12);
+        background: #111;
       }}
-    }} catch(e){{}}
-  }}
-}})();
-</script>
-"""
-    components.html(tarot_html, height=420 if revealed else 410)
+      .tarot-img {{
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: block;
+      }}
+      .tarot-front {{
+        position:absolute; inset:0;
+        opacity:0;
+        transform: scale(1.02);
+        transition: opacity .45s ease, transform .45s ease;
+      }}
+      .tarot-back {{
+        position:absolute; inset:0;
+        opacity:1;
+        transition: opacity .25s ease;
+      }}
+      .tarot-stage.shake .tarot-back {{
+        animation: tarot-shake 1.6s ease-in-out infinite;
+        filter: brightness(1.02) contrast(1.02);
+      }}
+      @keyframes tarot-shake {{
+        0% {{ transform: translate(0px,0px) rotate(0deg) scale(1); }}
+        10% {{ transform: translate(-2px, 1px) rotate(-0.9deg) scale(1.01); }}
+        20% {{ transform: translate( 2px,-1px) rotate( 1.1deg) scale(1.01); }}
+        30% {{ transform: translate(-3px, 2px) rotate(-1.4deg) scale(1.02); }}
+        40% {{ transform: translate( 3px,-2px) rotate( 1.4deg) scale(1.02); }}
+        50% {{ transform: translate(-2px, 2px) rotate(-1.0deg) scale(1.015); }}
+        60% {{ transform: translate( 2px,-2px) rotate( 1.0deg) scale(1.015); }}
+        70% {{ transform: translate(-1px, 1px) rotate(-0.6deg) scale(1.01); }}
+        80% {{ transform: translate( 1px,-1px) rotate( 0.6deg) scale(1.01); }}
+        90% {{ transform: translate(-1px, 0px) rotate(-0.3deg) scale(1.005); }}
+        100% {{ transform: translate(0px,0px) rotate(0deg) scale(1); }}
+      }}
+      .tarot-controls {{
+        display:flex; gap:10px; margin-top: 14px;
+      }}
+      .tarot-btn {{
+        flex:1;
+        padding: 14px 14px;
+        border-radius: 14px;
+        border: 0;
+        font-weight: 800;
+        font-size: 16px;
+        cursor: pointer;
+        background: linear-gradient(135deg,#5b56ff,#ff78c8);
+        color: white;
+        box-shadow: 0 10px 24px rgba(91,86,255,.25);
+      }}
+      .tarot-btn:disabled {{
+        opacity: .55; cursor: not-allowed; box-shadow: none;
+      }}
+      .tarot-note {{
+        margin-top: 12px;
+        padding: 14px 14px;
+        border-radius: 14px;
+        background: rgba(240,242,255,.9);
+        border: 1px dashed rgba(80,90,160,.25);
+        color: #27305a;
+        line-height: 1.5;
+        font-size: 14px;
+        display:none;
+      }}
+      .tarot-note.show {{ display:block; }}
+      .tarot-title {{
+        font-weight: 900;
+        font-size: 18px;
+        margin-bottom: 8px;
+      }}
+      .tarot-kws {{
+        opacity:.9;
+        margin-top: 8px;
+      }}
+      /* 스크롤 점프 방지: 버튼 클릭 시 현재 위치 고정 */
+      html, body {{ scroll-behavior: auto !important; }}
+    </style>
 
-    if revealed and front_label:
-        st.markdown(
-            f"""
-            <div class="reveal">
-              <div class="reveal-title">✨ {front_label}</div>
-              <div class="reveal-meaning">{front_meaning}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# =========================================================
-# 7) 다나눔렌탈 광고(고정)
-# =========================================================
-def dananeum_ad_block():
-    st.markdown(
-        f"""
-        <div class="adbox">
-          <div class="ad-badge">광고</div>
-          <div class="ad-title">[광고] 정수기 렌탈</div>
-          <div class="ad-body">
-            제휴카드 적용시 <b>월 렌탈비 0원</b>, 설치당일 <b>최대 현금50만원</b> + <b>사은품 증정</b>
-          </div>
-          <div style="margin-top:12px;">
-            <a class="ad-btn" href="{DANANEUM_LANDING_URL}" target="_blank">무료 상담하기</a>
-          </div>
-          <div class="ad-sub">이름/전화번호 작성 · 개인정보처리방침 동의 후 신청완료</div>
+    <div class="tarot-wrap" id="tarot-wrap">
+      <div class="tarot-stage" id="tarot-stage">
+        <div class="tarot-back" id="tarot-back">
+          <img class="tarot-img" src="data:image/png;base64,{back_b64}" alt="tarot-back"/>
         </div>
-        """,
-        unsafe_allow_html=True
-    )
+        <div class="tarot-front" id="tarot-front">
+          <img class="tarot-img" src="data:image/png;base64,{front_b64}" alt="tarot-front"/>
+        </div>
+      </div>
 
-# =========================================================
-# 8) 스타일 (그라데이션 + 카드형 고정)
-# =========================================================
-st.markdown("""
-<style>
-.block-container { padding-top: 1.0rem; padding-bottom: 2.2rem; max-width: 720px; }
+      <div class="tarot-controls">
+        <button class="tarot-btn" id="tarot-btn">타로카드 뽑기</button>
+      </div>
 
-.header-hero {
-  border-radius: 22px;
-  padding: 18px 16px;
-  background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 45%, #8ec5fc 100%);
-  color: white;
-  text-align: center;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.18);
-  margin-bottom: 14px;
-}
-.hero-title { font-size: 1.55rem; font-weight: 900; margin: 0; }
-.hero-sub { font-size: 0.95rem; opacity: 0.95; margin-top: 6px; }
-.badge {
-  display:inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  background: rgba(255,255,255,0.20);
-  border: 1px solid rgba(255,255,255,0.25);
-  margin-top: 10px;
-}
+      <div class="tarot-note" id="tarot-note">
+        <div class="tarot-title">🃏 {title}</div>
+        <div>{meaning}</div>
+        {"<div class='tarot-kws'><b>키워드</b>: " + " · ".join([str(k) for k in keywords]) + "</div>" if keywords else ""}
+      </div>
 
-.card {
-  background: rgba(255,255,255,0.96);
-  border-radius: 18px;
-  padding: 18px 16px;
-  box-shadow: 0 10px 28px rgba(0,0,0,0.10);
-  border: 1px solid rgba(140,120,200,0.18);
-  margin: 12px 0;
-}
-
-.result-card {
-  background: linear-gradient(135deg, rgba(245,245,255,0.96), rgba(255,255,255,0.96));
-  border-radius: 18px;
-  padding: 18px 16px;
-  box-shadow: 0 10px 28px rgba(0,0,0,0.10);
-  border: 1px solid rgba(140,120,200,0.18);
-  margin: 12px 0;
-}
-
-.soft-box {
-  background: rgba(245,245,255,0.78);
-  border: 1px solid rgba(130,95,220,0.18);
-  padding: 12px 12px;
-  border-radius: 14px;
-  line-height: 1.65;
-  font-size: 1.0rem;
-}
-
-.bigbtn > button {
-  border-radius: 999px !important;
-  font-weight: 900 !important;
-  padding: 0.78rem 1.15rem !important;
-}
-
-.adbox {
-  background: rgba(255,255,255,0.96);
-  border-radius: 18px;
-  padding: 16px;
-  margin: 12px 0;
-  border: 2px solid rgba(255, 140, 80, 0.55);
-  box-shadow: 0 10px 28px rgba(0,0,0,0.08);
-  text-align:center;
-}
-.ad-badge{
-  display:inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.82rem;
-  font-weight: 900;
-  background: rgba(255,140,80,0.18);
-  border: 1px solid rgba(255,140,80,0.35);
-  color:#c0392b;
-}
-.ad-title{
-  margin-top: 8px;
-  font-weight: 900;
-  font-size: 1.15rem;
-  color:#2b2350;
-}
-.ad-body{
-  margin-top: 8px;
-  font-size: 0.98rem;
-  color:#2b2350;
-  line-height:1.6;
-}
-.ad-btn{
-  display:inline-block;
-  background:#ff8c50;
-  color:white;
-  padding:10px 18px;
-  border-radius:999px;
-  font-weight:900;
-  text-decoration:none;
-  box-shadow: 0 10px 26px rgba(0,0,0,0.10);
-}
-.ad-sub{
-  margin-top: 10px;
-  font-size: 0.86rem;
-  opacity: 0.85;
-}
-
-.reveal{
-  margin-top: 12px;
-  border-radius: 18px;
-  padding: 14px 14px;
-  background: rgba(245,245,255,0.85);
-  border: 1px solid rgba(130,95,220,0.18);
-  animation: pop 0.25s ease-out;
-}
-.reveal-title{
-  font-weight: 900;
-  font-size: 1.2rem;
-  color:#2b2350;
-}
-.reveal-meaning{
-  margin-top: 8px;
-  line-height: 1.7;
-  color:#1f1747;
-}
-@keyframes pop{
-  from { transform: scale(0.97); opacity: 0.5; }
-  to { transform: scale(1.0); opacity: 1; }
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ✅ 전역 스크롤 저장(버튼 클릭 직전 위치 저장)
-components.html("""
-<script>
-(function(){
-  // Streamlit rerun 전에 클릭 위치 저장
-  document.addEventListener("click", function(ev){
-    try {
-      localStorage.setItem("scrollY", String(window.scrollY || 0));
-    } catch(e){}
-  }, true);
-})();
-</script>
-""", height=0)
-
-# =========================================================
-# 9) 세션 상태
-# =========================================================
-if "stage" not in st.session_state:
-    st.session_state.stage = "input"  # input / result
-if "name" not in st.session_state:
-    st.session_state.name = ""
-if "birth" not in st.session_state:
-    st.session_state.birth = date(2005, 1, 1)
-if "mbti_mode" not in st.session_state:
-    st.session_state.mbti_mode = "direct"  # direct / q16
-if "mbti" not in st.session_state:
-    st.session_state.mbti = "ENFP"
-
-# =========================================================
-# 10) 메인 렌더
-# =========================================================
-def render_input(dbs):
-    st.markdown(f"""
-    <div class="header-hero">
-      <p class="hero-title">🔮 2026 운세 | 띠 + MBTI + 사주 + 오늘/내일 + 타로</p>
-      <p class="hero-sub">이름 + 생년월일 + MBTI로 결과가 고정 출력됩니다</p>
-      <span class="badge">2026 · {APP_VERSION}</span>
+      <audio id="aud-mystery" preload="auto" {"src='data:audio/mp3;base64," + mystery_b64 + "'" if mystery_b64 else ""}></audio>
+      <audio id="aud-reveal" preload="auto" {"src='data:audio/mp3;base64," + reveal_b64 + "'" if reveal_b64 else ""}></audio>
     </div>
-    """, unsafe_allow_html=True)
 
-    st.session_state.name = st.text_input("이름", value=st.session_state.name, placeholder="예) 홍길동")
+    <script>
+      const btn = document.getElementById("tarot-btn");
+      const stage = document.getElementById("tarot-stage");
+      const front = document.getElementById("tarot-front");
+      const note = document.getElementById("tarot-note");
+      const audMystery = document.getElementById("aud-mystery");
+      const audReveal = document.getElementById("aud-reveal");
 
-    st.session_state.birth = st.date_input(
-        "생년월일",
-        value=st.session_state.birth,
-        min_value=date(1920, 1, 1),
-        max_value=date(2026, 12, 31),
-    )
+      let revealed = false;
 
-    lny_map = parse_lny_map(dbs["lunar_lny"])
-    zk, zy = zodiac_by_birth(st.session_state.birth, lny_map)
-    st.markdown(
-        f"<div class='card'><b>자동 띠 결정(한국 설 기준)</b><br>"
-        f"<div class='soft-box'>당신의 띠: <b>{ZODIAC_LABEL_KO.get(zk, zk)}</b> (기준년도: {zy}년)</div></div>",
-        unsafe_allow_html=True
-    )
+      function safePlay(aud) {{
+        if (!aud || !aud.src) return;
+        try {{
+          aud.currentTime = 0;
+          const p = aud.play();
+          if (p && p.catch) p.catch(()=>{{}});
+        }} catch(e) {{}}
+      }}
 
-    st.markdown("<div class='card'><b>MBTI</b></div>", unsafe_allow_html=True)
+      btn.addEventListener("click", () => {{
+        if (revealed) return;
 
-    mode = st.radio(
-        "MBTI를 어떻게 할까요?",
-        ["직접 선택", "16문항 테스트"],
-        index=0 if st.session_state.mbti_mode == "direct" else 1,
-        horizontal=True
-    )
-    st.session_state.mbti_mode = "direct" if mode == "직접 선택" else "q16"
+        // 클릭 순간 스크롤 위치를 고정(위로 튀는 느낌 최소화)
+        const y = window.scrollY || document.documentElement.scrollTop || 0;
+        window.scrollTo(0, y);
 
-    if st.session_state.mbti_mode == "direct":
-        st.session_state.mbti = st.selectbox("MBTI 직접 선택", MBTI_TYPES, index=MBTI_TYPES.index(st.session_state.mbti))
-        trait_text = get_mbti_trait_text(dbs["mbti_db"], st.session_state.mbti)
-        if trait_text:
-            st.markdown(f"<div class='soft-box'><b>{st.session_state.mbti}</b> · {strip_html_like(trait_text)}</div>", unsafe_allow_html=True)
+        btn.disabled = true;
 
-    else:
-        st.markdown("<div class='soft-box'>각 문항에서 더 가까운 쪽을 선택하세요. 제출하면 MBTI가 확정됩니다.</div>", unsafe_allow_html=True)
-        answers = []
-        for i, (axis, left, right) in enumerate(MBTI_Q16, start=1):
-            choice = st.radio(
-                f"{i}.",
-                [left, right],
-                key=f"mbti16_{i}"
-            )
-            answers.append((axis, choice == left))
+        // 1) 미스테리 사운드 + 흔들림 시작
+        safePlay(audMystery);
+        stage.classList.add("shake");
 
-        if st.button("제출하고 MBTI 확정", use_container_width=True):
-            st.session_state.mbti = compute_mbti_from_answers(answers)
-            st.success(f"확정된 MBTI: {st.session_state.mbti}")
+        // 2) 1.8초 후 공개(웅장 사운드 + 앞면)
+        setTimeout(() => {{
+          stage.classList.remove("shake");
+          safePlay(audReveal);
+          front.style.opacity = 1;
+          front.style.transform = "scale(1)";
+          note.classList.add("show");
+          revealed = true;
+        }}, 1800);
+      }});
+    </script>
+    """
 
-    st.markdown('<div class="bigbtn">', unsafe_allow_html=True)
-    if st.button("운세 보기", use_container_width=True):
-        st.session_state.stage = "result"
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-
+    # components.html height는 카드(정사각) + 버튼 + 설명 영역까지 여유있게
+    components.html(html, height=820)
 def render_result(dbs):
     name = (st.session_state.name or "").strip()
     birth = st.session_state.birth
@@ -828,12 +647,21 @@ def render_result(dbs):
     zodiac_pool = []
     zdb = dbs["zodiac_db"]
     if isinstance(zdb, dict):
-        # 1) direct key
-        val = zdb.get(zodiac_key)
-        # 2) nested
-        if val is None and isinstance(zdb.get("zodiac"), dict):
-            val = zdb["zodiac"].get(zodiac_key)
+        # 1) direct key (키 mismatch 방지)
+        zinfo = normalize_zodiac_key(zodiac_key)
+        zodiac_key_display = zinfo["display"]
 
+        def _lookup(dd: dict, k: str):
+            v = dd.get(k)
+            if v is None and isinstance(dd.get("zodiac"), dict):
+                v = dd["zodiac"].get(k)
+            return v
+
+        val = None
+        for _k in zinfo["candidates"]:
+            val = _lookup(zdb, _k)
+            if val is not None:
+                break
         if isinstance(val, list):
             zodiac_pool = val
         elif isinstance(val, dict):
@@ -968,3 +796,62 @@ if st.session_state.stage == "input":
     render_input(dbs)
 else:
     render_result(dbs)
+# =========================================================
+# 2.5) 유틸: 띠 키 정규화 (DB 키 mismatch 방지)
+#   - 화면 표시는 한국어(원숭이띠 등)
+#   - DB가 한국어/영문/동물명/접미사 유무 등으로 섞여 있어도 최대한 매칭
+# =========================================================
+def normalize_zodiac_key(raw: str) -> dict:
+    """raw에서 가능한 후보 키들을 만들어 반환.
+    return: {"display": <한국어표시>, "candidates": [..]}"""
+    if not raw:
+        return {"display": "", "candidates": []}
+
+    s = str(raw).strip()
+
+    # 접미사 정리
+    s_no_tti = s.replace("띠", "").strip()
+
+    # 영문 동물명 → 한글 띠
+    en_to_ko = {
+        "rat": "쥐", "ox": "소", "tiger": "호랑이", "rabbit": "토끼",
+        "dragon": "용", "snake": "뱀", "horse": "말", "goat": "양",
+        "monkey": "원숭이", "rooster": "닭", "dog": "개", "pig": "돼지",
+    }
+
+    # 혹시 "rooster띠" 같은 케이스
+    for en, ko in en_to_ko.items():
+        if s_no_tti.lower() == en:
+            s_no_tti = ko
+            break
+
+    # display는 항상 "OO띠"
+    display = s_no_tti + "띠" if s_no_tti else s
+
+    # 후보 키들(우선순위)
+    candidates = []
+    # 1) 그대로 / 접미사 유무
+    candidates += [s, s_no_tti, display]
+    # 2) 영문/한글 변환 후보
+    #    - 한글이면 영문도 추가
+    ko_to_en = {v: k for k, v in en_to_ko.items()}
+    base_ko = s_no_tti
+    if base_ko in ko_to_en:
+        candidates += [ko_to_en[base_ko], ko_to_en[base_ko] + "띠"]
+    # 3) 소문자/대문자 변형
+    candidates += [c.lower() for c in candidates if isinstance(c, str)]
+    candidates += [c.upper() for c in candidates if isinstance(c, str)]
+
+    # 중복 제거(순서 유지)
+    seen = set()
+    uniq = []
+    for c in candidates:
+        if not c:
+            continue
+        if c not in seen:
+            seen.add(c)
+            uniq.append(c)
+
+    return {"display": display, "candidates": uniq}
+
+
