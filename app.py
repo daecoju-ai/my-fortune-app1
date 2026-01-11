@@ -1,7 +1,10 @@
-# app.py (v2026.0002)
-# - v2026.0001 기준 유지(디자인/카드형/구조 유지)
-# - 수정: (1) 띠운세 DB 구조(year_2026/overall 등) 인식 보강
-# - 수정: (2) 타로: mp3 base64 임베드 정상화 + 화면 튐 완화(불필요한 st.rerun 제거, 컴포넌트 높이 고정)
+# app.py (v2026.0002_FIX2)
+# - 디자인 큰 틀 유지(그라데이션/카드형)
+# - DB는 data/의 JSON만 사용 (자동 생성/ fallback 문구 금지)
+# - MBTI/사주/띠 DB 인식 오류 수정
+# - 타로: back.png 표시 → 뽑기 클릭 시 흔들림 + 효과음 + 앞면 공개(하루 동안 고정, "하루 1회 가능" 멘트 유지)
+# - 타로 클릭 후 화면 위로 튀는 현상 완화(스크롤 위치 복원)
+# - (이번 수정) mystery 사운드 5초 + 흔들림 5초, reveal 길이/재생은 그대로
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -16,7 +19,7 @@ from pathlib import Path
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
-APP_VERSION = "v2026.0002"
+APP_VERSION = "v2026.0002_FIX2"
 APP_URL = "https://my-fortune.streamlit.app"
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 
@@ -128,26 +131,14 @@ def strip_html_like(text: str) -> str:
     text = re.sub(r"<[^>]*>", "", text)
     return text.strip()
 
-def read_file_b64(path: Path) -> str | None:
-    """임의 파일을 base64로 읽기(오디오 포함). 없으면 None."""
-    try:
-        if not path.exists():
-            return None
-        b = path.read_bytes()
-        if len(b) == 0:
-            return None
-        return base64.b64encode(b).decode("ascii")
-    except Exception:
-        return None
-
 def read_image_b64(path: Path) -> str | None:
-    """이미지 파일을 base64로 읽기."""
     try:
         if not path.exists():
             return None
         b = path.read_bytes()
         if len(b) < 12:
             return None
+        # 이미지/오디오 모두 base64로 올릴 수 있으니, 여기서는 "읽기 실패만" 방지
         return base64.b64encode(b).decode("ascii")
     except Exception:
         return None
@@ -408,6 +399,7 @@ def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
     if st.button("타로카드 뽑기", use_container_width=True, key="btn_tarot_draw"):
         st.session_state.tarot_revealed = True
         st.session_state.tarot_draw_ts = str(date.today())
+        st.rerun()
 
     front_b64 = None
     front_label = ""
@@ -424,36 +416,19 @@ def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
-    revealed = bool(st.session_state.tarot_revealed)
-
-    if revealed and (not card or not front_b64):
+    if st.session_state.tarot_revealed and (not card or not front_b64):
         st.info("타로 DB 또는 이미지 경로를 읽지 못했습니다. (data/tarot_db_ko.json 및 assets/tarot 폴더 확인)")
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
-    # 효과음 파일(폴더를 따로 안 만들었을 수도 있어서 후보 여러 개)
-    sfx_mystery_candidates = [
-        Path("assets/tarot/mystery.mp3"),
-        Path("assets/tarot/sfx_mystery.mp3"),
-        Path("assets/mystery.mp3"),
-    ]
-    sfx_reveal_candidates = [
-        Path("assets/tarot/reveal.mp3"),
-        Path("assets/tarot/sfx_reveal.mp3"),
-        Path("assets/reveal.mp3"),
-    ]
+    revealed = bool(st.session_state.tarot_revealed)
 
-    sfx_mystery_b64 = None
-    for p in sfx_mystery_candidates:
-        sfx_mystery_b64 = read_file_b64(p)
-        if sfx_mystery_b64:
-            break
-
-    sfx_reveal_b64 = None
-    for p in sfx_reveal_candidates:
-        sfx_reveal_b64 = read_file_b64(p)
-        if sfx_reveal_b64:
-            break
+    # ⚠️ 폴더를 따로 안 만들고 업로드했다고 했으니, 여기 경로는 'assets/tarot/' 하위로만 사용
+    # 필요시 파일명만 바꿔서 같은 폴더에 두면 됨.
+    sfx_mystery = Path("assets/tarot/sfx_mystery.mp3")
+    sfx_reveal = Path("assets/tarot/sfx_reveal.mp3")
+    sfx_mystery_b64 = read_image_b64(sfx_mystery)
+    sfx_reveal_b64 = read_image_b64(sfx_reveal)
 
     def _data_uri(b64: str, mime: str) -> str:
         return f"data:{mime};base64,{b64}"
@@ -502,21 +477,25 @@ def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
   animation: none;
 }}
 .tarot-stage.revealed .tarot-back {{
-  animation: shake 0.7s ease-in-out 1;
+  animation: shake 5s ease-in-out 1;   /* ✅ 흔들림 5초 */
 }}
 .tarot-front {{
   opacity: 0;
   transform: scale(0.98);
   animation: popin 0.35s ease-out forwards;
-  animation-delay: 0.72s;
+  animation-delay: 5.05s;             /* ✅ 5초 후 공개 */
 }}
 @keyframes shake {{
   0% {{ transform: translate(0px,0px) rotate(0deg); }}
-  15% {{ transform: translate(-3px,1px) rotate(-1deg); }}
-  30% {{ transform: translate(3px,-1px) rotate(1deg); }}
-  45% {{ transform: translate(-3px,1px) rotate(-1deg); }}
+  10% {{ transform: translate(-3px,1px) rotate(-1deg); }}
+  20% {{ transform: translate(3px,-1px) rotate(1deg); }}
+  30% {{ transform: translate(-3px,1px) rotate(-1deg); }}
+  40% {{ transform: translate(3px,-1px) rotate(1deg); }}
+  50% {{ transform: translate(-3px,1px) rotate(-1deg); }}
   60% {{ transform: translate(3px,-1px) rotate(1deg); }}
-  75% {{ transform: translate(-2px,1px) rotate(0deg); }}
+  70% {{ transform: translate(-3px,1px) rotate(-1deg); }}
+  80% {{ transform: translate(3px,-1px) rotate(1deg); }}
+  90% {{ transform: translate(-2px,1px) rotate(0deg); }}
   100% {{ transform: translate(0px,0px) rotate(0deg); }}
 }}
 @keyframes popin {{
@@ -527,7 +506,7 @@ def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
 
 <script>
 (function(){{
-  // 스크롤 복원
+  // ✅ 스크롤 튐 완화: 복원
   try {{
     const y = localStorage.getItem("scrollY");
     if (y) {{
@@ -545,19 +524,21 @@ def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
         m.volume = 0.85;
         m.currentTime = 0;
         m.play().catch(()=>{{}});
-        setTimeout(()=>{{ try{{ m.pause(); }}catch(e){{}} }}, 700);
+        // ✅ mystery 5초 재생
+        setTimeout(()=>{{ try{{ m.pause(); }}catch(e){{}} }}, 5000);
       }}
       if (r) {{
         r.volume = 0.95;
         r.currentTime = 0;
-        setTimeout(()=>{{ r.play().catch(()=>{{}}); }}, 650);
+        // ✅ reveal은 기존처럼 "리빌 직전"에 시작(길이는 파일 자체 길이 그대로)
+        setTimeout(()=>{{ r.play().catch(()=>{{}}); }}, 4950);
       }}
     }} catch(e){{}}
   }}
 }})();
 </script>
 """
-    components.html(tarot_html, height=430)
+    components.html(tarot_html, height=420 if revealed else 410)
 
     if revealed and front_label:
         st.markdown(
@@ -726,7 +707,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 전역 스크롤 저장(버튼 클릭 직전 위치 저장)
+# ✅ 전역 스크롤 저장(버튼 클릭 직전 위치 저장)
 components.html("""
 <script>
 (function(){
@@ -833,33 +814,19 @@ def render_result(dbs):
     # 1) 띠별 운세
     zodiac_pool = []
     zdb = dbs["zodiac_db"]
-
-    def _extract_list_from_zodiac_val(v):
-        """zodiac_fortunes_ko_2026.json의 다양한 구조를 최대한 흡수."""
-        if isinstance(v, list):
-            return v
-        if isinstance(v, dict):
-            # 1순위: 2026 전용 문장
-            for key in ("year_2026", "year", "overall", "today"):
-                vv = v.get(key)
-                if isinstance(vv, list) and vv:
-                    return vv
-            # 2순위: 관례적인 키
-            for key in ("items", "lines"):
-                vv = v.get(key)
-                if isinstance(vv, list) and vv:
-                    return vv
-            # 3순위: dict 안에 들어있는 '첫 번째 list'를 사용
-            for _, vv in v.items():
-                if isinstance(vv, list) and vv:
-                    return vv
-        return []
-
     if isinstance(zdb, dict):
         val = zdb.get(zodiac_key)
         if val is None and isinstance(zdb.get("zodiac"), dict):
             val = zdb["zodiac"].get(zodiac_key)
-        zodiac_pool = _extract_list_from_zodiac_val(val)
+
+        if isinstance(val, list):
+            zodiac_pool = val
+        elif isinstance(val, dict):
+            for k in ("items", "lines", "pools"):
+                vv = val.get(k)
+                if isinstance(vv, list):
+                    zodiac_pool = vv
+                    break
 
     zodiac_text = pick_one(
         [normalize_zodiac_text(strip_html_like(safe_str(x))) for x in zodiac_pool if safe_str(x).strip()],
@@ -983,3 +950,4 @@ if st.session_state.stage == "input":
     render_input(dbs)
 else:
     render_result(dbs)
+```0
