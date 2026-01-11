@@ -1,4 +1,4 @@
-# app.py (v2026.0002)
+# app.py (v2026.0003)
 # - 디자인 큰 틀 유지(그라데이션/카드형)
 # - DB는 data/의 JSON만 사용 (자동 생성/ fallback 문구 금지)
 # - MBTI/사주/띠 DB 인식 오류 수정
@@ -6,6 +6,13 @@
 # - 타로 클릭 후 화면 위로 튀는 현상 완화(스크롤 위치 복원)
 
 import streamlit as st
+
+# -----------------------------
+# Session state defaults
+# -----------------------------
+if "stage" not in st.session_state:
+    st.session_state.stage = "input"
+
 import streamlit.components.v1 as components
 from datetime import date, timedelta
 import json
@@ -18,7 +25,7 @@ from pathlib import Path
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
-APP_VERSION = "v2026.0002"
+APP_VERSION = "v2026.0003"
 APP_URL = "https://my-fortune.streamlit.app"
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 
@@ -784,19 +791,6 @@ def render_result(dbs):
         st.write(dbs["paths"])
 
 # =========================================================
-# 11) 실행
-# =========================================================
-try:
-    dbs = load_all_dbs()
-except Exception as e:
-    st.error(str(e))
-    st.stop()
-
-if st.session_state.stage == "input":
-    render_input(dbs)
-else:
-    render_result(dbs)
-# =========================================================
 # 2.5) 유틸: 띠 키 정규화 (DB 키 mismatch 방지)
 #   - 화면 표시는 한국어(원숭이띠 등)
 #   - DB가 한국어/영문/동물명/접미사 유무 등으로 섞여 있어도 최대한 매칭
@@ -855,3 +849,20 @@ def normalize_zodiac_key(raw: str) -> dict:
     return {"display": display, "candidates": uniq}
 
 
+
+# -----------------------------
+# Main
+# -----------------------------
+# 11) 실행
+# =========================================================
+try:
+    dbs = load_all_dbs()
+except Exception as e:
+    st.error(str(e))
+    st.stop()
+
+if st.session_state.stage == "input":
+    render_input(dbs)
+else:
+    render_result(dbs)
+# =========================================================
