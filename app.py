@@ -1,10 +1,9 @@
-# app.py (v2026.0002)
-# - v2026.0001 기준(그라데이션/카드형 UI) "디자인 임의 수정 금지" 준수
-# - 변경점(요청사항만):
-#   1) 타로: back 흔들림(5초) + mystery 사운드 5초 재생 후 reveal 사운드/앞면 공개
-#   2) 타로 클릭 시 화면 위로 튀는 현상 완화(스크롤 위치 저장/복원)
-#   3) 띠 운세 문장에 영어키/끝 (숫자) 표기 섞이면 정리
-#   4) "DB 연결 확인용" expander 기본 숨김(DEBUG_MODE=False)
+# app.py (v2026.0003_ZODIAC_FIX)
+# - 디자인/기능 기존 유지 (v2026.0002 기준)
+# - 변경사항: 띠 운세 파싱만 보강 (DB 구조 다양성 대응)
+#   * get_zodiac_pool() 신설
+#   * normalize + trailing index 제거 보장
+#   * 실제 비었을 때만 안내
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -19,7 +18,7 @@ from pathlib import Path
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
-APP_VERSION = "v2026.0002"
+APP_VERSION = "v2026.0003_ZODIAC_FIX"
 APP_URL = "https://my-fortune.streamlit.app"
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 DEBUG_MODE = False  # DB 연결 확인용 UI 숨김
@@ -202,7 +201,7 @@ def normalize_zodiac_text(text: str) -> str:
     t = str(text)
     for en, ko in ZODIAC_EN_TO_KO_INLINE.items():
         t = re.sub(rf"\b{re.escape(en)}\s*띠\b", ko, t, flags=re.IGNORECASE)
-        t = re.sub(rf"\b{re.escape(en)}\b", ko.replace("띠",""), t, flags=re.IGNORECASE)
+        t = re.sub(rf"\b{re.escape(en)}\b", ko.replace("띠", ""), t, flags=re.IGNORECASE)
     return t
 
 def strip_trailing_index(text: str) -> str:
@@ -210,6 +209,64 @@ def strip_trailing_index(text: str) -> str:
     if not text:
         return text
     return re.sub(r"\s*\(\d+\)\s*$", "", str(text)).strip()
+
+# ========== NEW: 띠 운세 파싱 전용 함수 ==========
+def get_zodiac_pool(zdb: dict, zodiac_key: str) -> list:
+    """
+    DB 구조 다양성에 대응해서, 주어진 zodiac_key에 해당하는 '문장 리스트'를 반환.
+    우선순위:
+      1) zdb[zodiac_key]              → list
+      2) zdb["zodiac"][zodiac_key]    → list
+      3) zdb[zodiac_key]["lines"]     → list
+      4) zdb[zodiac_key]["items"]     → list
+      5) zdb[zodiac_key]["pools"]     → (list or {"year_all":list} 등) → list 추출
+    어떤 것도 안 맞으면 [].
+    """
+    pool = []
+
+    if not isinstance(zdb, dict):
+        return pool
+
+    # 1) direct
+    val = zdb.get(zodiac_key)
+    # 2) nested "zodiac"
+    if val is None and isinstance(zdb.get("zodiac"), dict):
+        val = zdb["zodiac"].get(zodiac_key)
+
+    # a) 바로 list
+    if isinstance(val, list):
+        pool = val
+
+    # b) dict 내부 케이스
+    elif isinstance(val, dict):
+        # lines / items 최우선
+        for k in ("lines", "items"):
+            vv = val.get(k)
+            if isinstance(vv, list):
+                pool = vv
+                break
+        # pools 케이스
+        if not pool and isinstance(val.get("pools"), dict):
+            # 가장 널리 쓰이는 year_all, today 등 리스트를 우선 찾고
+            for kk in ("year_all", "today", "tomorrow", "overall"):
+                vv = val["pools"].get(kk)
+                if isinstance(vv, list):
+                    pool = vv
+                    break
+            # 그래도 없으면 dict 안의 첫 리스트를 채택
+            if not pool:
+                for _, vv in val["pools"].items():
+                    if isinstance(vv, list):
+                        pool = vv
+                        break
+
+    # 문자열로 흘러들어온 경우 방어 (稀)
+    elif isinstance(val, str) and val.strip():
+        pool = [val]
+
+    # 최종적으로 문자열 리스트로 정규화
+    return [strip_trailing_index(normalize_zodiac_text(strip_html_like(safe_str(x))))
+            for x in pool if safe_str(x).strip()]
 
 # =========================================================
 # 4) MBTI
@@ -226,14 +283,17 @@ MBTI_Q16 = [
     ("EI","처음 보는 사람과도 금방 친해지는 편이다","낯선 사람은 적응 시간이 필요하다"),
     ("EI","생각을 말하면서 정리하는 편이다","생각을 정리한 뒤 말하는 편이다"),
     ("EI","주말엔 약속이 있으면 좋다","주말엔 혼자 쉬고 싶다"),
+
     ("SN","구체적인 사실/데이터가 편하다","가능성/아이디어가 편하다"),
     ("SN","현재의 현실 문제 해결이 우선이다","미래의 큰 방향이 우선이다"),
     ("SN","경험을 기반으로 판단한다","직감/영감을 믿는 편이다"),
     ("SN","설명은 디테일이 중요하다","설명은 큰 그림이 중요하다"),
+
     ("TF","결정은 논리/원칙이 우선이다","결정은 사람/상황 배려가 우선이다"),
     ("TF","피드백은 직설이 좋다","피드백은 부드러운 방식이 좋다"),
     ("TF","갈등은 원인-해결이 핵심이다","갈등은 감정-관계가 핵심이다"),
     ("TF","공정함이 최우선이다","조화로움이 최우선이다"),
+
     ("JP","계획대로 진행해야 마음이 편하다","유연하게 바뀌어도 괜찮다"),
     ("JP","마감 전에 미리 끝내는 편이다","마감 직전에 몰아서 하는 편이다"),
     ("JP","정리/정돈이 되어야 편하다","어수선해도 진행 가능하다"),
@@ -491,7 +551,7 @@ def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
         if sfx_reveal_b64:
             audio_html += f"<audio id='reveal' src='{_data_uri(sfx_reveal_b64,'audio/mpeg')}'></audio>"
 
-    # ✅ 5초 흔들림 + 5초 뒤 공개
+    # 5초 흔들림 + 5초 뒤 공개 (기존 유지)
     tarot_html = f"""
 <div class="tarot-wrap">
   {audio_html}
@@ -555,7 +615,7 @@ def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
 
 <script>
 (function(){{
-  // ✅ 스크롤 튐 완화: 복원
+  // 스크롤 튐 완화: 복원
   try {{
     const y = localStorage.getItem("scrollY");
     if (y) {{
@@ -564,7 +624,7 @@ def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
     }}
   }} catch(e){{}}
 
-  // ✅ revealed 상태면: mystery 5초 → reveal
+  // revealed 상태면: mystery 5초 → reveal
   const revealed = {str(revealed).lower()};
   if (revealed) {{
     try {{
@@ -857,32 +917,17 @@ def render_result(dbs):
 
     base_seed = stable_seed(str(birth), name, mbti)
 
-    # 1) 띠별 운세
-    zodiac_pool = []
-    zdb = dbs["zodiac_db"]
-    if isinstance(zdb, dict):
-        val = zdb.get(zodiac_key)
-        if val is None and isinstance(zdb.get("zodiac"), dict):
-            val = zdb["zodiac"].get(zodiac_key)
-
-        if isinstance(val, list):
-            zodiac_pool = val
-        elif isinstance(val, dict):
-            for k in ("items", "lines", "pools"):
-                vv = val.get(k)
-                if isinstance(vv, list):
-                    zodiac_pool = vv
-                    break
-
+    # 1) 띠별 운세 (강화된 파서 사용)
+    zodiac_pool = get_zodiac_pool(dbs["zodiac_db"], zodiac_key)
     zodiac_text = pick_one(
-        [strip_trailing_index(normalize_zodiac_text(strip_html_like(safe_str(x)))) for x in zodiac_pool if safe_str(x).strip()],
+        zodiac_pool,
         stable_seed(str(base_seed), "zodiac")
     )
 
     # 2) MBTI 특징
     mbti_trait = strip_html_like(get_mbti_trait_text(dbs["mbti_db"], mbti))
 
-    # 3) 사주 한마디 (saju_ko.json: elements 기반)
+    # 3) 사주 한마디 (saju_ko.json: elements 기반 + 기타 호환)
     saju_text = ""
     sdb = dbs["saju_db"]
     if isinstance(sdb, dict) and isinstance(sdb.get("elements"), list) and sdb["elements"]:
