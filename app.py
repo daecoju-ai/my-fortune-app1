@@ -19,7 +19,7 @@ from pathlib import Path
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
-APP_VERSION = "v2026.0005_TAROSHAKE"
+APP_VERSION = "v2026.0007_STABLE"
 APP_URL = "https://my-fortune.streamlit.app"
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 DEBUG_MODE = False  # DB 연결 확인용 UI 숨김
@@ -196,19 +196,13 @@ def zodiac_by_birth(birth: date, lny_map: dict) -> tuple[str, int]:
     return zk, zodiac_year
 
 def normalize_zodiac_text(text: str) -> str:
-    """띠 운세 문장에 영어키(예: rooster띠, monkey띠의)가 섞여 있으면 한국어로 치환."""
+    """띠 운세 문장에 영어키(예: rooster띠)가 섞여 있으면 한국어로 치환."""
     if not text:
         return text
     t = str(text)
-
-    # 1) 'monkey띠의'처럼 뒤에 조사/문장이 바로 붙는 케이스까지 커버
     for en, ko in ZODIAC_EN_TO_KO_INLINE.items():
-        t = re.sub(rf"(?i){re.escape(en)}\s*띠", ko, t)
-
-    # 2) 본문에 영어 동물명만 단독으로 섞인 경우는 '원숭이'처럼 치환
-    for en, ko in ZODIAC_EN_TO_KO_INLINE.items():
-        t = re.sub(rf"(?i)\b{re.escape(en)}\b", ko.replace("띠", ""), t)
-
+        t = re.sub(rf"\b{re.escape(en)}\s*띠\b", ko, t, flags=re.IGNORECASE)
+        t = re.sub(rf"\b{re.escape(en)}\b", ko.replace("띠",""), t, flags=re.IGNORECASE)
     return t
 
 def strip_trailing_index(text: str) -> str:
@@ -416,6 +410,40 @@ def _pick_existing_path(candidates: list[str]) -> Path | None:
     return None
 
 def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
+
+    # ---- SAFE SHAKE OVERRIDE (v2026.0007_STABLE) ----
+    st.markdown("""
+    <style>
+    @keyframes shake {
+      0% { transform: translate(0px,0px) rotate(0deg); }
+      4% { transform: translate(-3px,1px) rotate(-1deg); }
+      8% { transform: translate(3px,-1px) rotate(1deg); }
+      12% { transform: translate(-3px,1px) rotate(-1deg); }
+      16% { transform: translate(3px,-1px) rotate(1deg); }
+      20% { transform: translate(-3px,1px) rotate(-1deg); }
+      24% { transform: translate(3px,-1px) rotate(1deg); }
+      28% { transform: translate(-3px,1px) rotate(-1deg); }
+      32% { transform: translate(3px,-1px) rotate(1deg); }
+      36% { transform: translate(-3px,1px) rotate(-1deg); }
+      40% { transform: translate(3px,-1px) rotate(1deg); }
+      44% { transform: translate(-3px,1px) rotate(-1deg); }
+      48% { transform: translate(3px,-1px) rotate(1deg); }
+      52% { transform: translate(-3px,1px) rotate(-1deg); }
+      56% { transform: translate(3px,-1px) rotate(1deg); }
+      60% { transform: translate(-3px,1px) rotate(-1deg); }
+      64% { transform: translate(3px,-1px) rotate(1deg); }
+      68% { transform: translate(-3px,1px) rotate(-1deg); }
+      72% { transform: translate(3px,-1px) rotate(1deg); }
+      76% { transform: translate(-3px,1px) rotate(-1deg); }
+      80% { transform: translate(3px,-1px) rotate(1deg); }
+      84% { transform: translate(-3px,1px) rotate(-1deg); }
+      88% { transform: translate(3px,-1px) rotate(1deg); }
+      92% { transform: translate(-3px,1px) rotate(-1deg); }
+      96% { transform: translate(3px,-1px) rotate(1deg); }
+      100% { transform: translate(0px,0px) rotate(0deg); }
+    }
+    </style>
+    """, unsafe_allow_html=True)
     st.markdown("<div class='card tarot-card'>", unsafe_allow_html=True)
     st.markdown("### 🃏 오늘의 타로카드 (하루 1회 가능)", unsafe_allow_html=True)
     st.markdown("<div class='soft-box'>뒷면 카드를 보고 <b>뽑기</b>를 누르면 카드가 공개됩니다. 오늘 하루 동안은 <b>같은 카드(같은 의미/이미지)</b>로 고정됩니다.</div>", unsafe_allow_html=True)
@@ -436,30 +464,10 @@ def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
     if "tarot_revealed" not in st.session_state:
         st.session_state.tarot_revealed = False
 
-    # 타로 섹션 앵커(버튼 클릭 후 화면 튐 방지용)
-    st.markdown("<div id='tarot-anchor'></div>", unsafe_allow_html=True)
-
     # 버튼 클릭 직전 스크롤 저장(JS에서 처리) → rerun 시 복원
     if st.button("타로카드 뽑기", use_container_width=True, key="btn_tarot_draw"):
         st.session_state.tarot_revealed = True
-
-    # 버튼 클릭으로 rerun 되면 모바일에서 상단으로 튀는 경우가 있어 앵커로 복원
-    if st.session_state.get("tarot_revealed"):
-        try:
-            import streamlit.components.v1 as components
-            components.html(
-                """
-                <script>
-                (function(){
-                  const anchor = window.parent.document.getElementById('tarot-anchor');
-                  if(anchor){ anchor.scrollIntoView({behavior:'instant', block:'start'}); }
-                })();
-                </script>
-                """,
-                height=0,
-            )
-        except Exception:
-            pass
+        st.rerun()
 
     # 이미지 준비
     front_b64 = None
@@ -562,33 +570,17 @@ def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
 }}
 @keyframes shake {{
   0% {{ transform: translate(0px,0px) rotate(0deg); }}
-  4% { transform: translate(-3px,1px) rotate(-1deg); }
-  8% { transform: translate(3px,-1px) rotate(1deg); }
-  12% { transform: translate(-3px,1px) rotate(-1deg); }
-  16% { transform: translate(3px,-1px) rotate(1deg); }
-  20% { transform: translate(-3px,1px) rotate(-1deg); }
-  24% { transform: translate(3px,-1px) rotate(1deg); }
-  28% { transform: translate(-3px,1px) rotate(-1deg); }
-  32% { transform: translate(3px,-1px) rotate(1deg); }
-  36% { transform: translate(-3px,1px) rotate(-1deg); }
-  40% { transform: translate(3px,-1px) rotate(1deg); }
-  44% { transform: translate(-3px,1px) rotate(-1deg); }
-  48% { transform: translate(3px,-1px) rotate(1deg); }
-  52% { transform: translate(-3px,1px) rotate(-1deg); }
-  56% { transform: translate(3px,-1px) rotate(1deg); }
-  60% { transform: translate(-3px,1px) rotate(-1deg); }
-  64% { transform: translate(3px,-1px) rotate(1deg); }
-  68% { transform: translate(-3px,1px) rotate(-1deg); }
-  72% { transform: translate(3px,-1px) rotate(1deg); }
-  76% { transform: translate(-3px,1px) rotate(-1deg); }
-  80% { transform: translate(3px,-1px) rotate(1deg); }
-  84% { transform: translate(-3px,1px) rotate(-1deg); }
-  88% { transform: translate(3px,-1px) rotate(1deg); }
-  92% { transform: translate(-3px,1px) rotate(-1deg); }
-  96% { transform: translate(3px,-1px) rotate(1deg); }
+  10% {{ transform: translate(-3px,1px) rotate(-1deg); }}
+  20% {{ transform: translate(3px,-1px) rotate(1deg); }}
+  30% {{ transform: translate(-3px,1px) rotate(-1deg); }}
+  40% {{ transform: translate(3px,-1px) rotate(1deg); }}
+  50% {{ transform: translate(-3px,1px) rotate(-1deg); }}
+  60% {{ transform: translate(3px,-1px) rotate(1deg); }}
+  70% {{ transform: translate(-2px,1px) rotate(0deg); }}
+  80% {{ transform: translate(2px,-1px) rotate(0deg); }}
+  90% {{ transform: translate(-1px,1px) rotate(0deg); }}
   100% {{ transform: translate(0px,0px) rotate(0deg); }}
 }}
-
 @keyframes popin {{
   from {{ opacity: 0; transform: scale(0.98); }}
   to   {{ opacity: 1; transform: scale(1.00); }}
