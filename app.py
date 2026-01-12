@@ -19,7 +19,7 @@ from pathlib import Path
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
-APP_VERSION = "v2026.0003_DBZODIAC"
+APP_VERSION = "v2026.0005_TAROSHAKE"
 APP_URL = "https://my-fortune.streamlit.app"
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 DEBUG_MODE = False  # DB 연결 확인용 UI 숨김
@@ -84,9 +84,6 @@ def load_all_dbs():
         "tarot_db_ko.json",
     ])
 
-    # ✅ 띠 DB 정규화(구형/신형 모두 지원)
-    zodiac_db = normalize_zodiac_db(zodiac_db)
-
     return {
         "fortunes_year": fortunes_year,
         "fortunes_today": fortunes_today,
@@ -107,70 +104,6 @@ def load_all_dbs():
             "tarot": path_tarot,
         }
     }
-
-
-# =========================================================
-# 1.5) 띠 DB 정규화 (v2026.0003_DBZODIAC)
-# - zodiac_fortunes_ko_2026.json이
-#   A) { "rat": ["..."], ... } (정상/평탄화) 이거나
-#   B) { "rat": { "today": [...], "texts": {...}, ... }, ... } (구형/중첩)
-#   어떤 형태든 app.py가 동일하게 처리하도록 "키=영문12, 값=list[str]"로 강제 정리
-# =========================================================
-ZODIAC_KEYS = ["rat","ox","tiger","rabbit","dragon","snake","horse","goat","monkey","rooster","dog","pig"]
-
-def _collect_strings_any(v):
-    out = []
-    if isinstance(v, str):
-        s = v.strip()
-        if s:
-            out.append(s)
-    elif isinstance(v, list):
-        for x in v:
-            out.extend(_collect_strings_any(x))
-    elif isinstance(v, dict):
-        for x in v.values():
-            out.extend(_collect_strings_any(x))
-    return out
-
-def normalize_zodiac_db(zdb):
-    """zdb를 {key:list[str]} 구조로 정규화(구형/신형 모두 지원)."""
-    if not isinstance(zdb, dict):
-        return {k: [] for k in ZODIAC_KEYS}
-
-    out = {k: [] for k in ZODIAC_KEYS}
-
-    for k in ZODIAC_KEYS:
-        v = zdb.get(k)
-        # 혹시 {"zodiac": {...}} 형태였던 과거 데이터도 방어
-        if v is None and isinstance(zdb.get("zodiac"), dict):
-            v = zdb["zodiac"].get(k)
-
-        items = []
-        if isinstance(v, list):
-            items = _collect_strings_any(v)
-        elif isinstance(v, dict):
-            # today/tomorrow/year/advice/texts 등 어떤 중첩이든 문자열만 salvage
-            items = _collect_strings_any(v)
-        elif isinstance(v, str):
-            items = [v.strip()] if v.strip() else []
-        else:
-            items = []
-
-        # 공백 정리 + 중복 제거(순서 유지)
-        cleaned = []
-        seen = set()
-        for s in items:
-            s2 = re.sub(r"\s+", " ", str(s)).strip()
-            if not s2:
-                continue
-            if s2 in seen:
-                continue
-            seen.add(s2)
-            cleaned.append(s2)
-
-        out[k] = cleaned
-
-    return out
 
 # =========================================================
 # 2) 유틸
@@ -263,13 +196,19 @@ def zodiac_by_birth(birth: date, lny_map: dict) -> tuple[str, int]:
     return zk, zodiac_year
 
 def normalize_zodiac_text(text: str) -> str:
-    """띠 운세 문장에 영어키(예: rooster띠)가 섞여 있으면 한국어로 치환."""
+    """띠 운세 문장에 영어키(예: rooster띠, monkey띠의)가 섞여 있으면 한국어로 치환."""
     if not text:
         return text
     t = str(text)
+
+    # 1) 'monkey띠의'처럼 뒤에 조사/문장이 바로 붙는 케이스까지 커버
     for en, ko in ZODIAC_EN_TO_KO_INLINE.items():
-        t = re.sub(rf"\b{re.escape(en)}\s*띠\b", ko, t, flags=re.IGNORECASE)
-        t = re.sub(rf"\b{re.escape(en)}\b", ko.replace("띠",""), t, flags=re.IGNORECASE)
+        t = re.sub(rf"(?i){re.escape(en)}\s*띠", ko, t)
+
+    # 2) 본문에 영어 동물명만 단독으로 섞인 경우는 '원숭이'처럼 치환
+    for en, ko in ZODIAC_EN_TO_KO_INLINE.items():
+        t = re.sub(rf"(?i)\b{re.escape(en)}\b", ko.replace("띠", ""), t)
+
     return t
 
 def strip_trailing_index(text: str) -> str:
@@ -497,10 +436,30 @@ def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
     if "tarot_revealed" not in st.session_state:
         st.session_state.tarot_revealed = False
 
+    # 타로 섹션 앵커(버튼 클릭 후 화면 튐 방지용)
+    st.markdown("<div id='tarot-anchor'></div>", unsafe_allow_html=True)
+
     # 버튼 클릭 직전 스크롤 저장(JS에서 처리) → rerun 시 복원
     if st.button("타로카드 뽑기", use_container_width=True, key="btn_tarot_draw"):
         st.session_state.tarot_revealed = True
-        st.rerun()
+
+    # 버튼 클릭으로 rerun 되면 모바일에서 상단으로 튀는 경우가 있어 앵커로 복원
+    if st.session_state.get("tarot_revealed"):
+        try:
+            import streamlit.components.v1 as components
+            components.html(
+                """
+                <script>
+                (function(){
+                  const anchor = window.parent.document.getElementById('tarot-anchor');
+                  if(anchor){ anchor.scrollIntoView({behavior:'instant', block:'start'}); }
+                })();
+                </script>
+                """,
+                height=0,
+            )
+        except Exception:
+            pass
 
     # 이미지 준비
     front_b64 = None
@@ -603,17 +562,33 @@ def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
 }}
 @keyframes shake {{
   0% {{ transform: translate(0px,0px) rotate(0deg); }}
-  10% {{ transform: translate(-3px,1px) rotate(-1deg); }}
-  20% {{ transform: translate(3px,-1px) rotate(1deg); }}
-  30% {{ transform: translate(-3px,1px) rotate(-1deg); }}
-  40% {{ transform: translate(3px,-1px) rotate(1deg); }}
-  50% {{ transform: translate(-3px,1px) rotate(-1deg); }}
-  60% {{ transform: translate(3px,-1px) rotate(1deg); }}
-  70% {{ transform: translate(-2px,1px) rotate(0deg); }}
-  80% {{ transform: translate(2px,-1px) rotate(0deg); }}
-  90% {{ transform: translate(-1px,1px) rotate(0deg); }}
+  4% { transform: translate(-3px,1px) rotate(-1deg); }
+  8% { transform: translate(3px,-1px) rotate(1deg); }
+  12% { transform: translate(-3px,1px) rotate(-1deg); }
+  16% { transform: translate(3px,-1px) rotate(1deg); }
+  20% { transform: translate(-3px,1px) rotate(-1deg); }
+  24% { transform: translate(3px,-1px) rotate(1deg); }
+  28% { transform: translate(-3px,1px) rotate(-1deg); }
+  32% { transform: translate(3px,-1px) rotate(1deg); }
+  36% { transform: translate(-3px,1px) rotate(-1deg); }
+  40% { transform: translate(3px,-1px) rotate(1deg); }
+  44% { transform: translate(-3px,1px) rotate(-1deg); }
+  48% { transform: translate(3px,-1px) rotate(1deg); }
+  52% { transform: translate(-3px,1px) rotate(-1deg); }
+  56% { transform: translate(3px,-1px) rotate(1deg); }
+  60% { transform: translate(-3px,1px) rotate(-1deg); }
+  64% { transform: translate(3px,-1px) rotate(1deg); }
+  68% { transform: translate(-3px,1px) rotate(-1deg); }
+  72% { transform: translate(3px,-1px) rotate(1deg); }
+  76% { transform: translate(-3px,1px) rotate(-1deg); }
+  80% { transform: translate(3px,-1px) rotate(1deg); }
+  84% { transform: translate(-3px,1px) rotate(-1deg); }
+  88% { transform: translate(3px,-1px) rotate(1deg); }
+  92% { transform: translate(-3px,1px) rotate(-1deg); }
+  96% { transform: translate(3px,-1px) rotate(1deg); }
   100% {{ transform: translate(0px,0px) rotate(0deg); }}
 }}
+
 @keyframes popin {{
   from {{ opacity: 0; transform: scale(0.98); }}
   to   {{ opacity: 1; transform: scale(1.00); }}
@@ -929,8 +904,17 @@ def render_result(dbs):
     zdb = dbs["zodiac_db"]
     if isinstance(zdb, dict):
         val = zdb.get(zodiac_key)
+        if val is None and isinstance(zdb.get("zodiac"), dict):
+            val = zdb["zodiac"].get(zodiac_key)
+
         if isinstance(val, list):
             zodiac_pool = val
+        elif isinstance(val, dict):
+            for k in ("items", "lines", "pools"):
+                vv = val.get(k)
+                if isinstance(vv, list):
+                    zodiac_pool = vv
+                    break
 
     zodiac_text = pick_one(
         [strip_trailing_index(normalize_zodiac_text(strip_html_like(safe_str(x)))) for x in zodiac_pool if safe_str(x).strip()],
