@@ -982,6 +982,24 @@ def render_result(dbs):
     dananeum_ad_block()
     tarot_ui(dbs["tarot_db"], birth, name, mbti)
 
+    # ✅ 미니게임 CTA (타로 아래 고정 버튼)
+    st.markdown(
+        f"""
+        <div class="card" style="text-align:center;">
+          <div style="font-weight:900; font-size:1.08rem; color:#2b2350; margin-bottom:10px;">
+            ☕ 미니게임 하고 커피쿠폰 받으러가기
+          </div>
+          <a class="ad-btn" href="{DANANEUM_LANDING_URL}" target="_blank" style="display:block;">
+            미니게임하고 커피쿠폰 받으러가기
+          </a>
+          <div class="ad-sub" style="margin-top:10px;">
+            ※ 행사상품 소진시 공지없이 조기종료 될 수 있습니다.
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
     if st.button("입력 화면으로", use_container_width=True):
         st.session_state.stage = "input"
         st.rerun()
