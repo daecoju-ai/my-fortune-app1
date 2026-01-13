@@ -19,7 +19,7 @@ from pathlib import Path
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
-APP_VERSION = "v2026.0015_MINIGAME_FIXED"
+APP_VERSION = "v2026.0016_MINIGAME_CLEAN"
 APP_URL = "https://my-fortune.streamlit.app"
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 DEBUG_MODE = False  # DB 연결 확인용 UI 숨김
@@ -1094,70 +1094,11 @@ def _try_minigame_autosubmit(birth: date, last_sec_str: str, reason: str) -> tup
     last_sec_str = _fmt_sec(float(last_sec)) if last_sec is not None else ""
     if last is not None and last_ok is False:
         st.markdown("#### 🔁 재도전 기회 얻기")
-
-        # ---- MINIGAME_SHARE_TOOLS (v2026.0013_SHARETOOLS) ----
-        # 실제 공유를 쉽게 하기 위해: (1) 현재 페이지 링크 복사, (2) 모바일 네이티브 공유(Web Share API)
-        # 공유 후 아래 '공유 완료 +1' 버튼을 눌러 기회를 추가합니다(자기확인 방식).
-        try:
-            import streamlit.components.v1 as components
-            share_html = """
-            <div style="display:flex; gap:10px; flex-wrap:wrap; margin:6px 0 10px 0;">
-              <button id="copyLinkBtn" style="flex:1; min-width:140px; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06); color:inherit; font-weight:700;">
-                📋 링크 복사
-              </button>
-              <button id="nativeShareBtn" style="flex:1; min-width:140px; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06); color:inherit; font-weight:700;">
-                🔗 공유하기
-              </button>
-              <span id="shareMsg" style="flex-basis:100%; font-size:12px; opacity:0.75;"></span>
-            </div>
-            <script>
-              (function(){
-                const msg = (t)=>{ const el=document.getElementById('shareMsg'); if(el){el.textContent=t;} };
-                const getUrl = ()=>{
-                  try { return window.parent.location.href; } catch(e){ return window.location.href; }
-                };
-                const copy = async ()=>{
-                  const url = getUrl();
-                  try{
-                    await navigator.clipboard.writeText(url);
-                    msg("링크를 복사했어요 ✅");
-                  }catch(e){
-                    // fallback
-                    const ta=document.createElement('textarea');
-                    ta.value=url; document.body.appendChild(ta);
-                    ta.select(); document.execCommand('copy');
-                    document.body.removeChild(ta);
-                    msg("링크를 복사했어요 ✅");
-                  }
-                };
-                const share = async ()=>{
-                  const url = getUrl();
-                  if(navigator.share){
-                    try{
-                      await navigator.share({title:"미니게임 도전!", text:"20.260~20.269초 맞추기 도전!", url});
-                      msg("공유를 완료했어요 ✅");
-                    }catch(e){
-                      msg("공유가 취소되었어요.");
-                    }
-                  }else{
-                    await copy();
-                    msg("이 브라우저는 공유를 지원하지 않아 링크를 복사했어요 ✅");
-                  }
-                };
-                document.getElementById('copyLinkBtn')?.addEventListener('click', copy);
-                document.getElementById('nativeShareBtn')?.addEventListener('click', share);
-              })();
-            </script>
-            """
-            components.html(share_html, height=90)
-        except Exception:
-            pass
         st.write("아래 버튼 중 하나를 눌러 **기회를 +1회** 늘릴 수 있어요. (자기확인 방식)")
-        st.caption("TIP: 위의 **링크 복사/공유하기**로 실제 공유 후, **공유 완료 +1**을 눌러주세요.")
         c1, c2, c3 = st.columns(3)
 
         with c1:
-            if st.button("공유 완료 +1", use_container_width=True, key="mg_share_bonus"):
+            if st.button("친구에게 공유하고 +1", use_container_width=True, key="mg_share_bonus"):
                 st.session_state["minigame_attempts"] = int(st.session_state.get("minigame_attempts", 0)) + 1
                 st.session_state["minigame_bonus_reason"] = (st.session_state.get("minigame_bonus_reason") or []) + ["share"]
                 st.session_state["minigame_shared"] = True
@@ -1223,23 +1164,17 @@ def _try_minigame_autosubmit(birth: date, last_sec_str: str, reason: str) -> tup
         last_sec = st.session_state.get("minigame_last")
         last_sec_str = _fmt_sec(float(last_sec)) if last_sec is not None else ""
 
-                submitted = st.form_submit_button("응모/저장하기", use_container_width=True)
+        submitted = st.form_submit_button("응모/저장하기", use_container_width=True)
         if submitted:
-            valid = True
             if not entry_name.strip():
                 st.error("이름을 입력해주세요.")
-                valid = False
-            if not entry_phone.strip():
+            elif not entry_phone.strip():
                 st.error("전화번호를 입력해주세요.")
-                valid = False
-            if not consent:
+            elif not consent:
                 st.error("개인정보처리방침 동의가 필요합니다.")
-                valid = False
-            if not last_sec_str:
+            elif not last_sec_str:
                 st.error("먼저 미니게임에서 STOP을 눌러 기록을 만든 뒤 응모해주세요.")
-                valid = False
-
-            if valid:
+            else:
                 # 시트 컬럼 순서:
                 # 시간 | 이름 | 전화번호 | 언어 | 기록초 | 공유여부 | 상담신청 | 생년월일
                 row = [
@@ -1259,10 +1194,300 @@ def _try_minigame_autosubmit(birth: date, last_sec_str: str, reason: str) -> tup
                     st.session_state["minigame_consent_ok"] = True
                     st.session_state["minigame_profile_name"] = entry_name.strip()
                     st.session_state["minigame_profile_phone"] = entry_phone.strip()
-            # (fixed) no-elif validation
+
+                elif not last_sec_str:
                 st.error("먼저 미니게임에서 STOP을 눌러 기록을 만든 뒤 응모해주세요.")
             else:
                     # URL 미설정 등은 앱이 죽지 않도록 안내만
+                    st.warning(f"저장 처리: {msg}")
+                    st.write("전송할 데이터(ROW):")
+                    st.code(row, language="json")
+
+
+
+def _get_webapp_url():
+    try:
+        if hasattr(st, "secrets") and st.secrets.get("GSHEET_WEBAPP_URL"):
+            return st.secrets.get("GSHEET_WEBAPP_URL")
+    except Exception:
+        pass
+    v = os.getenv("GSHEET_WEBAPP_URL")
+    if v:
+        return v
+    return "https://script.google.com/macros/s/AKfycbzqvExf3oVzLK578Rv_AUN3YTzlo90x6gl0VAS8J7exjbapf--4ODxQn_Ovxrr9rKfG/exec"
+
+def send_minigame_to_sheet(row: list) -> tuple[bool, str]:
+    """시트 컬럼 순서:
+    시간 | 이름 | 전화번호 | 언어 | 기록초 | 공유여부 | 상담신청 | 생년월일
+    """
+    url = _get_webapp_url()
+    if not url:
+        return False, "GSHEET_WEBAPP_URL 미설정(전송 생략)"
+    try:
+        r = requests.post(url, json={"row": row}, timeout=8)
+        if r.status_code == 200:
+            return True, "전송 완료"
+        return False, f"HTTP {r.status_code}"
+    except Exception as e:
+        return False, f"전송 실패: {e}"
+
+def _try_minigame_autosubmit(birth: date, last_sec_str: str, reason: str) -> tuple[bool, str]:
+    name = (st.session_state.get("minigame_profile_name") or "").strip()
+    phone = (st.session_state.get("minigame_profile_phone") or "").strip()
+    consent_ok = bool(st.session_state.get("minigame_consent_ok", False))
+    if not consent_ok or not name or not phone:
+        return False, "자동응모를 위해서는 1회 '동의 후 응모/저장'이 필요합니다."
+    if not last_sec_str:
+        return False, "기록이 없습니다. 먼저 STOP으로 기록을 만든 뒤 이용해주세요."
+
+    shared = bool(st.session_state.get("minigame_shared", False))
+    consult = bool(st.session_state.get("minigame_consult", False))
+    sig = f"{_today_key()}|{name}|{phone}|{last_sec_str}|{reason}|{shared}|{consult}"
+    if st.session_state.get("minigame_autosubmit_sig") == sig:
+        return False, "이미 자동응모 처리되었습니다."
+
+    row = [
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        name,
+        phone,
+        "ko",
+        last_sec_str,
+        shared,
+        consult,
+        str(birth),
+    ]
+    ok_send, msg = send_minigame_to_sheet(row)
+    if ok_send:
+        st.session_state["minigame_autosubmit_sig"] = sig
+        return True, f"자동응모 완료 ✅ ({msg})"
+    return False, f"자동응모 실패: {msg}"
+
+
+def mini_game_ui(birth: date, mbti: str, zodiac_ko: str):
+    _reset_minigame_daily()
+
+    st.markdown("### ⏱️ 미니게임: 20.260~20.269초 맞추기")
+    st.caption("디지털 스톱워치를 **START**로 시작하고 **STOP**으로 멈추세요. 기록은 소수점 3자리까지 표시됩니다.")
+    st.info("※ 선착순으로 진행되며 준비된 커피쿠폰 조기 소진 시 공지 없이 종료될 수 있습니다.")
+
+    st.markdown("<div id='minigame-anchor'></div>", unsafe_allow_html=True)
+
+    attempts = int(st.session_state.get("minigame_attempts", 0))
+    running = bool(st.session_state.get("minigame_running", False))
+    start_t = st.session_state.get("minigame_start", None)
+
+    now_sec = 0.0
+    if running and isinstance(start_t, (int, float)):
+        now_sec = max(0.0, time.perf_counter() - float(start_t))
+
+    st.markdown(
+        f"<div style='font-size:42px; font-weight:800; letter-spacing:1px; text-align:center; padding:8px 0;'>{_fmt_sec(now_sec)}<span style='font-size:18px; font-weight:700;'> s</span></div>",
+        unsafe_allow_html=True,
+    )
+    st.caption(f"남은 기회: **{attempts}회**")
+
+    colA, colB, colC = st.columns([1, 1, 1])
+    with colA:
+        if st.button("START", use_container_width=True, disabled=(attempts <= 0 or running), key="mg_start"):
+            st.session_state["minigame_running"] = True
+            st.session_state["minigame_start"] = time.perf_counter()
+            try:
+                import streamlit.components.v1 as components
+                components.html(
+                    "<script>(function(){const a=window.parent.document.getElementById('minigame-anchor');if(a){a.scrollIntoView({behavior:'instant',block:'start'});}})();</script>",
+                    height=0,
+                )
+            except Exception:
+                pass
+            st.rerun()
+
+    with colB:
+        if st.button("STOP", use_container_width=True, disabled=(not running), key="mg_stop"):
+            sec = now_sec
+            ok = (MINIGAME_MIN <= sec <= MINIGAME_MAX)
+            st.session_state["minigame_running"] = False
+            st.session_state["minigame_start"] = None
+            st.session_state["minigame_attempts"] = max(0, attempts - 1)
+            st.session_state["minigame_last"] = sec
+            st.session_state["minigame_last_ok"] = ok
+            _append_record(sec, ok)
+            st.rerun()
+
+    with colC:
+        if st.button("RESET", use_container_width=True, key="mg_reset"):
+            st.session_state["minigame_running"] = False
+            st.session_state["minigame_start"] = None
+            st.rerun()
+
+    if running:
+        time.sleep(0.03)
+        st.rerun()
+
+    last = st.session_state.get("minigame_last", None)
+    last_ok = st.session_state.get("minigame_last_ok", None)
+    last_sec_str = _fmt_sec(float(last)) if last is not None else ""
+
+    if last is not None:
+        if last_ok:
+            st.success(f"성공! 기록: {last_sec_str}s  ✅  (성공 범위: {MINIGAME_MIN:.3f}~{MINIGAME_MAX:.3f})")
+        else:
+            st.error(f"실패… 기록: {last_sec_str}s  ❌  (성공 범위: {MINIGAME_MIN:.3f}~{MINIGAME_MAX:.3f})")
+
+    recs = st.session_state.get("minigame_records") or []
+    if recs:
+        with st.expander("📒 내 기록 보기", expanded=False):
+            for r in recs[:20]:
+                badge = "✅" if r["ok"] else "❌"
+                st.write(f"- {r['ts']} · {_fmt_sec(r['sec'])}s · {badge}")
+
+    if last is not None and last_ok is False:
+        st.markdown("#### 🔁 재도전 기회 얻기")
+        st.write("아래 버튼 중 하나를 눌러 **기회를 +1회** 늘릴 수 있어요. (자기확인 방식)")
+        st.caption("TIP: 아래의 **링크 복사/공유하기**로 실제 공유 후, **공유 완료 +1**을 눌러주세요.")
+
+        try:
+            import streamlit.components.v1 as components
+            share_html = """
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin:6px 0 10px 0;">
+              <button id="copyLinkBtn" style="flex:1; min-width:140px; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06); color:inherit; font-weight:700;">
+                📋 링크 복사
+              </button>
+              <button id="nativeShareBtn" style="flex:1; min-width:140px; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06); color:inherit; font-weight:700;">
+                🔗 공유하기
+              </button>
+              <span id="shareMsg" style="flex-basis:100%; font-size:12px; opacity:0.75;"></span>
+            </div>
+            <script>
+              (function(){
+                const msg = (t)=>{ const el=document.getElementById('shareMsg'); if(el){el.textContent=t;} };
+                const getUrl = ()=>{
+                  try { return window.parent.location.href; } catch(e){ return window.location.href; }
+                };
+                const copy = async ()=>{
+                  const url = getUrl();
+                  try{
+                    await navigator.clipboard.writeText(url);
+                    msg("링크를 복사했어요 ✅");
+                  }catch(e){
+                    const ta=document.createElement('textarea');
+                    ta.value=url; document.body.appendChild(ta);
+                    ta.select(); document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    msg("링크를 복사했어요 ✅");
+                  }
+                };
+                const share = async ()=>{
+                  const url = getUrl();
+                  if(navigator.share){
+                    try{
+                      await navigator.share({title:"미니게임 도전!", text:"20.260~20.269초 맞추기 도전!", url});
+                      msg("공유를 완료했어요 ✅");
+                    }catch(e){
+                      msg("공유가 취소되었어요.");
+                    }
+                  }else{
+                    await copy();
+                    msg("이 브라우저는 공유를 지원하지 않아 링크를 복사했어요 ✅");
+                  }
+                };
+                document.getElementById('copyLinkBtn')?.addEventListener('click', copy);
+                document.getElementById('nativeShareBtn')?.addEventListener('click', share);
+              })();
+            </script>
+            """
+            components.html(share_html, height=90)
+        except Exception:
+            pass
+
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            if st.button("공유 완료 +1", use_container_width=True, key="mg_share_bonus"):
+                st.session_state["minigame_attempts"] = int(st.session_state.get("minigame_attempts", 0)) + 1
+                st.session_state["minigame_bonus_reason"] = (st.session_state.get("minigame_bonus_reason") or []) + ["share"]
+                st.session_state["minigame_shared"] = True
+                st.success("기회 +1 추가!")
+                ok_auto, msg_auto = _try_minigame_autosubmit(birth, last_sec_str, "share")
+                if ok_auto:
+                    st.info(msg_auto)
+                else:
+                    st.caption(msg_auto)
+
+        with c2:
+            if st.button("광고 보기(추후 애드센스) +1", use_container_width=True, key="mg_adsense_bonus"):
+                st.session_state["minigame_attempts"] = int(st.session_state.get("minigame_attempts", 0)) + 1
+                st.session_state["minigame_bonus_reason"] = (st.session_state.get("minigame_bonus_reason") or []) + ["adsense"]
+                st.success("기회 +1 추가!")
+                ok_auto, msg_auto = _try_minigame_autosubmit(birth, last_sec_str, "adsense")
+                if ok_auto:
+                    st.info(msg_auto)
+                else:
+                    st.caption(msg_auto)
+
+        with c3:
+            if st.button("다나눔렌탈 광고 보기 +1", use_container_width=True, key="mg_dananeum_bonus"):
+                st.session_state["minigame_attempts"] = int(st.session_state.get("minigame_attempts", 0)) + 1
+                st.session_state["minigame_bonus_reason"] = (st.session_state.get("minigame_bonus_reason") or []) + ["dananeum"]
+                st.session_state["minigame_consult"] = True
+                st.success("기회 +1 추가!")
+                st.link_button("무료 상담 페이지 열기", "https://incredible-dusk-20d2b5.netlify.app/")
+                ok_auto, msg_auto = _try_minigame_autosubmit(birth, last_sec_str, "dananeum")
+                if ok_auto:
+                    st.info(msg_auto)
+                else:
+                    st.caption(msg_auto)
+
+        st.markdown("---")
+
+    st.markdown("#### ☕ 커피쿠폰 응모(기록 저장)")
+    st.caption("생년월일/MBTI는 자동 반영됩니다. 이름/전화번호와 동의 체크 후 제출하세요.")
+
+    with st.form("minigame_entry_form", clear_on_submit=False):
+        col1, col2 = st.columns(2)
+        with col1:
+            entry_name = st.text_input("이름", value=(st.session_state.get("minigame_profile_name") or st.session_state.get("name") or ""))
+        with col2:
+            entry_phone = st.text_input("전화번호", value=(st.session_state.get("minigame_profile_phone") or st.session_state.get("phone") or ""))
+
+        st.text_input("생년월일", value=str(birth), disabled=True)
+        st.text_input("MBTI", value=(mbti or ""), disabled=True)
+        st.text_input("띠", value=(zodiac_ko or ""), disabled=True)
+
+        consent = st.checkbox("개인정보처리방침에 동의합니다.", value=False)
+
+        submitted = st.form_submit_button("응모/저장하기", use_container_width=True)
+        if submitted:
+            valid = True
+            if not entry_name.strip():
+                st.error("이름을 입력해주세요.")
+                valid = False
+            if not entry_phone.strip():
+                st.error("전화번호를 입력해주세요.")
+                valid = False
+            if not consent:
+                st.error("개인정보처리방침 동의가 필요합니다.")
+                valid = False
+            if not last_sec_str:
+                st.error("먼저 미니게임에서 STOP을 눌러 기록을 만든 뒤 응모해주세요.")
+                valid = False
+
+            if valid:
+                row = [
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    entry_name.strip(),
+                    entry_phone.strip(),
+                    "ko",
+                    last_sec_str,
+                    bool(st.session_state.get("minigame_shared", False)),
+                    bool(st.session_state.get("minigame_consult", False)),
+                    str(birth),
+                ]
+                ok_send, msg = send_minigame_to_sheet(row)
+                if ok_send:
+                    st.success(f"저장 완료 ✅ ({msg})")
+                    st.session_state["minigame_consent_ok"] = True
+                    st.session_state["minigame_profile_name"] = entry_name.strip()
+                    st.session_state["minigame_profile_phone"] = entry_phone.strip()
+                else:
                     st.warning(f"저장 처리: {msg}")
                     st.write("전송할 데이터(ROW):")
                     st.code(row, language="json")
