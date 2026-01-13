@@ -1,18 +1,16 @@
+
 # app.py
-# v2026.0016_MINIGAME_CLEAN_FULL
+# v2026.0017_STABLE_PLUS_MINIGAME_DOWNLOAD
+# Fortune + Tarot + MiniGame + Google Sheet (Apps Script WebApp)
 
 import streamlit as st
-import json
-import random
-import time
-import os
-import requests
+import json, random, time, os, requests
 from datetime import datetime, date
 
 # =============================
 # CONFIG
 # =============================
-APP_VERSION = "v2026.0016_MINIGAME_CLEAN_FULL"
+APP_VERSION = "v2026.0017_STABLE_PLUS_MINIGAME_DOWNLOAD"
 
 ZODIAC_DB_FILE = "zodiac_fortunes_ko_2026.json"
 
@@ -22,17 +20,14 @@ MINIGAME_MIN = 20.260
 MINIGAME_MAX = 20.269
 MINIGAME_DAILY_ATTEMPTS = 1
 
-
 # =============================
 # UTILS
 # =============================
 def _today_key():
     return datetime.now().strftime("%Y-%m-%d")
 
-
 def _fmt_sec(v: float) -> str:
     return f"{v:.3f}"
-
 
 # =============================
 # DB LOAD
@@ -42,54 +37,33 @@ def load_zodiac_db():
     with open(ZODIAC_DB_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
-
 # =============================
 # ZODIAC
 # =============================
 ZODIAC_MAP = [
-    ("rat", "쥐"),
-    ("ox", "소"),
-    ("tiger", "호랑이"),
-    ("rabbit", "토끼"),
-    ("dragon", "용"),
-    ("snake", "뱀"),
-    ("horse", "말"),
-    ("goat", "양"),
-    ("monkey", "원숭이"),
-    ("rooster", "닭"),
-    ("dog", "개"),
-    ("pig", "돼지"),
+    ("rat", "쥐"), ("ox", "소"), ("tiger", "호랑이"), ("rabbit", "토끼"),
+    ("dragon", "용"), ("snake", "뱀"), ("horse", "말"), ("goat", "양"),
+    ("monkey", "원숭이"), ("rooster", "닭"), ("dog", "개"), ("pig", "돼지"),
 ]
 
-
 def get_zodiac_from_birth(birth: date):
-    year = birth.year
-    idx = (year - 4) % 12
+    idx = (birth.year - 4) % 12
     key, ko = ZODIAC_MAP[idx]
     return key, f"{ko}띠"
 
-
 # =============================
-# TAROT (simple mock)
+# TAROT (simple daily fixed)
 # =============================
 TAROT_CARDS = [
-    "The Fool - 새로운 시작",
-    "The Magician - 기회 포착",
-    "The High Priestess - 직감",
-    "The Empress - 풍요",
-    "The Emperor - 결단",
-    "The Lovers - 선택",
-    "The Chariot - 추진력",
-    "Strength - 인내",
-    "The Hermit - 성찰",
-    "Wheel of Fortune - 전환점",
+    "The Fool · 새로운 시작", "The Magician · 기회 포착", "The High Priestess · 직감",
+    "The Empress · 풍요", "The Emperor · 결단", "The Lovers · 선택",
+    "The Chariot · 추진력", "Strength · 인내", "The Hermit · 성찰",
+    "Wheel of Fortune · 전환점",
 ]
-
 
 def get_daily_tarot(seed_key: str):
     random.seed(seed_key)
     return random.choice(TAROT_CARDS)
-
 
 # =============================
 # MINIGAME STATE
@@ -106,16 +80,13 @@ def _reset_minigame_daily():
         st.session_state["minigame_records"] = []
         st.session_state["minigame_shared"] = False
         st.session_state["minigame_consult"] = False
-        st.session_state["minigame_consent_ok"] = False
         st.session_state["minigame_profile_name"] = ""
         st.session_state["minigame_profile_phone"] = ""
-
 
 def _append_record(sec: float, ok: bool):
     recs = st.session_state.get("minigame_records") or []
     recs.insert(0, {"ts": datetime.now().strftime("%H:%M:%S"), "sec": sec, "ok": ok})
     st.session_state["minigame_records"] = recs[:20]
-
 
 # =============================
 # SHEET
@@ -128,7 +99,6 @@ def send_minigame_to_sheet(row: list):
         return False, f"HTTP {r.status_code}"
     except Exception as e:
         return False, str(e)
-
 
 # =============================
 # MINIGAME UI
@@ -280,7 +250,6 @@ def mini_game_ui(birth: date, mbti: str, zodiac_ko: str):
                 else:
                     st.warning("전송 실패")
                     st.code(row, language="json")
-
 
 # =============================
 # MAIN UI
