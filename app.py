@@ -15,14 +15,13 @@ import random
 import hashlib
 import base64
 from pathlib import Path
-MINIGAME_OUT_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
 APP_VERSION = "v2026.0002"
 APP_URL = "https://my-fortune.streamlit.app"
-DANANEUM_LANDING_URL = "https://fascinating-parfait-92a985.netlify.app/"
+DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 DEBUG_MODE = False  # DB 연결 확인용 UI 숨김
 
 st.set_page_config(
@@ -995,9 +994,33 @@ def render_result(dbs):
 # 11) 실행
 # =========================================================
 
-    # ✅ (2페이지 맨 아래) 미니게임 CTA
-    st.markdown('---')
-    st.link_button('🎮 미니게임하고 ☕ 커피쿠폰 받기', MINIGAME_OUT_URL, use_container_width=True)
+    # === CTA: 미니게임하고 커피쿠폰 받기 (2페이지 맨 아래 강조 버튼) ===
+    st.markdown('''
+    <div style="margin:24px 0 8px 0; text-align:center;">
+      <a href="https://incredible-dusk-20d2b5.netlify.app/" target="_blank" style="text-decoration:none;">
+        <div style="
+          width:100%;
+          padding:18px 14px;
+          border-radius:18px;
+          background: linear-gradient(135deg, #ffd36a, #ff8c2b);
+          color:#1a1a1a;
+          font-weight:900;
+          font-size:1.1rem;
+          box-shadow: 0 8px 22px rgba(0,0,0,0.28);
+          animation: pulse 1.4s ease-in-out infinite;
+        ">
+          🎮 미니게임하고 ☕ 커피쿠폰 받기
+        </div>
+      </a>
+    </div>
+    <style>
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    </style>
+    ''', unsafe_allow_html=True)
 
 try:
     dbs = load_all_dbs()
