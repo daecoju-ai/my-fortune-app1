@@ -8,7 +8,7 @@
 
 import streamlit as st
 import streamlit.components.v1 as components
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 import json
 import re
 import random
