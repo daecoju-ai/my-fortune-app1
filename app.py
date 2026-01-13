@@ -1004,11 +1004,15 @@ def render_result(dbs):
 
 
 # =========================================================
+# 10.8) 미니게임
+# =========================================================
 # 10.8) 미니게임 (3단계 전용 화면)
 # - 목적 강조: "미니게임 하고 커피쿠폰 받기"
 # - 타로/운세 재실행 꼬임 방지: stage="minigame" 분리
 # - 사운드: clock-ticking (START 시), reveal (STOP 시 1회)
-# - 외부 링크 기반 간접 검증: 링크 열기 + 5초 대기 후 보너스 받기 버튼 활성화
+# - 외부 링크 기반 간접 검증:
+#     * 친구공유하고 재도전하기 / 광고보고 재도전하기
+#     * 외부로 나갔다가 돌아온 뒤 "재도전 시작(기회 1회)"를 눌러야 기회가 1로 세팅
 # =========================================================
 
 import time as _time
@@ -1024,8 +1028,8 @@ CLOCK_SOUND_PATH = "assets/clock-ticking.mp3"
 REVEAL_SOUND_PATH = "assets/reveal.mp3"  # 없으면 자동 무시
 
 # 보너스용 외부 링크(원하면 나중에 교체 가능)
-SHARE_OUT_URL = "https://www.kakao.com/"
-AD_OUT_URL = DANANEUM_LANDING_URL  # 실제 광고/랜딩(기존 광고는 화면에 그대로 노출)
+SHARE_OUT_URL = APP_URL               # 공유는 앱 URL 공유(2페이지 '친구 공유'와 동일 흐름)
+AD_OUT_URL = DANANEUM_LANDING_URL     # 광고/랜딩(실제 광고 블록은 화면에 그대로 유지)
 
 GSHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzqvExf3oVzLK578Rv_AUN3YTzlo90x6gl0VAS8J7exjbapf--4ODxQn_Ovxrr9rKfG/exec"
 
@@ -1040,7 +1044,6 @@ def _read_file_b64(path: str) -> str | None:
 
 def _autoplay_audio_html(b64: str, mime: str = "audio/mpeg", loop: bool = False) -> str:
     loop_attr = " loop" if loop else ""
-    # muted 제거: 모바일에서도 재생 시도(브라우저 정책에 따라 사용자 인터랙션 후 재생됨)
     return f"""
 <audio autoplay{loop_attr}>
   <source src="data:{mime};base64,{b64}" type="{mime}">
@@ -1061,14 +1064,14 @@ def _reset_minigame_daily():
         st.session_state["mg_start"] = None
         st.session_state["mg_last"] = None
         st.session_state["mg_ok"] = None
+
+        # 행동 기록(시트 기록용)
         st.session_state["mg_shared_bonus"] = False
         st.session_state["mg_ad_bonus"] = False
 
-        # 간접 검증(대기) 상태
-        st.session_state["mg_pending_type"] = None  # "share" | "ad"
+        # 간접 검증(외부 이동) 상태
+        st.session_state["mg_pending_type"] = None      # "share" | "ad" | None
         st.session_state["mg_pending_started_at"] = None
-        st.session_state["mg_bonus_claimed_share"] = False
-        st.session_state["mg_bonus_claimed_ad"] = False
 
 
 def _post_row_to_sheet(row: list):
@@ -1080,53 +1083,36 @@ def _post_row_to_sheet(row: list):
 
 
 def _bonus_pending_ui(pending_type: str, out_url: str):
-    """
-    간접 검증 UX:
-    1) 버튼 눌러 pending 시작
-    2) 외부 링크 열기(사용자가 실제로 나갔다가 돌아오게 유도)
-    3) 5초 뒤 '보너스 받기' 활성화
-    """
-    # 시작
-    if st.button("링크 열기", use_container_width=True, key=f"mg_open_{pending_type}"):
-        st.session_state["mg_pending_type"] = pending_type
-        st.session_state["mg_pending_started_at"] = _time.time()
-        st.rerun()
+    """외부 링크 기반 간접 검증 UI (복귀 시 기회 1회로 세팅)"""
+    st.markdown("### 🔁 재도전 기회 얻기")
+    st.info("외부 페이지를 확인하신 뒤, 아래 **재도전 시작** 버튼을 눌러 게임으로 복귀하면 기회가 1회로 세팅됩니다.")
 
-    st.link_button("외부 페이지로 이동", out_url, use_container_width=True)
-
-    started_at = st.session_state.get("mg_pending_started_at") or _time.time()
-    elapsed = _time.time() - float(started_at)
-    wait_left = max(0, 5 - int(elapsed))
-
-    if wait_left > 0:
-        st.caption(f"보너스 활성화까지 {wait_left}초… (외부 페이지를 확인하고 돌아와주세요)")
+    # 공유는 2페이지와 동일하게(친구공유 UI 재사용)
+    if pending_type == "share":
+        st.markdown("**친구공유하고 재도전하기**")
+        share_block()
+        st.link_button("외부로 이동(선택)", out_url, use_container_width=True, key="mg_link_out_share")
     else:
-        # 보너스 받기
+        st.markdown("**광고보고 재도전하기**")
+        st.link_button("광고/랜딩 열기", out_url, use_container_width=True, key="mg_link_out_ad")
+
+    if st.button("✅ 재도전 시작 (기회 1회)", use_container_width=True, key=f"mg_back_and_retry_{pending_type}"):
+        st.session_state["mg_attempts"] = 1  # 요구사항: 돌아오면 남은 기회 1로 표시
+        st.session_state["mg_running"] = False
+        st.session_state["mg_start"] = None
+
         if pending_type == "share":
-            if st.button("✅ 공유 보너스 받기 (+1)", use_container_width=True, key="mg_claim_share"):
-                if not st.session_state.get("mg_bonus_claimed_share", False):
-                    st.session_state["mg_attempts"] = int(st.session_state.get("mg_attempts", 0)) + 1
-                    st.session_state["mg_shared_bonus"] = True
-                    st.session_state["mg_bonus_claimed_share"] = True
-                st.session_state["mg_pending_type"] = None
-                st.session_state["mg_pending_started_at"] = None
-                st.rerun()
-        else:
-            if st.button("✅ 광고 보너스 받기 (+1)", use_container_width=True, key="mg_claim_ad"):
-                if not st.session_state.get("mg_bonus_claimed_ad", False):
-                    st.session_state["mg_attempts"] = int(st.session_state.get("mg_attempts", 0)) + 1
-                    st.session_state["mg_ad_bonus"] = True
-                    st.session_state["mg_bonus_claimed_ad"] = True
-                st.session_state["mg_pending_type"] = None
-                st.session_state["mg_pending_started_at"] = None
-                st.rerun()
+            st.session_state["mg_shared_bonus"] = True
+        elif pending_type == "ad":
+            st.session_state["mg_ad_bonus"] = True
+
+        st.session_state["mg_pending_type"] = None
+        st.session_state["mg_pending_started_at"] = None
+        st.rerun()
 
 
 def render_minigame_screen(dbs):
-    """
-    3단계 화면: 미니게임 + 커피쿠폰 받기(응모)
-    - 이 화면은 타로/운세 로직과 분리됨 (rerun 반복해도 결과 고정)
-    """
+    """3단계 화면: 미니게임 + 커피쿠폰 받기(응모)"""
     _reset_minigame_daily()
 
     # 안전장치: 운세를 안 보고 들어오는 경우 차단
@@ -1136,16 +1122,29 @@ def render_minigame_screen(dbs):
 
     if not birth or not mbti or not zodiac_label:
         st.warning("먼저 운세 결과를 확인한 뒤 미니게임에 참여할 수 있어요.")
-        if st.button("운세 화면으로", use_container_width=True):
+        if st.button("운세 화면으로", use_container_width=True, key="mg_go_result"):
             st.session_state.stage = "result"
             st.rerun()
         return
 
     st.markdown("## 🎮 미니게임 하고 ☕ 커피쿠폰 받기")
+    st.caption("정산 후 문자로 쿠폰 발송")
     st.warning("본 이벤트는 선착순으로 진행되며, 행사상품 소진 시 공지없이 조기 종료될 수 있습니다.")
 
-    # 실제 광고는 그대로 노출(문구는 '광고보기 +1'만 유지)
+    # 광고는 그대로 노출
     dananeum_ad_block()
+
+    # 외부 이동 pending이면: 게임 대신 복귀 UI만 보여줌 (중복 위젯 방지)
+    pending = st.session_state.get("mg_pending_type")
+    if pending in ("share", "ad"):
+        _bonus_pending_ui("share" if pending == "share" else "ad", SHARE_OUT_URL if pending == "share" else AD_OUT_URL)
+        st.markdown("---")
+        if st.button("← 운세 화면으로", use_container_width=True, key="mg_back_to_result_from_pending"):
+            st.session_state.stage = "result"
+            st.session_state["mg_pending_type"] = None
+            st.session_state["mg_pending_started_at"] = None
+            st.rerun()
+        return
 
     attempts = int(st.session_state.get("mg_attempts", 0))
     running = bool(st.session_state.get("mg_running", False))
@@ -1155,11 +1154,30 @@ def render_minigame_screen(dbs):
     if running and isinstance(start_t, (int, float)):
         now_sec = max(0.0, _time.perf_counter() - float(start_t))
 
+    # ===== Timer "image-like" 강화 패널 =====
     st.markdown(
-        f"<div style='font-size:44px;font-weight:900;text-align:center;letter-spacing:0.5px'>{_fmt_sec(now_sec)} s</div>",
+        f"""
+        <div style="
+          border:5px solid rgba(0,0,0,0.65);
+          border-radius:22px;
+          padding:18px 14px;
+          margin:12px 0 10px 0;
+          text-align:center;
+          background: radial-gradient(circle at 30% 20%, rgba(0,255,204,0.20), transparent 55%),
+                      linear-gradient(135deg,#0b0b0f 0%, #151525 40%, #1d1d35 100%);
+          box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+        ">
+          <div style="font-size:14px;letter-spacing:3px;color:rgba(255,255,255,0.75);font-weight:900;">DIGITAL STOPWATCH</div>
+          <div style="font-size:72px;font-weight:1000;line-height:1.05;color:#00ffcc;text-shadow: 0 6px 18px rgba(0,255,204,0.18);">
+            {_fmt_sec(now_sec)}
+          </div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.70);margin-top:6px;">
+            남은 기회 <b style="color:#fff;">{attempts}</b> · 목표 {MINIGAME_MIN:.3f}~{MINIGAME_MAX:.3f}초
+          </div>
+        </div>
+        """,
         unsafe_allow_html=True,
     )
-    st.caption(f"남은 기회: {attempts}회  ·  성공 범위: {MINIGAME_MIN:.3f} ~ {MINIGAME_MAX:.3f}")
 
     # START 중 tick 사운드(루프)
     clock_b64 = _read_file_b64(CLOCK_SOUND_PATH)
@@ -1205,65 +1223,46 @@ def render_minigame_screen(dbs):
 
     if last is not None:
         if ok:
-            st.success(f"🎉 성공! 기록 {_fmt_sec(float(last))}초  ·  커피쿠폰 받기 정보를 입력해주세요.")
+            st.success(f"🎉 성공! 기록 {_fmt_sec(float(last))}초  ·  **정산 후 문자로 쿠폰 발송**")
+            st.markdown("<div class='soft-box'><b>즉시 지급</b>이 아니라, <b>정산 후 문자로 쿠폰을 발송</b>합니다.</div>", unsafe_allow_html=True)
         else:
             st.error(f"❌ 실패! 기록 {_fmt_sec(float(last))}초")
             st.markdown("### 추첨 응모 희망시 정보를 입력해주세요")
 
-    # 실패 시 보너스 UI (공유/광고보기 문구 유지)
+    # 실패 시 재도전 옵션: 버튼 클릭 → pending UI로 이동(복귀 후 기회 1회)
     if last is not None and (ok is False):
         st.markdown("---")
         st.markdown("### 🔁 재도전 옵션")
-        st.caption("아래 버튼은 '행동 의미' 안내입니다. 외부 링크 확인 후 보너스를 받을 수 있어요.")
+        st.caption("외부 링크를 확인한 뒤, 돌아와서 **재도전 시작**을 눌러야 기회가 1회로 세팅됩니다.")
 
         b1, b2 = st.columns(2)
         with b1:
             st.markdown("**공유완료.**")
-            pending = st.session_state.get("mg_pending_type")
-            if pending == "share":
-                _bonus_pending_ui("share", SHARE_OUT_URL)
-            else:
-                if st.button("공유 완료 +1", use_container_width=True, key="mg_share_start"):
-                    st.session_state["mg_pending_type"] = "share"
-                    st.session_state["mg_pending_started_at"] = _time.time()
-                    st.rerun()
+            if st.button("친구공유하고 재도전하기", use_container_width=True, key="mg_go_share_pending"):
+                st.session_state["mg_pending_type"] = "share"
+                st.session_state["mg_pending_started_at"] = _time.time()
+                st.rerun()
 
         with b2:
             st.markdown("**광고보기.**")
-            pending = st.session_state.get("mg_pending_type")
-            if pending == "ad":
-                _bonus_pending_ui("ad", AD_OUT_URL)
-            else:
-                if st.button("광고 보기 +1", use_container_width=True, key="mg_ad_start"):
-                    st.session_state["mg_pending_type"] = "ad"
-                    st.session_state["mg_pending_started_at"] = _time.time()
-                    st.rerun()
+            if st.button("광고보고 재도전하기", use_container_width=True, key="mg_go_ad_pending"):
+                st.session_state["mg_pending_type"] = "ad"
+                st.session_state["mg_pending_started_at"] = _time.time()
+                st.rerun()
 
-        # pending 상태면 해당 UI 노출
-        pending = st.session_state.get("mg_pending_type")
-        if pending == "share":
-            st.markdown("---")
-            st.subheader("공유 보너스")
-            _bonus_pending_ui("share", SHARE_OUT_URL)
-        elif pending == "ad":
-            st.markdown("---")
-            st.subheader("광고 보너스")
-            _bonus_pending_ui("ad", AD_OUT_URL)
-
-    # 응모 폼: 성공자는 필수 느낌 / 실패자는 추첨 응모
+    # 응모 폼: 성공/실패 공통(성공자는 쿠폰 발송, 실패자는 추첨)
     if last is not None:
         st.markdown("---")
         st.subheader("☕ 커피쿠폰 받기 · 응모 정보")
         st.caption("행사상품 소진 시 공지없이 조기 종료될 수 있습니다.")
 
         with st.form("mg_entry_form", clear_on_submit=False):
-            entry_name = st.text_input("이름")
-            entry_phone = st.text_input("전화번호")
-            st.text_input("생년월일", value=str(birth), disabled=True)
+            entry_name = st.text_input("이름", key="mg_entry_name")
+            entry_phone = st.text_input("전화번호", key="mg_entry_phone")
+            st.text_input("생년월일", value=str(birth), disabled=True, key="mg_entry_birth")
+            consent = st.checkbox("개인정보처리방침 동의", value=False, key="mg_entry_consent")
 
-            consent = st.checkbox("개인정보처리방침 동의", value=False)
-
-            submit_label = "응모하기 (성공 즉시지급/실패 추첨)"
+            submit_label = "응모하기 (성공: 정산 후 문자 발송 / 실패: 추첨 응모)"
             submitted = st.form_submit_button(submit_label, use_container_width=True)
 
             if submitted:
@@ -1284,7 +1283,7 @@ def render_minigame_screen(dbs):
                     "ko",                                          # 언어
                     _fmt_sec(float(last)),                         # 기록초
                     bool(st.session_state.get("mg_shared_bonus", False)),  # 공유여부
-                    bool(st.session_state.get("mg_ad_bonus", False)),      # 상담신청(여기서는 광고보기 보너스로 기록)
+                    bool(st.session_state.get("mg_ad_bonus", False)),      # 상담신청(광고보고=1)
                     str(birth),                                    # 생년월일
                 ]
 
@@ -1294,8 +1293,6 @@ def render_minigame_screen(dbs):
                 else:
                     st.warning(f"전송 실패: {msg}")
                     st.code(row, language="json")
-
-
 
 # =========================================================
 # 11) 실행
