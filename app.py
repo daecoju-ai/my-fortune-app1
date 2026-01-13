@@ -19,7 +19,7 @@ from pathlib import Path
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
-APP_VERSION = "v2026.0013_SHARETOOLS"
+APP_VERSION = "v2026.0014_FIXINDENT"
 APP_URL = "https://my-fortune.streamlit.app"
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 DEBUG_MODE = False  # DB 연결 확인용 UI 숨김
@@ -1234,6 +1234,7 @@ def _try_minigame_autosubmit(birth: date, last_sec_str: str, reason: str) -> tup
             elif not last_sec_str:
                 st.error("먼저 미니게임에서 STOP을 눌러 기록을 만든 뒤 응모해주세요.")
             else:
+
                 # 시트 컬럼 순서:
                 # 시간 | 이름 | 전화번호 | 언어 | 기록초 | 공유여부 | 상담신청 | 생년월일
                 row = [
