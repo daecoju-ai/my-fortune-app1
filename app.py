@@ -413,28 +413,28 @@ def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
     st.markdown("<div class='card tarot-card'>", unsafe_allow_html=True)
     st.markdown("### 🃏 오늘의 타로카드 (하루 1회 가능)", unsafe_allow_html=True)
 
-# --- CTA: 미니게임하고 커피쿠폰 받기 (타로 아래) ---
-st.markdown(
-    '''
-    <div style="margin:20px 0;">
-        <a href="https://incredible-dusk-20d2b5.netlify.app/" target="_blank">
-            <button style="
-                width:100%;
-                padding:14px;
-                font-size:16px;
-                font-weight:600;
-                border:none;
-                border-radius:14px;
-                background:#ff9f5a;
-                color:#1f2a44;
-            ">
-                🎮 미니게임하고 ☕ 커피쿠폰 받기
-            </button>
-        </a>
-    </div>
-    ''',
-    unsafe_allow_html=True
-)
+    # --- CTA: 미니게임하고 커피쿠폰 받기 (타로 아래) ---
+    st.markdown(
+        '''
+        <div style="margin:20px 0;">
+            <a href="https://incredible-dusk-20d2b5.netlify.app/" target="_blank">
+                <button style="
+                    width:100%;
+                    padding:14px;
+                    font-size:16px;
+                    font-weight:600;
+                    border:none;
+                    border-radius:14px;
+                    background:#ff9f5a;
+                    color:#1f2a44;
+                ">
+                    🎮 미니게임하고 ☕ 커피쿠폰 받기
+                </button>
+            </a>
+        </div>
+        ''',
+        unsafe_allow_html=True
+    )
 
     st.markdown("<div class='soft-box'>뒷면 카드를 보고 <b>뽑기</b>를 누르면 카드가 공개됩니다. 오늘 하루 동안은 <b>같은 카드(같은 의미/이미지)</b>로 고정됩니다.</div>", unsafe_allow_html=True)
 
