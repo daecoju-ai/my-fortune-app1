@@ -39,7 +39,7 @@ def _loop_audio(path: str):
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
-APP_VERSION = "v2026.0032_REVERTBASE_FIXES"
+APP_VERSION = "v2026.0033_SHAREUI_LOOPAUDIO_SHEETFIFIX"
 APP_URL = "https://my-fortune.streamlit.app"
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 DEBUG_MODE = False  # DB 연결 확인용 UI 숨김
@@ -1057,12 +1057,10 @@ def _reset_minigame_daily():
         st.session_state["mg_bonus_pending"] = None  # "share"|"ad"|None
 
 def _bonus_pending_ui(kind: str, out_url: str):
-    st.markdown("### 🔗 외부 페이지로 이동")
-    st.caption("외부 페이지를 확인한 뒤 아래 버튼을 눌러 **게임 화면으로 복귀**하면 재도전 기회가 1회 부여됩니다.")
-    # 링크는 Streamlit 버전 이슈를 피하기 위해 markdown 링크로 처리
-    st.markdown(f"[외부 페이지로 이동]({out_url})")
+    st.markdown("### 🔁 친구에게 공유하고 재도전")
+    share_block()
 
-    if st.button("게임 화면으로 복귀하기", use_container_width=True, key=f"mg_return_{kind}"):
+    if st.button("이전 화면으로", use_container_width=True, key=f"mg_return_{kind}"), use_container_width=True, key=f"mg_return_{kind}"):
         st.session_state["mg_attempts"] = 1  # 돌아오면 1회로 표시
         if kind == "share":
             st.session_state["mg_shared"] = True
@@ -1102,7 +1100,7 @@ def render_minigame_screen(dbs):
     if running:
         # START 중 시계 소리
         try:
-            st.audio(CLOCK_SOUND_PATH, autoplay=True)
+            _loop_audio(CLOCK_SOUND_PATH)
         except Exception:
             pass
 
