@@ -15,13 +15,14 @@ import random
 import hashlib
 import base64
 from pathlib import Path
+MINIGAME_OUT_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
 APP_VERSION = "v2026.0002"
 APP_URL = "https://my-fortune.streamlit.app"
-DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
+DANANEUM_LANDING_URL = "https://fascinating-parfait-92a985.netlify.app/"
 DEBUG_MODE = False  # DB 연결 확인용 UI 숨김
 
 st.set_page_config(
@@ -412,30 +413,6 @@ def _pick_existing_path(candidates: list[str]) -> Path | None:
 def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
     st.markdown("<div class='card tarot-card'>", unsafe_allow_html=True)
     st.markdown("### 🃏 오늘의 타로카드 (하루 1회 가능)", unsafe_allow_html=True)
-
-    # --- CTA: 미니게임하고 커피쿠폰 받기 (타로 아래) ---
-    st.markdown(
-        '''
-        <div style="margin:20px 0;">
-            <a href="https://incredible-dusk-20d2b5.netlify.app/" target="_blank">
-                <button style="
-                    width:100%;
-                    padding:14px;
-                    font-size:16px;
-                    font-weight:600;
-                    border:none;
-                    border-radius:14px;
-                    background:#ff9f5a;
-                    color:#1f2a44;
-                ">
-                    🎮 미니게임하고 ☕ 커피쿠폰 받기
-                </button>
-            </a>
-        </div>
-        ''',
-        unsafe_allow_html=True
-    )
-
     st.markdown("<div class='soft-box'>뒷면 카드를 보고 <b>뽑기</b>를 누르면 카드가 공개됩니다. 오늘 하루 동안은 <b>같은 카드(같은 의미/이미지)</b>로 고정됩니다.</div>", unsafe_allow_html=True)
 
     # back.png
@@ -1017,6 +994,11 @@ def render_result(dbs):
 # =========================================================
 # 11) 실행
 # =========================================================
+
+    # ✅ (2페이지 맨 아래) 미니게임 CTA
+    st.markdown('---')
+    st.link_button('🎮 미니게임하고 ☕ 커피쿠폰 받기', MINIGAME_OUT_URL, use_container_width=True)
+
 try:
     dbs = load_all_dbs()
 except Exception as e:
