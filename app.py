@@ -8,18 +8,20 @@
 
 import streamlit as st
 import streamlit.components.v1 as components
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import json
 import re
 import random
 import hashlib
 import base64
 from pathlib import Path
+import time
+import requests
 
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
-APP_VERSION = "v2026.0007_STABLE"
+APP_VERSION = "v2026.0002"
 APP_URL = "https://my-fortune.streamlit.app"
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 DEBUG_MODE = False  # DB 연결 확인용 UI 숨김
@@ -410,40 +412,6 @@ def _pick_existing_path(candidates: list[str]) -> Path | None:
     return None
 
 def tarot_ui(tarot_db: dict, birth: date, name: str, mbti: str):
-
-    # ---- SAFE SHAKE OVERRIDE (v2026.0007_STABLE) ----
-    st.markdown("""
-    <style>
-    @keyframes shake {
-      0% { transform: translate(0px,0px) rotate(0deg); }
-      4% { transform: translate(-3px,1px) rotate(-1deg); }
-      8% { transform: translate(3px,-1px) rotate(1deg); }
-      12% { transform: translate(-3px,1px) rotate(-1deg); }
-      16% { transform: translate(3px,-1px) rotate(1deg); }
-      20% { transform: translate(-3px,1px) rotate(-1deg); }
-      24% { transform: translate(3px,-1px) rotate(1deg); }
-      28% { transform: translate(-3px,1px) rotate(-1deg); }
-      32% { transform: translate(3px,-1px) rotate(1deg); }
-      36% { transform: translate(-3px,1px) rotate(-1deg); }
-      40% { transform: translate(3px,-1px) rotate(1deg); }
-      44% { transform: translate(-3px,1px) rotate(-1deg); }
-      48% { transform: translate(3px,-1px) rotate(1deg); }
-      52% { transform: translate(-3px,1px) rotate(-1deg); }
-      56% { transform: translate(3px,-1px) rotate(1deg); }
-      60% { transform: translate(-3px,1px) rotate(-1deg); }
-      64% { transform: translate(3px,-1px) rotate(1deg); }
-      68% { transform: translate(-3px,1px) rotate(-1deg); }
-      72% { transform: translate(3px,-1px) rotate(1deg); }
-      76% { transform: translate(-3px,1px) rotate(-1deg); }
-      80% { transform: translate(3px,-1px) rotate(1deg); }
-      84% { transform: translate(-3px,1px) rotate(-1deg); }
-      88% { transform: translate(3px,-1px) rotate(1deg); }
-      92% { transform: translate(-3px,1px) rotate(-1deg); }
-      96% { transform: translate(3px,-1px) rotate(1deg); }
-      100% { transform: translate(0px,0px) rotate(0deg); }
-    }
-    </style>
-    """, unsafe_allow_html=True)
     st.markdown("<div class='card tarot-card'>", unsafe_allow_html=True)
     st.markdown("### 🃏 오늘의 타로카드 (하루 1회 가능)", unsafe_allow_html=True)
     st.markdown("<div class='soft-box'>뒷면 카드를 보고 <b>뽑기</b>를 누르면 카드가 공개됩니다. 오늘 하루 동안은 <b>같은 카드(같은 의미/이미지)</b>로 고정됩니다.</div>", unsafe_allow_html=True)
@@ -804,7 +772,7 @@ components.html("""
 # 9) 세션 상태
 # =========================================================
 if "stage" not in st.session_state:
-    st.session_state.stage = "input"  # input / result
+    st.session_state.stage = "input"  # input / result / minigame
 if "name" not in st.session_state:
     st.session_state.name = ""
 if "birth" not in st.session_state:
@@ -888,6 +856,7 @@ def render_result(dbs):
     lny_map = parse_lny_map(dbs["lunar_lny"])
     zodiac_key, zodiac_year = zodiac_by_birth(birth, lny_map)
     zodiac_label = ZODIAC_LABEL_KO.get(zodiac_key, zodiac_key)
+    st.session_state["zodiac_label"] = zodiac_label
 
     base_seed = stable_seed(str(birth), name, mbti)
 
@@ -1016,8 +985,10 @@ def render_result(dbs):
     dananeum_ad_block()
     tarot_ui(dbs["tarot_db"], birth, name, mbti)
 
-    # 🎮 미니게임 추가
-    mini_game_ui(birth, mbti, zodiac_label)
+    st.markdown("---")
+    if st.button("🎮 미니게임 도전하기", use_container_width=True):
+        st.session_state.stage = "minigame"
+        st.rerun()
 
     if st.button("입력 화면으로", use_container_width=True):
         st.session_state.stage = "input"
@@ -1028,47 +999,49 @@ def render_result(dbs):
             st.write(dbs["paths"])
 
 
-# =========================================================
-# 10.5) 미니게임: 20.260~20.269초 맞추기 + 구글시트 응모
-# =========================================================
 
-import requests
-import time as _time
+
+# =========================================================
+# 10.5) 미니게임: 20.260~20.269초 맞추기 + 커피쿠폰 응모(구글시트)
+# - 운세/타로(2단계)와 완전히 분리된 3단계 화면
+# =========================================================
 
 MINIGAME_MIN = 20.260
 MINIGAME_MAX = 20.269
 MINIGAME_DAILY_ATTEMPTS = 1
 
+# Apps Script WebApp (POST)
 GSHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzqvExf3oVzLK578Rv_AUN3YTzlo90x6gl0VAS8J7exjbapf--4ODxQn_Ovxrr9rKfG/exec"
 
-def _today_key():
+def _mg_today_key() -> str:
     return date.today().isoformat()
 
-def _fmt_sec(v: float) -> str:
+def _mg_fmt_sec(v: float) -> str:
     return f"{v:.3f}"
 
-def _reset_minigame_daily():
-    today = _today_key()
-    if st.session_state.get("minigame_day") != today:
-        st.session_state["minigame_day"] = today
-        st.session_state["minigame_attempts"] = MINIGAME_DAILY_ATTEMPTS
-        st.session_state["minigame_running"] = False
-        st.session_state["minigame_start"] = None
-        st.session_state["minigame_last"] = None
-        st.session_state["minigame_last_ok"] = None
-        st.session_state["minigame_records"] = []
-        st.session_state["minigame_shared"] = False
-        st.session_state["minigame_consult"] = False
-        st.session_state["minigame_profile_name"] = ""
-        st.session_state["minigame_profile_phone"] = ""
-        st.session_state["minigame_consent_ok"] = False
+def _mg_reset_daily():
+    today = _mg_today_key()
+    if st.session_state.get("mg_day") != today:
+        st.session_state["mg_day"] = today
+        st.session_state["mg_attempts"] = MINIGAME_DAILY_ATTEMPTS
+        st.session_state["mg_running"] = False
+        st.session_state["mg_start"] = None
+        st.session_state["mg_last"] = None
+        st.session_state["mg_last_ok"] = None
+        st.session_state["mg_records"] = []
+        st.session_state["mg_shared"] = False
+        st.session_state["mg_consult"] = False
 
-def _append_record(sec: float, ok: bool):
-    recs = st.session_state.get("minigame_records") or []
-    recs.insert(0, {"ts": datetime.now().strftime("%H:%M:%S"), "sec": sec, "ok": ok})
-    st.session_state["minigame_records"] = recs[:20]
+def _mg_append_record(sec: float, ok: bool):
+    recs = st.session_state.get("mg_records") or []
+    recs.insert(0, {"ts": datetime.now().strftime("%H:%M:%S"), "sec": float(sec), "ok": bool(ok)})
+    st.session_state["mg_records"] = recs[:30]
 
-def send_minigame_to_sheet(row: list):
+def send_minigame_to_sheet(row: list) -> tuple[bool, str]:
+    """
+    컬럼 순서(고정):
+    시간 | 이름 | 전화번호 | 언어 | 기록초 | 공유여부 | 상담신청 | 생년월일
+    """
     try:
         r = requests.post(GSHEET_WEBAPP_URL, json={"row": row}, timeout=8)
         if r.status_code == 200:
@@ -1077,127 +1050,156 @@ def send_minigame_to_sheet(row: list):
     except Exception as e:
         return False, str(e)
 
-def mini_game_ui(birth: date, mbti: str, zodiac_ko: str):
-    _reset_minigame_daily()
+def render_minigame_screen():
+    # 접근 제한: 운세를 본 뒤에만 가능
+    if st.session_state.get("stage") != "minigame":
+        st.session_state.stage = "input"
+        st.rerun()
 
-    st.markdown("### ⏱️ 미니게임: 20.260~20.269초 맞추기")
-    st.caption("START → STOP으로 기록을 맞추세요 (소수점 3자리)")
-    st.info("※ 선착순 이벤트, 커피쿠폰 조기 소진 시 공지 없이 종료될 수 있습니다.")
+    birth = st.session_state.get("birth")
+    mbti = st.session_state.get("mbti") or "ENFP"
+    zodiac_label = st.session_state.get("zodiac_label") or ""
 
-    attempts = int(st.session_state.get("minigame_attempts", 0))
-    running = bool(st.session_state.get("minigame_running", False))
-    start_t = st.session_state.get("minigame_start", None)
+    if not birth:
+        st.warning("먼저 운세를 확인한 뒤 미니게임에 참여할 수 있어요.")
+        st.session_state.stage = "input"
+        st.rerun()
+
+    _mg_reset_daily()
+
+    # 상단 네비
+    topc1, topc2 = st.columns([1, 1])
+    with topc1:
+        if st.button("← 운세 화면으로", use_container_width=True):
+            st.session_state.stage = "result"
+            st.rerun()
+    with topc2:
+        st.caption(APP_VERSION)
+
+    st.markdown("## ⏱️ 미니게임: 20.260~20.269초 맞추기")
+    st.info("⚠️ 본 이벤트는 선착순으로 진행되며, **행사상품 소진 시 공지 없이 조기 종료될 수 있습니다.**")
+
+    attempts = int(st.session_state.get("mg_attempts", 0))
+    running = bool(st.session_state.get("mg_running", False))
+    start_t = st.session_state.get("mg_start")
 
     now_sec = 0.0
     if running and isinstance(start_t, (int, float)):
-        now_sec = max(0.0, _time.perf_counter() - float(start_t))
+        now_sec = max(0.0, time.perf_counter() - float(start_t))
 
     st.markdown(
-        f"<div style='font-size:40px;font-weight:800;text-align:center'>{_fmt_sec(now_sec)} s</div>",
+        f"<div style='font-size:46px;font-weight:900;text-align:center;letter-spacing:1px;padding:8px 0;'>{_mg_fmt_sec(now_sec)}<span style='font-size:18px;font-weight:800;'> s</span></div>",
         unsafe_allow_html=True,
     )
-    st.caption(f"남은 기회: {attempts}회")
+    st.caption(f"남은 기회: **{attempts}회**")
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        if st.button("START", use_container_width=True, disabled=(attempts <= 0 or running), key="mg_start"):
-            st.session_state["minigame_running"] = True
-            st.session_state["minigame_start"] = _time.perf_counter()
+        if st.button("START", use_container_width=True, disabled=(attempts <= 0 or running), key="mg_btn_start"):
+            st.session_state["mg_running"] = True
+            st.session_state["mg_start"] = time.perf_counter()
             st.rerun()
 
     with c2:
-        if st.button("STOP", use_container_width=True, disabled=(not running), key="mg_stop"):
-            sec = now_sec
+        if st.button("STOP", use_container_width=True, disabled=(not running), key="mg_btn_stop"):
+            sec = float(now_sec)
             ok = (MINIGAME_MIN <= sec <= MINIGAME_MAX)
-            st.session_state["minigame_running"] = False
-            st.session_state["minigame_start"] = None
-            st.session_state["minigame_attempts"] = max(0, attempts - 1)
-            st.session_state["minigame_last"] = sec
-            st.session_state["minigame_last_ok"] = ok
-            _append_record(sec, ok)
+            st.session_state["mg_running"] = False
+            st.session_state["mg_start"] = None
+            st.session_state["mg_attempts"] = max(0, attempts - 1)
+            st.session_state["mg_last"] = sec
+            st.session_state["mg_last_ok"] = ok
+            _mg_append_record(sec, ok)
             st.rerun()
 
     with c3:
-        if st.button("RESET", use_container_width=True, key="mg_reset"):
-            st.session_state["minigame_running"] = False
-            st.session_state["minigame_start"] = None
+        if st.button("RESET", use_container_width=True, key="mg_btn_reset"):
+            st.session_state["mg_running"] = False
+            st.session_state["mg_start"] = None
             st.rerun()
 
     if running:
-        _time.sleep(0.03)
+        time.sleep(0.03)
         st.rerun()
 
-    last = st.session_state.get("minigame_last", None)
-    last_ok = st.session_state.get("minigame_last_ok", None)
-    last_sec_str = _fmt_sec(float(last)) if last is not None else ""
+    last = st.session_state.get("mg_last")
+    last_ok = st.session_state.get("mg_last_ok")
+    last_sec_str = _mg_fmt_sec(float(last)) if last is not None else ""
 
     if last is not None:
         if last_ok:
-            st.success(f"성공! 기록 {last_sec_str}s")
+            st.success(f"🎉 성공! 기록: **{last_sec_str}s**  (성공 범위: {MINIGAME_MIN:.3f}~{MINIGAME_MAX:.3f})")
+            st.write("✅ **즉시 당첨 대상입니다. 아래 정보를 입력해 주세요.**")
         else:
-            st.error(f"실패! 기록 {last_sec_str}s")
+            st.error(f"❌ 실패… 기록: **{last_sec_str}s**  (성공 범위: {MINIGAME_MIN:.3f}~{MINIGAME_MAX:.3f})")
+            st.write("**추첨 응모를 희망하시면 아래 정보를 입력해주세요.**")
 
-    if last is not None and not last_ok:
-        st.markdown("#### 🔁 재도전 기회 얻기")
+    # 실패자 재도전 옵션
+    if last is not None and (last_ok is False):
+        st.markdown("### 🔁 재도전 기회 얻기")
+        st.caption("아래 버튼을 누르면 기회가 1회 늘어납니다.")
         b1, b2, b3 = st.columns(3)
         with b1:
-            if st.button("공유 완료 +1", use_container_width=True, key="mg_share_bonus"):
-                st.session_state["minigame_attempts"] += 1
-                st.session_state["minigame_shared"] = True
-                st.success("기회 +1")
-
+            if st.button("공유 완료 +1", use_container_width=True, key="mg_bonus_share"):
+                st.session_state["mg_attempts"] = int(st.session_state.get("mg_attempts", 0)) + 1
+                st.session_state["mg_shared"] = True
+                st.success("기회 +1 추가!")
         with b2:
-            if st.button("광고 보기 +1", use_container_width=True, key="mg_ads_bonus"):
-                st.session_state["minigame_attempts"] += 1
-                st.success("기회 +1")
-
+            if st.button("광고 보기(추후 애드센스) +1", use_container_width=True, key="mg_bonus_ads"):
+                st.session_state["mg_attempts"] = int(st.session_state.get("mg_attempts", 0)) + 1
+                st.success("기회 +1 추가!")
         with b3:
-            if st.button("다나눔렌탈 +1", use_container_width=True, key="mg_dn_bonus"):
-                st.session_state["minigame_attempts"] += 1
-                st.session_state["minigame_consult"] = True
-                st.success("기회 +1")
-                st.link_button("무료 상담 페이지", DANANEUM_LANDING_URL)
+            if st.button("다나눔렌탈 광고 보기 +1", use_container_width=True, key="mg_bonus_dn"):
+                st.session_state["mg_attempts"] = int(st.session_state.get("mg_attempts", 0)) + 1
+                st.session_state["mg_consult"] = True
+                st.success("기회 +1 추가!")
+                st.link_button("무료 상담 페이지 열기", DANANEUM_LANDING_URL)
 
-    recs = st.session_state.get("minigame_records") or []
+    # 기록
+    recs = st.session_state.get("mg_records") or []
     if recs:
-        with st.expander("📒 내 기록"):
-            for r in recs:
-                st.write(f"{r['ts']} · {_fmt_sec(r['sec'])}s · {'성공' if r['ok'] else '실패'}")
+        with st.expander("📒 내 기록", expanded=False):
+            for r in recs[:30]:
+                badge = "✅" if r["ok"] else "❌"
+                st.write(f"- {r['ts']} · {_mg_fmt_sec(r['sec'])}s · {badge}")
 
-    st.markdown("#### ☕ 커피쿠폰 응모")
+    st.markdown("---")
 
-    with st.form("minigame_entry_form", clear_on_submit=False):
-        col1, col2 = st.columns(2)
-        with col1:
-            entry_name = st.text_input("이름", value=st.session_state.get("minigame_profile_name", ""))
-        with col2:
-            entry_phone = st.text_input("전화번호", value=st.session_state.get("minigame_profile_phone", ""))
+    # 광고(3단계에 함께 붙기)
+    st.markdown("### 📢 안내 / 광고")
+    dananeum_ad_block()
 
+    st.markdown("---")
+
+    # 응모 폼 (성공자: 필수, 실패자: 선택)
+    st.markdown("### ☕ 커피쿠폰 응모(기록 저장)")
+    st.info("⚠️ **행사상품 소진 시 공지 없이 조기 종료될 수 있습니다.**")
+    st.caption("생년월일은 자동 입력됩니다. (이름/전화번호/동의 필수)")
+
+    with st.form("mg_entry_form", clear_on_submit=False):
+        entry_name = st.text_input("이름")
+        entry_phone = st.text_input("전화번호")
         st.text_input("생년월일", value=str(birth), disabled=True)
-        st.text_input("MBTI", value=mbti, disabled=True)
-        st.text_input("띠", value=zodiac_ko, disabled=True)
 
-        consent = st.checkbox("개인정보처리방침에 동의합니다.")
+        consent = st.checkbox("개인정보처리방침에 동의합니다.", value=False)
 
         submitted = st.form_submit_button("응모/저장하기", use_container_width=True)
 
         if submitted:
             valid = True
-
             if not entry_name.strip():
                 st.error("이름을 입력해주세요.")
                 valid = False
-
             if not entry_phone.strip():
                 st.error("전화번호를 입력해주세요.")
                 valid = False
-
             if not consent:
-                st.error("개인정보 동의가 필요합니다.")
+                st.error("개인정보처리방침 동의가 필요합니다.")
                 valid = False
 
+            # 성공자/실패자 모두 기록이 있어야 응모 가능(행사 운영상)
             if not last_sec_str:
-                st.error("STOP으로 기록을 만든 뒤 응모해주세요.")
+                st.error("먼저 미니게임에서 STOP을 눌러 기록을 만든 뒤 응모해주세요.")
                 valid = False
 
             if valid:
@@ -1207,19 +1209,15 @@ def mini_game_ui(birth: date, mbti: str, zodiac_ko: str):
                     entry_phone.strip(),
                     "ko",
                     last_sec_str,
-                    bool(st.session_state.get("minigame_shared", False)),
-                    bool(st.session_state.get("minigame_consult", False)),
+                    bool(st.session_state.get("mg_shared", False)),
+                    bool(st.session_state.get("mg_consult", False)),
                     str(birth),
                 ]
-
                 ok_send, msg = send_minigame_to_sheet(row)
                 if ok_send:
-                    st.success("저장 완료!")
-                    st.session_state["minigame_profile_name"] = entry_name.strip()
-                    st.session_state["minigame_profile_phone"] = entry_phone.strip()
-                    st.session_state["minigame_consent_ok"] = True
+                    st.success("응모/저장 완료 ✅")
                 else:
-                    st.warning("전송 실패")
+                    st.warning(f"전송 실패: {msg}")
                     st.code(row, language="json")
 
 
@@ -1234,5 +1232,10 @@ except Exception as e:
 
 if st.session_state.stage == "input":
     render_input(dbs)
-else:
+elif st.session_state.stage == "result":
     render_result(dbs)
+elif st.session_state.stage == "minigame":
+    render_minigame_screen()
+else:
+    st.session_state.stage = "input"
+    st.rerun()
