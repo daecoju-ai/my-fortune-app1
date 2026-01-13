@@ -21,7 +21,7 @@ from pathlib import Path
 # =========================================================
 APP_VERSION = "v2026.0002"
 APP_URL = "https://my-fortune.streamlit.app"
-DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
+DANANEUM_LANDING_URL = "https://fascinating-parfait-92a985.netlify.app/"
 DEBUG_MODE = False  # DB 연결 확인용 UI 숨김
 
 st.set_page_config(
@@ -369,16 +369,32 @@ def share_block():
 # 6) 타로 (하루 동안 고정 + back→shake→reveal + 효과음)
 # =========================================================
 def get_tarot_of_day(tarot_db: dict, user_seed: int, today_: date):
-    majors = []
-    if isinstance(tarot_db, dict) and isinstance(tarot_db.get("majors"), list):
-        majors = tarot_db["majors"]
-    elif isinstance(tarot_db, dict) and isinstance(tarot_db.get("cards"), list):
-        majors = tarot_db["cards"]
+    """타로카드 1장 (하루 고정).
+    - DB가 78장(메이저+마이너) 전부 들어있으면 전체 풀에서 랜덤 선택
+    - 기존 구조(majors/cards/list)도 그대로 호환
+    """
+    cards_raw = []
+
+    # 1) 가장 흔한 구조: {"cards":[...]} 또는 list
+    if isinstance(tarot_db, dict) and isinstance(tarot_db.get("cards"), list):
+        cards_raw = tarot_db["cards"]
     elif isinstance(tarot_db, list):
-        majors = tarot_db
+        cards_raw = tarot_db
+    else:
+        # 2) 기존 majors 호환
+        if isinstance(tarot_db, dict) and isinstance(tarot_db.get("majors"), list):
+            cards_raw.extend(tarot_db.get("majors", []))
+
+        # 3) 마이너 아르카나/기타 키들까지 전부 흡수 (list of dict)
+        if isinstance(tarot_db, dict):
+            for k, v in tarot_db.items():
+                if k in ("cards", "majors"):
+                    continue
+                if isinstance(v, list) and v and all(isinstance(x, dict) for x in v):
+                    cards_raw.extend(v)
 
     cleaned = []
-    for c in majors:
+    for c in cards_raw:
         if not isinstance(c, dict):
             continue
         name = c.get("name_ko") or c.get("name") or c.get("title") or c.get("card")
@@ -398,6 +414,7 @@ def get_tarot_of_day(tarot_db: dict, user_seed: int, today_: date):
     if not cleaned:
         return None
 
+    # ✅ 하루 고정: (날짜 + 사용자 seed)로 선택
     seed_int = stable_seed(str(today_), str(user_seed), "tarot")
     r = random.Random(seed_int)
     return r.choice(cleaned)
