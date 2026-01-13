@@ -19,7 +19,7 @@ from pathlib import Path
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
-APP_VERSION = "v2026.0014_FIXINDENT"
+APP_VERSION = "v2026.0015_MINIGAME_FIXED"
 APP_URL = "https://my-fortune.streamlit.app"
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 DEBUG_MODE = False  # DB 연결 확인용 UI 숨김
@@ -1223,18 +1223,23 @@ def _try_minigame_autosubmit(birth: date, last_sec_str: str, reason: str) -> tup
         last_sec = st.session_state.get("minigame_last")
         last_sec_str = _fmt_sec(float(last_sec)) if last_sec is not None else ""
 
-        submitted = st.form_submit_button("응모/저장하기", use_container_width=True)
+                submitted = st.form_submit_button("응모/저장하기", use_container_width=True)
         if submitted:
+            valid = True
             if not entry_name.strip():
                 st.error("이름을 입력해주세요.")
-            elif not entry_phone.strip():
+                valid = False
+            if not entry_phone.strip():
                 st.error("전화번호를 입력해주세요.")
-            elif not consent:
+                valid = False
+            if not consent:
                 st.error("개인정보처리방침 동의가 필요합니다.")
-            elif not last_sec_str:
+                valid = False
+            if not last_sec_str:
                 st.error("먼저 미니게임에서 STOP을 눌러 기록을 만든 뒤 응모해주세요.")
-            else:
+                valid = False
 
+            if valid:
                 # 시트 컬럼 순서:
                 # 시간 | 이름 | 전화번호 | 언어 | 기록초 | 공유여부 | 상담신청 | 생년월일
                 row = [
@@ -1254,8 +1259,7 @@ def _try_minigame_autosubmit(birth: date, last_sec_str: str, reason: str) -> tup
                     st.session_state["minigame_consent_ok"] = True
                     st.session_state["minigame_profile_name"] = entry_name.strip()
                     st.session_state["minigame_profile_phone"] = entry_phone.strip()
-
-                elif not last_sec_str:
+            # (fixed) no-elif validation
                 st.error("먼저 미니게임에서 STOP을 눌러 기록을 만든 뒤 응모해주세요.")
             else:
                     # URL 미설정 등은 앱이 죽지 않도록 안내만
