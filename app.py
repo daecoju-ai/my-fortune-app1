@@ -19,7 +19,7 @@ from pathlib import Path
 # =========================================================
 # 0) 고정값/버전
 # =========================================================
-APP_VERSION = "v2026.0028_SYNTAXFIX_BONUSFLOW"
+APP_VERSION = "v2026.0029_STEP2_BUTTON_FIX"
 APP_URL = "https://my-fortune.streamlit.app"
 DANANEUM_LANDING_URL = "https://incredible-dusk-20d2b5.netlify.app/"
 DEBUG_MODE = False  # DB 연결 확인용 UI 숨김
@@ -981,6 +981,14 @@ def render_result(dbs):
     share_block()
     dananeum_ad_block()
     tarot_ui(dbs["tarot_db"], birth, name, mbti)
+
+    # 🎮 미니게임 진입 버튼 (2번째 화면)
+    st.markdown("---")
+    st.markdown("## 🎮 미니게임 하고 ☕ 커피쿠폰 받기")
+    st.caption("미니게임에 도전해서 커피쿠폰을 받아보세요. 성공 시 정산 후 문자로 쿠폰이 발송됩니다.")
+    if st.button("🎮 미니게임 하고 ☕ 커피쿠폰 받기", use_container_width=True, key="btn_go_minigame_step2"):
+        st.session_state["stage"] = "minigame"
+        st.rerun()
 
     if st.button("입력 화면으로", use_container_width=True):
         st.session_state.stage = "input"
