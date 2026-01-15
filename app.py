@@ -21,7 +21,7 @@ from pathlib import Path
 # =========================================================
 APP_VERSION = "v2026.0002"
 APP_URL = "https://my-fortune.streamlit.app"
-DANANEUM_LANDING_URL = "https://fascinating-parfait-92a985.netlify.app/"
+DANANEUM_LANDING_URL = "https://sparkling-dolphin-2ec2e8.netlify.app/"
 DEBUG_MODE = False  # DB 연결 확인용 UI 숨김
 
 st.set_page_config(
