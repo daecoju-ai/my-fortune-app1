@@ -1014,7 +1014,7 @@ def render_result(dbs):
     # === CTA: 미니게임하고 커피쿠폰 받기 (2페이지 맨 아래 강조 버튼) ===
     st.markdown('''
     <div style="margin:24px 0 8px 0; text-align:center;">
-      <a href="https://incredible-dusk-20d2b5.netlify.app/" target="_blank" style="text-decoration:none;">
+      <a href="https://incandescent-sunburst-13d53d.netlify.app/" target="_blank" style="text-decoration:none;">
         <div style="
           width:100%;
           padding:18px 14px;
