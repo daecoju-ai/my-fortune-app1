@@ -21,7 +21,7 @@ from pathlib import Path
 # =========================================================
 APP_VERSION = "v2026.0002"
 APP_URL = "https://my-fortune.streamlit.app"
-DANANEUM_LANDING_URL = "https://sparkling-dolphin-2ec2e8.netlify.app/"
+DANANEUM_LANDING_URL = "https://capable-kataifi-46f1ad.netlify.app/"
 DEBUG_MODE = False  # DB 연결 확인용 UI 숨김
 
 st.set_page_config(
@@ -1014,7 +1014,7 @@ def render_result(dbs):
     # === CTA: 미니게임하고 커피쿠폰 받기 (2페이지 맨 아래 강조 버튼) ===
     st.markdown('''
     <div style="margin:24px 0 8px 0; text-align:center;">
-      <a href="https://incandescent-sunburst-13d53d.netlify.app/" target="_blank" style="text-decoration:none;">
+      <a href="https://chipper-biscuit-1c9ec3.netlify.app/" target="_blank" style="text-decoration:none;">
         <div style="
           width:100%;
           padding:18px 14px;
